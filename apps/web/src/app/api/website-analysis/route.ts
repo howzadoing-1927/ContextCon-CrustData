@@ -17,7 +17,11 @@ const SCHEMA = {
     pricing: { type: ["string", "null"], description: "Only pricing explicitly stated on the page, else null" },
     capacity: { type: ["string", "null"], description: "Only explicitly stated capacity or volume limits, else null" },
     customer_type: { type: ["string", "null"], description: "The kind of company they sell to" },
-    regions: { type: ["array", "null"], items: { type: "string" } },
+    regions: {
+      type: ["array", "null"],
+      items: { type: "string" },
+      description: "Countries, states, or localities the company says it focuses on; null when the page doesn't say",
+    },
     buyer_roles: { type: ["array", "null"], items: { type: "string" }, description: "Job titles of buyers they target" },
     timeline: { type: ["string", "null"] },
     criteria: { type: ["array", "null"], items: { type: "string" }, description: "Traits of a good-fit customer" },

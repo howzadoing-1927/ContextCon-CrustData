@@ -61,7 +61,7 @@ const LABELS: Record<BriefKey, string> = {
   description: "Description",
   capacity: "Capacity",
   customer_type: "Customer type",
-  regions: "Regions",
+  regions: "Any place you focus on?",
   buyer_roles: "Buyer roles",
   timeline: "Buying timeline",
   criteria: "Fit criteria",
@@ -321,7 +321,10 @@ export function BriefView({
 
         <BriefSection title="Your ideal customer" description="Used to find companies and to prefill new missions.">
           {text("customer_type", { wide: true })}
-          {text("regions", { hint: "Separate with commas." })}
+          {text("regions", {
+            hint: "A country, a state, or a locality. Leave blank if you don't focus on a place.",
+            placeholder: "e.g. Maharashtra, or schools in Pune",
+          })}
           {text("buyer_roles", { hint: "Separate with commas." })}
           {text("timeline", { wide: true, placeholder: "e.g. Buying this quarter" })}
           {text("criteria", { multiline: true, hint: "One per line." })}
@@ -428,6 +431,30 @@ export function BriefView({
               {describeError(save.error).body}
             </Notice>
           )}
+          {filled && draft && (
+            <div className="mb-5 rounded-lg border border-hairline bg-raised px-4 py-3.5">
+              <h2 className="text-sm font-semibold">Read these before you continue</h2>
+              <p className="mt-0.5 text-2xs text-muted-foreground">The rep describes you and picks prospects from exactly this.</p>
+              <dl className="mt-3 space-y-2.5 text-sm">
+                {(
+                  [
+                    ["Service", draft.service.trim()],
+                    ["Description", draft.description.trim()],
+                    [
+                      "Ideal customer",
+                      draft.customer_type.trim() &&
+                        [draft.customer_type.trim(), ...draft.criteria.split("\n").map((c) => c.trim()).filter(Boolean)].join(" · "),
+                    ],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div key={label} className="grid grid-cols-[7.5rem_1fr] gap-3 max-sm:grid-cols-1 max-sm:gap-0.5">
+                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dd className={cn("min-w-0 text-pretty break-words", !value && "text-signal")}>{value || "Add this above"}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
           <label className={cn("flex items-start gap-3 text-sm", !filled && "opacity-60")}>
             <input
               id="brief-approval"
@@ -438,11 +465,11 @@ export function BriefView({
               onChange={(e) => setApproved(e.target.checked)}
               className="mt-0.5 size-4 shrink-0 accent-foreground"
             />
-            <span>I approve these details. Meetings need the prospect&apos;s explicit agreement.</span>
+            <span>I&apos;ve reviewed the service, the description, and the ideal customer. Meetings need the prospect&apos;s explicit agreement.</span>
           </label>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button type="submit" size="lg" className="h-10 px-4" disabled={!filled || save.pending}>
-              {save.pending ? "Saving brief…" : "Approve and continue"}
+              {save.pending ? "Saving brief…" : "Reviewed and continue"}
               <ArrowRight data-icon="inline-end" />
             </Button>
             <span className="text-xs text-muted-foreground">Next: connect Google and add your test inbox.</span>

@@ -615,7 +615,8 @@ export function createFixtureTransport(): Transport {
   return {
     kind: "FIXTURE",
     async send(request) {
-      if (request.method === "POST" && request.path === "/workspace/website-analysis") {
+      const demo = normalizeWebsite((request.body as { url?: string } | undefined)?.url ?? "") === "https://demo-seller.example/";
+      if (request.method === "POST" && request.path === "/workspace/website-analysis" && !demo) {
         const real = await readWebsite(request);
         if (real) return real;
       }

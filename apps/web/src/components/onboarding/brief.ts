@@ -81,7 +81,6 @@ export const REQUIRED: BriefKey[] = [
   "service",
   "description",
   "customer_type",
-  "regions",
   "criteria",
   "timezone",
 ];
