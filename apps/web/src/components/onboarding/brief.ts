@@ -30,11 +30,11 @@ export type FieldOrigin = { kind: "site"; page: string } | { kind: "founder" } |
 
 const DEFAULT_ESCALATION = ["Discounts or custom pricing", "Contract or legal terms", "Delivery or uptime guarantees"];
 
-const lines = (v: string[] | null) => (v ?? []).join("\n");
-const list = (v: string[] | null) => (v ?? []).join(", ");
 const tidy = (parts: string[]) => parts.map((s) => s.trim()).filter(Boolean);
 const splitLines = (v: string) => tidy(v.split("\n"));
 const splitList = (v: string) => tidy(v.split(/[\n,]/));
+
+const ICP_KEYS: BriefKey[] = ["customer_type", "regions", "buyer_roles", "timeline", "criteria", "exclusions"];
 
 export function draftFromAnalysis(a: WebsiteAnalysis): { draft: BriefDraft; origins: Partial<Record<BriefKey, FieldOrigin>> } {
   const origins: Partial<Record<BriefKey, FieldOrigin>> = {};
@@ -52,12 +52,12 @@ export function draftFromAnalysis(a: WebsiteAnalysis): { draft: BriefDraft; orig
     pricing: site("pricing", a.pricing) ?? "",
     description: site("description", a.description) ?? "",
     capacity: site("capacity", a.capacity) ?? "",
-    customer_type: site("customer_type", a.customer_type) ?? "",
-    regions: list(site("regions", a.regions)),
-    buyer_roles: list(site("buyer_roles", a.buyer_roles)),
-    timeline: site("timeline", a.timeline) ?? "",
-    criteria: lines(site("criteria", a.criteria)),
-    exclusions: lines(site("exclusions", a.exclusions)),
+    customer_type: "",
+    regions: "",
+    buyer_roles: "",
+    timeline: "",
+    criteria: "",
+    exclusions: "",
     duration: 30,
     timezone: site("timezone", a.timezone) ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     weekdays: [1, 2, 3, 4, 5],
@@ -65,6 +65,7 @@ export function draftFromAnalysis(a: WebsiteAnalysis): { draft: BriefDraft; orig
     end: "17:00",
     escalation: DEFAULT_ESCALATION.join("\n"),
   };
+  for (const key of ICP_KEYS) origins[key] = { kind: "founder" };
   origins.website_url = { kind: "site", page: a.url };
   origins.founder_name = { kind: "founder" };
   origins.founder_email = { kind: "founder" };
@@ -81,6 +82,7 @@ export const REQUIRED: BriefKey[] = [
   "service",
   "description",
   "customer_type",
+  "buyer_roles",
   "criteria",
   "timezone",
 ];

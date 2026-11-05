@@ -16,6 +16,7 @@ from psycopg.types.json import Jsonb
 
 from services.core import db
 from services.core.config import Settings, get_settings
+from services.core.google import build_google_adapter
 
 from services.adapters.crustdata.adapter import CrustdataResearch
 from services.adapters.crustdata.client import CrustdataClient
@@ -25,6 +26,7 @@ from . import actions, queue
 from .handlers import handle_normalize_mission
 from .qualify import handle_qualify_and_draft
 from .research import handle_research
+from .send import handle_send_email
 
 log = logging.getLogger("outcome.worker")
 
@@ -59,6 +61,7 @@ def build_handlers(settings: Settings) -> dict[str, Handler]:
         handlers["research"] = partial(handle_research, research_factory=research_factory)
     else:
         log.warning("CRUSTDATA_API_KEY not configured; research tasks will stay ready")
+    handlers["send_email"] = partial(handle_send_email, adapter=build_google_adapter(settings))
     return handlers
 
 

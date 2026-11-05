@@ -1,4 +1,17 @@
 {
+  "$defs": {
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    }
+  },
   "$id": "urn:outcome:outcome.v1:BookingReceipt",
   "additionalProperties": false,
   "properties": {
@@ -26,6 +39,17 @@
       "minLength": 1,
       "title": "Event Id",
       "type": "string"
+    },
+    "execution_label": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionLabel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "html_link": {
       "anyOf": [

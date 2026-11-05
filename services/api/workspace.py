@@ -3,10 +3,10 @@ from fastapi.responses import JSONResponse
 
 from services.core import db
 from services.core.contracts.envelopes import SuccessEnvelope
-from services.core.contracts.requests import PolicyUpdate, ProfileUpdate, SourceInput
+from services.core.contracts.requests import BriefSave, PolicyUpdate, ProfileUpdate, SourceInput
 from services.core.contracts.version import API_PREFIX
 from services.core.contracts.views import EvidenceView, OrganizationView
-from services.core.workspace import ingest_source, update_policy, update_profile, workspace_view
+from services.core.workspace import ingest_source, save_brief, update_policy, update_profile, workspace_view
 
 from .auth import Principal, require_member, require_owner
 from .campaigns import idempotency_key
@@ -34,6 +34,18 @@ def put_profile(
 ) -> SuccessEnvelope[OrganizationView]:
     with db.transaction() as conn:
         update_profile(conn, organization_id=principal.organization_id, user_id=principal.user_id, update=body)
+    return _view(request, principal)
+
+
+@router.put("/workspace/brief", response_model=SuccessEnvelope[OrganizationView])
+def put_brief(
+    request: Request, body: BriefSave, principal: Principal = Depends(require_owner)
+) -> SuccessEnvelope[OrganizationView]:
+    key = idempotency_key(request)
+    with db.transaction() as conn:
+        save_brief(
+            conn, organization_id=principal.organization_id, user_id=principal.user_id, idempotency_key=key, update=body
+        )
     return _view(request, principal)
 
 

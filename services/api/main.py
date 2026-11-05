@@ -5,15 +5,17 @@ from uuid import uuid4
 import psycopg
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from psycopg_pool import PoolTimeout
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from services.core.config import get_settings
 from services.core.contracts.enums import ErrorCode
 from services.core.contracts.version import CONTRACT_VERSION
 from services.core.db import DatabaseNotConfigured, reset_pool
 
-from . import campaigns, health, workspace
+from . import campaigns, demo, health, me, workspace
 from .errors import ApiError, error_response
 
 log = logging.getLogger("outcome.api")
@@ -79,8 +81,28 @@ def create_app() -> FastAPI:
         return error_response(request, 500, ErrorCode.INTERNAL, "Internal error.", False)
 
     app.include_router(health.router)
+    app.include_router(me.router)
+    app.include_router(demo.router)
     app.include_router(campaigns.router)
     app.include_router(workspace.router)
+
+    origins = list(get_settings().allowed_cors_origins)
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allow_headers=[
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Idempotency-Key",
+                "X-Organization-ID",
+                "X-Correlation-ID",
+            ],
+            expose_headers=["X-Correlation-ID"],
+        )
     return app
 
 

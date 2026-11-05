@@ -54,6 +54,9 @@ def seed_organization(
     consent_record: str,
     timezone: str = "Asia/Kolkata",
     approved_facts: list[str] | None = None,
+    demo: bool = False,
+    seller_account_email: str | None = None,
+    website_url: str | None = None,
 ) -> UUID:
     """Create an organization, its owner membership and a simulation policy with one consented buyer.
     `approved_facts` are operator-attested statements: each becomes operator evidence plus an approved fact
@@ -75,13 +78,19 @@ def seed_organization(
         "duration_minutes": 15,
         "limits": DEFAULT_LIMITS,
     }
+    if demo:
+        policy["demo_allow_launch_without_google"] = True
     conn.execute(
-        "insert into organizations (id, name, timezone, policy_json, config_version) values (%s, %s, %s, %s, 1)",
-        (org_id, name, timezone, Jsonb(policy)),
+        "insert into organizations (id, name, website_url, timezone, policy_json, config_version) values (%s, %s, %s, %s, %s, 1)",
+        (org_id, name, website_url, timezone, Jsonb(policy)),
     )
     add_membership(conn, organization_id=org_id, user_id=owner_user_id, role="owner")
     if approved_facts:
         approve_operator_facts(conn, organization_id=org_id, user_id=owner_user_id, facts=approved_facts)
+    if seller_account_email or demo:
+        seed_seller_connection_without_oauth(
+            conn, organization_id=org_id, account_email=seller_account_email or "seller@demo.invalid"
+        )
     return org_id
 
 
@@ -101,13 +110,31 @@ def approve_operator_facts(conn: psycopg.Connection, *, organization_id: UUID, u
         ).fetchone()["id"]
         approved.append({"id": f"F{index}", "text": text, "evidence_ids": [str(evidence_id)],
                          "authority": "operator_approved", "approved": True})
+    existing = conn.execute(
+        "select approved_profile_json from organizations where id = %s", (organization_id,)
+    ).fetchone()["approved_profile_json"] or {}
+    profile = {
+        **existing,
+        "approved_facts": approved,
+        "faq": existing.get("faq") or [],
+        "forbidden_promises": existing.get("forbidden_promises") or [],
+    }
+    if not profile.get("ideal_customer"):
+        profile["ideal_customer"] = {
+            "customer_type": "B2B software companies",
+            "regions": ["India"],
+            "buyer_roles": ["VP of Sales"],
+            "timeline": None,
+            "criteria": ["Sells to other businesses"],
+            "exclusions": [],
+        }
     conn.execute(
         """
         update organizations
         set approved_profile_json = %s, profile_version = profile_version + 1, approved_at = now(), approved_by = %s
         where id = %s
         """,
-        (Jsonb({"approved_facts": approved, "faq": [], "forbidden_promises": []}), user_id, organization_id),
+        (Jsonb(profile), user_id, organization_id),
     )
 
 
@@ -164,6 +191,9 @@ def main(argv: list[str] | None = None) -> None:
         default=[],
         help="Operator-attested seller fact to approve (repeatable). Only state facts the seller has approved.",
     )
+    seed.add_argument("--demo", action="store_true", help="Mark launch-without-Google as waived (demo) and seed a dummy seller connection.")
+    seed.add_argument("--seller-email", default=None, help="Seed a dummy connected seller row (no tokens) at this address.")
+    seed.add_argument("--website-url", default=None)
 
     purge = sub.add_parser("purge-org")
     purge.add_argument("--organization-id", required=True, type=UUID)
@@ -186,6 +216,9 @@ def _run(args: argparse.Namespace) -> None:
                 consent_record=args.consent_record,
                 timezone=args.timezone,
                 approved_facts=args.fact,
+                demo=args.demo,
+                seller_account_email=args.seller_email,
+                website_url=args.website_url,
             )
             print(json.dumps({"organization_id": str(org_id)}))
         else:

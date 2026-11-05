@@ -21,11 +21,13 @@ class GateResult:
 
     @property
     def passed(self) -> bool:
-        return all(c["pass"] for c in self.checks if c.get("status") != "deferred")
+        return all(c["pass"] for c in self.checks if c.get("status") not in {"deferred", "waived (demo)"})
 
     @property
     def first_failure(self) -> dict | None:
-        return next((c for c in self.checks if c.get("status") != "deferred" and not c["pass"]), None)
+        return next(
+            (c for c in self.checks if c.get("status") not in {"deferred", "waived (demo)"} and not c["pass"]), None
+        )
 
     def add(self, step: int, name: str, ok: bool, reason: str) -> bool:
         self.checks.append({"step": step, "name": name, "pass": bool(ok), "reason": reason})
@@ -48,6 +50,7 @@ def initial_send_gate(
     snapshot: dict,
     recipient: str,
     sender: str | None,
+    conversation: dict | None = None,
 ) -> GateResult:
     gate = GateResult()
 
@@ -69,7 +72,14 @@ def initial_send_gate(
         "select status, stage from campaigns where organization_id = %s and id = %s", (organization_id, campaign_id)
     ).fetchone()
     gate.add(2, "campaign_running", campaign["status"] == "running", f"campaign {campaign['status']}/{campaign['stage']}")
-    gate.add(2, "no_inbound_yet", True, "initial message; no conversation exists yet")
+    if conversation is None:
+        gate.add(2, "no_inbound_yet", True, "initial message; no conversation exists yet")
+    else:
+        inbound = conn.execute(
+            "select count(*) as n from messages where organization_id = %s and conversation_id = %s and direction = 'inbound'",
+            (organization_id, conversation["id"]),
+        ).fetchone()["n"]
+        gate.add(2, "no_inbound_yet", inbound == 0, "no inbound messages yet" if inbound == 0 else f"{inbound} inbound messages")
 
     # 3. simulation, consent, exact single recipient, authorized sender
     buyer = (snapshot.get("policy") or {}).get("buyer_test") or {}
@@ -102,13 +112,23 @@ def initial_send_gate(
              f"verifier verdict {verification.verdict if verification else 'missing'}")
 
     # 6. action eligibility
-    prior = conn.execute(
-        "select count(*) as n from conversations where organization_id = %s and campaign_id = %s", (organization_id, campaign_id)
-    ).fetchone()["n"]
-    gate.add(6, "initial_send_eligible", bool(draft) and draft.purpose == "initial" and prior == 0,
-             "first outbound for this campaign; no existing conversation or booking")
-
-    # 7-8 run at dispatch time
-    gate.checks.append({"step": 7, "name": "budget_scopes_token", "pass": False, "status": "deferred", "reason": "checked atomically at dispatch (B6)"})
-    gate.checks.append({"step": 8, "name": "immutable_action_lock_recheck", "pass": False, "status": "deferred", "reason": "prepared and rechecked under lock at dispatch (B6)"})
+    if conversation is None:
+        prior = conn.execute(
+            "select count(*) as n from conversations where organization_id = %s and campaign_id = %s", (organization_id, campaign_id)
+        ).fetchone()["n"]
+        gate.add(6, "initial_send_eligible", bool(draft) and draft.purpose == "initial" and prior == 0,
+                 "first outbound for this campaign; no existing conversation or booking")
+        gate.checks.append({"step": 7, "name": "budget_scopes_token", "pass": False, "status": "deferred", "reason": "checked atomically at dispatch (B6)"})
+        gate.checks.append({"step": 8, "name": "immutable_action_lock_recheck", "pass": False, "status": "deferred", "reason": "prepared and rechecked under lock at dispatch (B6)"})
+    else:
+        outbound = conn.execute(
+            "select count(*) as n from messages where organization_id = %s and conversation_id = %s and direction = 'outbound'",
+            (organization_id, conversation["id"]),
+        ).fetchone()["n"]
+        gate.add(
+            6,
+            "initial_send_eligible",
+            bool(draft) and draft.purpose == "initial" and conversation["state"] == "drafting" and outbound == 0,
+            "first outbound; conversation is drafting and no message has been sent",
+        )
     return gate

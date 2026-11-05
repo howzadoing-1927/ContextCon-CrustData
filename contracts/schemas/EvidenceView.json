@@ -12,6 +12,17 @@
       "title": "EvidenceSourceKind",
       "type": "string"
     },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    },
     "FactStatus": {
       "enum": [
         "observed",
@@ -34,6 +45,17 @@
     "excerpt": {
       "title": "Excerpt",
       "type": "string"
+    },
+    "execution_label": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionLabel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "fact_status": {
       "$ref": "#/$defs/FactStatus"

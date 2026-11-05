@@ -210,6 +210,22 @@ def test_policy_requires_simulation_and_complete_consent(api, make_tenant, overr
 # ---------------------------------------------------------------- launch gate and snapshot
 
 
+def test_launch_refused_when_founder_icp_missing(api, make_tenant, conn):
+    tenant = make_tenant()
+    conn.execute(
+        "update organizations set approved_profile_json = approved_profile_json - 'ideal_customer' where id = %s",
+        (tenant.organization_id,),
+    )
+
+    response = api.post(
+        "/api/v1/campaigns",
+        headers=auth_headers(tenant.owner, tenant.organization_id, key="no-icp"),
+        json=campaign_body(tenant),
+    )
+
+    assert response.status_code == 422 and response.json()["error"]["details"]["field"] == "ideal_customer"
+
+
 def test_launch_refused_when_facts_not_approved(api, make_tenant, conn):
     tenant = make_tenant()
     conn.execute(

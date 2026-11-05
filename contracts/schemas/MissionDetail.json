@@ -71,6 +71,17 @@
           "title": "Event Id",
           "type": "string"
         },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "html_link": {
           "anyOf": [
             {
@@ -359,6 +370,17 @@
           "title": "Evidence Ids",
           "type": "array"
         },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "id": {
           "format": "uuid",
           "title": "Id",
@@ -520,6 +542,17 @@
           "title": "Excerpt",
           "type": "string"
         },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "fact_status": {
           "$ref": "#/$defs/FactStatus"
         },
@@ -596,6 +629,17 @@
       ],
       "title": "EvidenceView",
       "type": "object"
+    },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
     },
     "FactStatus": {
       "enum": [
@@ -752,6 +796,17 @@
         },
         "direction": {
           "$ref": "#/$defs/MessageDirection"
+        },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "id": {
           "format": "uuid",
@@ -1189,6 +1244,17 @@
           "type": "null"
         }
       ]
+    },
+    "conversation_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ConversationState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "created_at": {
       "format": "date-time",

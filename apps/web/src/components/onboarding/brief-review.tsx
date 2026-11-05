@@ -327,15 +327,15 @@ export function BriefView({
           </fieldset>
         </BriefSection>
 
-        <BriefSection title="Your ideal customer" description="Used to find companies and to prefill new missions.">
-          {text("customer_type", { wide: true })}
+        <BriefSection title="Your ideal customer" description="You tell us who to sell to. We will not guess this from your site.">
+          {text("customer_type", { wide: true, placeholder: "e.g. K-12 schools" })}
           {text("regions", {
             hint: "A country, a state, or a locality. Leave blank if you don't focus on a place.",
-            placeholder: "e.g. Maharashtra, or schools in Pune",
+            placeholder: "e.g. India, or schools in Pune",
           })}
-          {text("buyer_roles", { hint: "Separate with commas." })}
+          {text("buyer_roles", { hint: "Separate with commas.", placeholder: "e.g. Principal, school administrator" })}
           {text("timeline", { wide: true, placeholder: "e.g. Buying this quarter" })}
-          {text("criteria", { multiline: true, hint: "One per line." })}
+          {text("criteria", { multiline: true, hint: "One per line.", placeholder: "e.g. Has a dedicated academic coordinator" })}
           {text("exclusions", { multiline: true, hint: "One per line. Companies matching these are skipped." })}
         </BriefSection>
 

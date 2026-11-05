@@ -1,0 +1,421 @@
+{
+  "$defs": {
+    "EvidenceSourceKind": {
+      "enum": [
+        "crustdata",
+        "seller_website",
+        "operator",
+        "google_message",
+        "google_calendar",
+        "policy"
+      ],
+      "title": "EvidenceSourceKind",
+      "type": "string"
+    },
+    "EvidenceView": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "excerpt": {
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fact_status": {
+          "$ref": "#/$defs/FactStatus"
+        },
+        "field_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Field Path"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "provider_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider Ref"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "source_as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source As Of"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/EvidenceSourceKind"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Url"
+        }
+      },
+      "required": [
+        "id",
+        "source_kind",
+        "source_url",
+        "provider_ref",
+        "field_path",
+        "excerpt",
+        "retrieved_at",
+        "source_as_of",
+        "content_sha256",
+        "fact_status"
+      ],
+      "title": "EvidenceView",
+      "type": "object"
+    },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    },
+    "FactStatus": {
+      "enum": [
+        "observed",
+        "operator_approved",
+        "hypothesis",
+        "conflicted"
+      ],
+      "title": "FactStatus",
+      "type": "string"
+    },
+    "IdealCustomer": {
+      "additionalProperties": false,
+      "properties": {
+        "buyer_roles": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Buyer Roles",
+          "type": "array"
+        },
+        "criteria": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Criteria",
+          "type": "array"
+        },
+        "customer_type": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Customer Type",
+          "type": "string"
+        },
+        "exclusions": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Exclusions",
+          "type": "array"
+        },
+        "regions": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Regions",
+          "type": "array"
+        },
+        "timeline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeline"
+        }
+      },
+      "required": [
+        "customer_type",
+        "regions",
+        "buyer_roles",
+        "criteria",
+        "exclusions"
+      ],
+      "title": "IdealCustomer",
+      "type": "object"
+    },
+    "ProposedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^[A-Za-z0-9_.-]{1,80}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "evidence_ids"
+      ],
+      "title": "ProposedFact",
+      "type": "object"
+    },
+    "SellerBrief": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capacity"
+        },
+        "founder_email": {
+          "title": "Founder Email",
+          "type": "string"
+        },
+        "founder_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Founder Name",
+          "type": "string"
+        },
+        "pricing": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pricing"
+        },
+        "service": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Service",
+          "type": "string"
+        }
+      },
+      "required": [
+        "founder_name",
+        "founder_email",
+        "service"
+      ],
+      "title": "SellerBrief",
+      "type": "object"
+    },
+    "WorkingHours": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "title": "Start",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        },
+        "weekdays": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Weekdays",
+          "type": "array"
+        }
+      },
+      "required": [
+        "timezone",
+        "weekdays",
+        "start",
+        "end"
+      ],
+      "title": "WorkingHours",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:BriefSave",
+  "additionalProperties": false,
+  "description": "Founder brief: maps onto profile CAS plus policy hours/duration. Additive seller_brief/ideal_customer.",
+  "properties": {
+    "approved_fact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 50,
+      "title": "Approved Fact Ids",
+      "type": "array"
+    },
+    "description": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "duration_minutes": {
+      "enum": [
+        15,
+        30
+      ],
+      "title": "Duration Minutes",
+      "type": "integer"
+    },
+    "escalation_topics": {
+      "items": {
+        "maxLength": 1000,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 50,
+      "title": "Escalation Topics",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceView"
+      },
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Evidence",
+      "type": "array"
+    },
+    "expected_profile_version": {
+      "minimum": 0,
+      "title": "Expected Profile Version",
+      "type": "integer"
+    },
+    "ideal_customer": {
+      "$ref": "#/$defs/IdealCustomer"
+    },
+    "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "proposed_facts": {
+      "items": {
+        "$ref": "#/$defs/ProposedFact"
+      },
+      "maxItems": 50,
+      "title": "Proposed Facts",
+      "type": "array"
+    },
+    "seller_brief": {
+      "$ref": "#/$defs/SellerBrief"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    },
+    "website_url": {
+      "maxLength": 2048,
+      "pattern": "^https://",
+      "title": "Website Url",
+      "type": "string"
+    },
+    "working_hours": {
+      "$ref": "#/$defs/WorkingHours"
+    }
+  },
+  "required": [
+    "expected_profile_version",
+    "name",
+    "website_url",
+    "timezone",
+    "seller_brief",
+    "ideal_customer",
+    "description",
+    "approved_fact_ids",
+    "proposed_facts",
+    "evidence",
+    "escalation_topics",
+    "working_hours",
+    "duration_minutes"
+  ],
+  "title": "BriefSave",
+  "type": "object"
+}

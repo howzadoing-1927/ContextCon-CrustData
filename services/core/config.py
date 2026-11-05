@@ -38,6 +38,13 @@ def _optional(name: str) -> str | None:
     return value or None
 
 
+def _csv(name: str) -> tuple[str, ...]:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return ()
+    return tuple(item.strip() for item in raw.split(",") if item.strip())
+
+
 _IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]{0,40}$")
 _BUCKET = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
 
@@ -60,6 +67,10 @@ class Settings:
     supabase_jwt_secret: str | None
     supabase_jwks_url: str | None
     runtime_organization_id: UUID | None
+    demo_organization_id: UUID | None
+    demo_session_enabled: bool
+    demo_session_ttl_seconds: int
+    allowed_cors_origins: tuple[str, ...]
     worker_id: str | None
     release_sha: str | None
     task_lease_seconds: int
@@ -104,6 +115,7 @@ class Settings:
 def get_settings() -> Settings:
     load_dotenv()
     runtime_org = _optional("RUNTIME_ORGANIZATION_ID")
+    demo_org = _optional("DEMO_ORGANIZATION_ID")
     return Settings(
         database_url=_optional("DATABASE_URL"),
         db_schema=_identifier("OUTCOME_DB_SCHEMA", "public", _IDENTIFIER),
@@ -114,6 +126,10 @@ def get_settings() -> Settings:
         supabase_jwt_secret=_optional("SUPABASE_JWT_SECRET"),
         supabase_jwks_url=_optional("SUPABASE_JWKS_URL"),
         runtime_organization_id=UUID(runtime_org) if runtime_org else None,
+        demo_organization_id=UUID(demo_org) if demo_org else None,
+        demo_session_enabled=_bool("DEMO_SESSION_ENABLED", False),
+        demo_session_ttl_seconds=_int("DEMO_SESSION_TTL_SECONDS", 3600),
+        allowed_cors_origins=_csv("ALLOWED_CORS_ORIGINS"),
         worker_id=_optional("WORKER_ID"),
         release_sha=_optional("RELEASE_SHA"),
         task_lease_seconds=_int("TASK_LEASE_SECONDS", 60),

@@ -80,12 +80,17 @@ def _organization_header(request: Request) -> UUID:
         ) from exc
 
 
-def require_member(request: Request) -> Principal:
+def require_user(request: Request) -> UUID:
+    """Authenticate the bearer token without selecting an organization."""
     claims = verify_access_token(_bearer_token(request))
     try:
-        user_id = UUID(claims["sub"])
+        return UUID(claims["sub"])
     except ValueError as exc:
         raise _unauthenticated() from exc
+
+
+def require_member(request: Request) -> Principal:
+    user_id = require_user(request)
     organization_id = _organization_header(request)
     with db.connection() as conn:
         row = conn.execute(

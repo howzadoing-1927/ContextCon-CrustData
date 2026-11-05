@@ -6,6 +6,7 @@ from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from .base import ContractModel, Email, Zone
 from .enums import CampaignControl, ResolutionType
+from .views import EvidenceView, IdealCustomer, SellerBrief
 
 _CLOCK = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 ShortText = Annotated[str, Field(min_length=1, max_length=1000)]
@@ -126,6 +127,40 @@ class PolicyUpdate(ContractModel):
             raise ValueError("P0 requires exactly one buyer_test and at most one owner_test recipient")
         if len({r.email for r in self.consented_recipients}) != len(self.consented_recipients):
             raise ValueError("recipient emails must be distinct")
+        return self
+
+
+class ProposedFact(ContractModel):
+    id: str = Field(pattern=r"^[A-Za-z0-9_.-]{1,80}$")
+    text: ShortText
+    evidence_ids: list[UUID] = Field(min_length=1)
+
+
+class BriefSave(ContractModel):
+    """Founder brief: maps onto profile CAS plus policy hours/duration. Additive seller_brief/ideal_customer."""
+
+    expected_profile_version: int = Field(ge=0)
+    name: str = Field(min_length=1, max_length=200)
+    website_url: str = Field(pattern=r"^https://", max_length=2048)
+    timezone: Zone
+    seller_brief: SellerBrief
+    ideal_customer: IdealCustomer
+    description: ShortText
+    approved_fact_ids: list[str] = Field(max_length=50)
+    proposed_facts: list[ProposedFact] = Field(max_length=50)
+    evidence: list[EvidenceView] = Field(min_length=1, max_length=50)
+    escalation_topics: list[ShortText] = Field(max_length=50)
+    working_hours: WorkingHours
+    duration_minutes: Literal[15, 30]
+
+    @model_validator(mode="after")
+    def _ticked_facts_exist(self) -> "BriefSave":
+        known = {fact.id for fact in self.proposed_facts}
+        unknown = sorted({fid for fid in self.approved_fact_ids if fid not in known})
+        if unknown:
+            raise ValueError(f"approved_fact_ids references unknown proposed facts: {unknown}")
+        if not any(role.strip() for role in self.ideal_customer.buyer_roles):
+            raise ValueError("ideal_customer.buyer_roles must include at least one role")
         return self
 
 

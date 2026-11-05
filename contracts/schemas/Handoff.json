@@ -28,6 +28,17 @@
           "title": "Event Id",
           "type": "string"
         },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "html_link": {
           "anyOf": [
             {
@@ -93,6 +104,17 @@
       ],
       "title": "BuyerStatedNeed",
       "type": "object"
+    },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
     }
   },
   "$id": "urn:outcome:outcome.v1:Handoff",

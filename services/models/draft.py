@@ -92,6 +92,23 @@ def build_envelope(*, campaign_id: str, snapshot: dict, prospect: dict, evidence
 
 
 SIMULATION_SENTENCE = "In this test you are playing the buyer."
+_MIN_SNAPPED_CLAIM = 24
+
+
+def _snap_claim_to_body(text: str, body: str) -> tuple[int, str] | None:
+    """Exact unique substring, or the longest unique prefix of the claim that already appears in the body."""
+    if not text:
+        return None
+    positions = [m.start() for m in re.finditer(re.escape(text), body)]
+    if len(positions) == 1:
+        return positions[0], text
+    trimmed = text.rstrip()
+    while len(trimmed) >= _MIN_SNAPPED_CLAIM:
+        positions = [m.start() for m in re.finditer(re.escape(trimmed), body)]
+        if len(positions) == 1:
+            return positions[0], trimmed
+        trimmed = trimmed[:-1].rstrip()
+    return None
 
 DRAFTING_RULES = [
     "Every claims[].text must be copied character-for-character from body_text (an exact substring); start/end are its code-point offsets.",
@@ -99,7 +116,7 @@ DRAFTING_RULES = [
     "or headquarters text); no adjectives or categories that do not appear there (no 'large', no synonyms).",
     "Seller statements: kind seller_fact, copy the approved fact text, cite approved_fact_ids, evidence_ids empty.",
     "Company statements: kind prospect_fact, evidence_ids only from prospect.evidence[].evidence_id (never fact ids).",
-    "Any statement about fit, need or benefit: kind hypothesis, worded as a possibility (may/might/could), evidence_ids may be empty.",
+    "Any statement about fit, need or benefit: kind hypothesis, worded as a possibility (may/might/could) or as a question, evidence_ids may be empty.",
     "Do not make claims about the researched person, their role relevance or the buyer's organization chart.",
     f"Include exactly this sentence, and do NOT list it in claims: {SIMULATION_SENTENCE}",
     "Under 120 words. No names, signatures with names, addresses, links or headers.",
@@ -120,10 +137,14 @@ def deterministic_findings(draft: DraftProposal, envelope: dict) -> tuple[list[s
             repairs.append("mandated simulation sentence removed from claims (framing, not a factual claim)")
             continue
         if body[claim.start:claim.end] != claim.text:
-            positions = [m.start() for m in re.finditer(re.escape(claim.text), body)] if claim.text else []
-            if len(positions) == 1:
-                repairs.append(f"offsets recomputed for claim {claim.text[:40]!r}")
-                claim = claim.model_copy(update={"start": positions[0], "end": positions[0] + len(claim.text)})
+            snapped = _snap_claim_to_body(claim.text, body)
+            if snapped is not None:
+                start, text = snapped
+                if text != claim.text:
+                    repairs.append(f"claim text trimmed to the unique body substring {text[:40]!r}")
+                else:
+                    repairs.append(f"offsets recomputed for claim {claim.text[:40]!r}")
+                claim = claim.model_copy(update={"text": text, "start": start, "end": start + len(text)})
             else:
                 findings.append(f"claim text not found exactly once in body: {claim.text[:80]!r}")
         if set(claim.evidence_ids) & fact_ids:
@@ -142,7 +163,7 @@ def deterministic_findings(draft: DraftProposal, envelope: dict) -> tuple[list[s
             findings.append(f"seller claim without an approved fact: {claim.text[:80]!r}")
         if claim.kind == "prospect_fact" and not claim.evidence_ids:
             findings.append(f"prospect claim without evidence: {claim.text[:80]!r}")
-        if claim.kind == "hypothesis" and not _HYPOTHESIS_WORDS.search(claim.text):
+        if claim.kind == "hypothesis" and not _HYPOTHESIS_WORDS.search(claim.text) and "?" not in claim.text:
             findings.append(f"hypothesis not phrased as a possibility: {claim.text[:80]!r}")
         if claim.kind == "scheduling_fact" and not envelope["offered_slots"]:
             findings.append("scheduling claim without offered slots")

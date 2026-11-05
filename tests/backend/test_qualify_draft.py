@@ -155,6 +155,38 @@ def test_offsets_are_repaired_only_for_exact_unique_text():
     assert fixed.claims[0].approved_fact_ids == ["F1"] and fixed.claims[0].evidence_ids == []
 
 
+def test_long_claim_snaps_to_unique_body_prefix():
+    env = envelope_for(full_evidence())
+    body = "Seller schedules demos. Acme Labs is a logistics company in India. In this test you are playing the buyer."
+    extra = "Acme Labs is a logistics company in India that also ships globally overnight."
+    d = draft(body, [
+        {"text": extra, "start": 0, "end": len(extra), "kind": "prospect_fact",
+         "evidence_ids": [str(env["prospect"]["evidence"][0]["evidence_id"])], "approved_fact_ids": []},
+    ])
+
+    findings, repairs, fixed = deterministic_findings(d, env)
+
+    assert findings == []
+    assert any("trimmed" in r for r in repairs)
+    assert fixed.claims[0].text in body and body.count(fixed.claims[0].text) == 1
+    assert body[fixed.claims[0].start:fixed.claims[0].end] == fixed.claims[0].text
+    assert fixed.claims[0].text.startswith("Acme Labs is a logistics company in India")
+
+
+def test_question_hypothesis_does_not_need_possibility_words():
+    env = envelope_for(full_evidence())
+    body = "Seller schedules demos. In this test you are playing the buyer. Would a short demo be useful?"
+    d = draft(body, [
+        claim(body, "Seller schedules demos.", "seller_fact", facts=["F1"]),
+        claim(body, "Would a short demo be useful?", "hypothesis"),
+    ])
+
+    findings, _, fixed = deterministic_findings(d, env)
+
+    assert findings == []
+    assert [c.kind for c in fixed.claims] == ["seller_fact", "hypothesis"]
+
+
 def test_draft_schema_rejects_recipient_fields():
     with pytest.raises(ValidationError):
         draft("Hello", [], to_email="someone@example.com")

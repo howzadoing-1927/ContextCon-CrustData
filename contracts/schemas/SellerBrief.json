@@ -1,0 +1,53 @@
+{
+  "$id": "urn:outcome:outcome.v1:SellerBrief",
+  "additionalProperties": false,
+  "properties": {
+    "capacity": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Capacity"
+    },
+    "founder_email": {
+      "title": "Founder Email",
+      "type": "string"
+    },
+    "founder_name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Founder Name",
+      "type": "string"
+    },
+    "pricing": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pricing"
+    },
+    "service": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Service",
+      "type": "string"
+    }
+  },
+  "required": [
+    "founder_name",
+    "founder_email",
+    "service"
+  ],
+  "title": "SellerBrief",
+  "type": "object"
+}

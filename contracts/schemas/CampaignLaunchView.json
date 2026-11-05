@@ -15,6 +15,27 @@
       "title": "CampaignState",
       "type": "string"
     },
+    "ConversationState": {
+      "enum": [
+        "researching",
+        "qualified",
+        "drafting",
+        "waiting_reply",
+        "evaluating_reply",
+        "offering_slots",
+        "waiting_slot_acceptance",
+        "booking",
+        "booked",
+        "completed",
+        "declined",
+        "suppressed",
+        "needs_human",
+        "send_unknown",
+        "stopped"
+      ],
+      "title": "ConversationState",
+      "type": "string"
+    },
     "EstimatedCost": {
       "additionalProperties": false,
       "properties": {
@@ -116,6 +137,17 @@
       "minimum": 1,
       "title": "Config Version",
       "type": "integer"
+    },
+    "conversation_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ConversationState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "created_at": {
       "format": "date-time",

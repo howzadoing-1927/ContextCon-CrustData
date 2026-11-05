@@ -11,7 +11,7 @@ from services.core.campaigns import get_mission_detail
 from services.core.config import get_settings
 from services.core.contracts.model_io import NormalizedPlan
 from services.models.client import AzureModelClient, ModelCall, ModelUnavailable
-from services.models.normalize import build_envelope, normalize_mission
+from services.models.normalize import apply_founder_icp, build_envelope, normalize_mission, repair_plan
 from services.worker import queue
 from services.worker.handlers import handle_normalize_mission
 
@@ -68,8 +68,55 @@ class FakeClient:
 def test_valid_plan_validates_and_passes_policy():
     outcome = normalize_mission(FakeClient(VALID_PLAN), campaign_id="c", request_text="Find logistics", snapshot=SNAPSHOT)
 
-    assert outcome.plan == NormalizedPlan.model_validate(VALID_PLAN)
+    assert outcome.plan == repair_plan(NormalizedPlan.model_validate(VALID_PLAN))
     assert outcome.policy_violations == [] and len(outcome.calls) == 1
+
+
+def test_founder_icp_overwrites_market_from_request_text():
+    snapshot = {
+        **SNAPSHOT,
+        "ideal_customer": {
+            "customer_type": "K-12 schools",
+            "regions": ["India"],
+            "buyer_roles": ["Principal", "School administrator"],
+            "timeline": None,
+            "criteria": ["Has an academic coordinator"],
+            "exclusions": ["universities"],
+        },
+    }
+
+    outcome = normalize_mission(
+        FakeClient(VALID_PLAN),
+        campaign_id="c",
+        request_text="Book a demo with a mid-market logistics company's head of sales.",
+        snapshot=snapshot,
+    )
+
+    assert outcome.plan.industries == ["K-12 schools"]
+    assert outcome.plan.buyer_roles == ["Principal", "School administrator"]
+    assert outcome.plan.geography == ["India"]
+    assert outcome.plan.exclusions == ["universities"]
+
+
+def test_repair_drops_filled_missing_and_demotes_unmapped_must_haves():
+    raw = {
+        **VALID_PLAN,
+        "missing_required_fields": [
+            "geography",
+            "confirmation of company size fitting mid-market definition",
+            "budget",
+        ],
+        "company_rules": [
+            {"field": "company_size", "operator": "range", "value": [50, 1000], "must_have": True},
+            {"field": "company_market_segment", "operator": "equals", "value": "mid-market", "must_have": True},
+        ],
+    }
+
+    plan = repair_plan(NormalizedPlan.model_validate(raw))
+
+    assert plan.missing_required_fields == ["budget"]
+    assert plan.company_rules[0].must_have is True
+    assert plan.company_rules[1].must_have is False
 
 
 def test_invalid_output_gets_one_repair_with_errors():
@@ -187,12 +234,16 @@ def test_handler_accepts_valid_plan_and_queues_research(leased, conn):
 
     campaign = _campaign(conn, launched)
     assert (campaign["status"], campaign["stage"], campaign["version"]) == ("running", "research", 2)
-    assert campaign["normalized_plan_json"] == NormalizedPlan.model_validate(VALID_PLAN).model_dump(mode="json")
+    snapshot = conn.execute(
+        "select launch_snapshot_json from campaigns where id = %s", (launched.id,)
+    ).fetchone()["launch_snapshot_json"]
+    expected = repair_plan(apply_founder_icp(NormalizedPlan.model_validate(VALID_PLAN), snapshot)).model_dump(mode="json")
+    assert campaign["normalized_plan_json"] == expected
     assert campaign["budget_json"]["usage"]["model_calls"] == 1 and campaign["budget_json"]["usage"]["tokens_in"] == 100
     [decision] = _decisions(conn, launched)
     assert decision["status"] == "accepted" and decision["policy_result_json"]["pass"] is True
     assert decision["model_metadata_json"]["deployment"] == "fixture-fast"
-    assert decision["model_metadata_json"]["prompt_version"] == "normalize_mission.v1"
+    assert decision["model_metadata_json"]["prompt_version"] == "normalize_mission.v3"
     research = conn.execute(
         "select status from tasks where organization_id = %s and kind = 'research'", (tenant.organization_id,)
     ).fetchall()
@@ -202,7 +253,7 @@ def test_handler_accepts_valid_plan_and_queues_research(leased, conn):
 
 def test_handler_missing_required_fields_needs_human_without_research(leased, conn):
     tenant, launched, lease = leased
-    plan = {**VALID_PLAN, "missing_required_fields": ["target geography"]}
+    plan = {**VALID_PLAN, "missing_required_fields": ["budget"]}
 
     handle_normalize_mission(conn, lease, client=FakeClient(plan))
 

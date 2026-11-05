@@ -1,0 +1,52 @@
+{
+  "$id": "urn:outcome:outcome.v1:DemoSessionView",
+  "additionalProperties": false,
+  "properties": {
+    "access_token": {
+      "title": "Access Token",
+      "type": "string"
+    },
+    "expires_in": {
+      "title": "Expires In",
+      "type": "integer"
+    },
+    "organization_id": {
+      "format": "uuid",
+      "title": "Organization Id",
+      "type": "string"
+    },
+    "organization_name": {
+      "title": "Organization Name",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "owner",
+        "member"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "session_kind": {
+      "const": "demo",
+      "default": "demo",
+      "title": "Session Kind",
+      "type": "string"
+    },
+    "token_type": {
+      "const": "bearer",
+      "default": "bearer",
+      "title": "Token Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "access_token",
+    "expires_in",
+    "organization_id",
+    "organization_name",
+    "role"
+  ],
+  "title": "DemoSessionView",
+  "type": "object"
+}

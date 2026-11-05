@@ -1,0 +1,30 @@
+{
+  "$id": "urn:outcome:outcome.v1:MembershipView",
+  "additionalProperties": false,
+  "properties": {
+    "organization_id": {
+      "format": "uuid",
+      "title": "Organization Id",
+      "type": "string"
+    },
+    "organization_name": {
+      "title": "Organization Name",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "owner",
+        "member"
+      ],
+      "title": "Role",
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "organization_name",
+    "role"
+  ],
+  "title": "MembershipView",
+  "type": "object"
+}

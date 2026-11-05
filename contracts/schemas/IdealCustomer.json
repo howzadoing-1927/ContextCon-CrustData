@@ -1,0 +1,66 @@
+{
+  "$id": "urn:outcome:outcome.v1:IdealCustomer",
+  "additionalProperties": false,
+  "properties": {
+    "buyer_roles": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Buyer Roles",
+      "type": "array"
+    },
+    "criteria": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "minItems": 1,
+      "title": "Criteria",
+      "type": "array"
+    },
+    "customer_type": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Customer Type",
+      "type": "string"
+    },
+    "exclusions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "regions": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Regions",
+      "type": "array"
+    },
+    "timeline": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Timeline"
+    }
+  },
+  "required": [
+    "customer_type",
+    "regions",
+    "buyer_roles",
+    "criteria",
+    "exclusions"
+  ],
+  "title": "IdealCustomer",
+  "type": "object"
+}

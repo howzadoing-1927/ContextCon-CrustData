@@ -28,6 +28,17 @@
           "title": "Event Id",
           "type": "string"
         },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "html_link": {
           "anyOf": [
             {
@@ -95,6 +106,17 @@
       "title": "ConversationState",
       "type": "string"
     },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    },
     "MessageDirection": {
       "enum": [
         "inbound",
@@ -122,6 +144,17 @@
         },
         "direction": {
           "$ref": "#/$defs/MessageDirection"
+        },
+        "execution_label": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExecutionLabel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "id": {
           "format": "uuid",

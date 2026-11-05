@@ -1,0 +1,33 @@
+{
+  "$id": "urn:outcome:outcome.v1:ProposedFact",
+  "additionalProperties": false,
+  "properties": {
+    "evidence_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "id": {
+      "pattern": "^[A-Za-z0-9_.-]{1,80}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "text": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "text",
+    "evidence_ids"
+  ],
+  "title": "ProposedFact",
+  "type": "object"
+}

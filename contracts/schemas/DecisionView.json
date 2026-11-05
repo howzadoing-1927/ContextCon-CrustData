@@ -90,6 +90,17 @@
       "title": "DecisionStatus",
       "type": "string"
     },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    },
     "PolicyCheck": {
       "additionalProperties": false,
       "properties": {
@@ -162,6 +173,17 @@
       },
       "title": "Evidence Ids",
       "type": "array"
+    },
+    "execution_label": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutionLabel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "id": {
       "format": "uuid",

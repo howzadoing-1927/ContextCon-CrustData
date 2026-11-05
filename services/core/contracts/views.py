@@ -11,6 +11,7 @@ from .enums import (
     ConversationState,
     DecisionStatus,
     EvidenceSourceKind,
+    ExecutionLabel,
     FactStatus,
     MessageDirection,
     MessageStatus,
@@ -61,6 +62,7 @@ class CampaignView(ContractModel):
     config_version: int = Field(ge=1)
     usage: Usage
     last_decision_id: UUID | None
+    conversation_state: ConversationState | None = None
     created_at: AwareDatetime
     updated_at: AwareDatetime
 
@@ -82,6 +84,7 @@ class EvidenceView(ContractModel):
     source_as_of: AwareDatetime | None
     content_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     fact_status: FactStatus
+    execution_label: ExecutionLabel | None = None
 
 
 class ProspectCompany(ContractModel):
@@ -173,6 +176,7 @@ class DecisionView(ContractModel):
     actual_action: ActualAction | None
     resolution: dict[str, Any] | None
     created_at: AwareDatetime
+    execution_label: ExecutionLabel | None = None
 
 
 class MessageView(ContractModel):
@@ -184,6 +188,7 @@ class MessageView(ContractModel):
     received_at: AwareDatetime | None
     provider_message_id: str | None
     status: MessageStatus
+    execution_label: ExecutionLabel | None = None
 
 
 class Slot(ContractModel):
@@ -205,6 +210,7 @@ class BookingReceipt(ContractModel):
     verified_at: AwareDatetime
     attendee_acceptance: Literal["not_verified"]
     mode: Literal["simulation"]
+    execution_label: ExecutionLabel | None = None
 
 
 class ConversationView(ContractModel):
@@ -242,6 +248,43 @@ class Handoff(ContractModel):
     notification_status: Literal["not_requested", "pending", "sent", "failed"]
 
 
+class SellerBrief(ContractModel):
+    founder_name: str = Field(min_length=1, max_length=200)
+    founder_email: Email
+    service: str = Field(min_length=1, max_length=1000)
+    pricing: str | None = None
+    capacity: str | None = None
+
+
+class IdealCustomer(ContractModel):
+    customer_type: str = Field(min_length=1, max_length=1000)
+    regions: list[str] = Field(max_length=20)
+    buyer_roles: list[str] = Field(max_length=20)
+    timeline: str | None = None
+    criteria: list[str] = Field(min_length=1, max_length=20)
+    exclusions: list[str] = Field(max_length=20)
+
+
+class MembershipView(ContractModel):
+    organization_id: UUID
+    organization_name: str
+    role: Literal["owner", "member"]
+
+
+class MembershipsView(ContractModel):
+    items: list[MembershipView]
+
+
+class DemoSessionView(ContractModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int
+    organization_id: UUID
+    organization_name: str
+    role: Literal["owner", "member"]
+    session_kind: Literal["demo"] = "demo"
+
+
 class ApprovedProfileView(ContractModel):
     approved_facts: list[dict[str, Any]]
     faq: list[dict[str, Any]]
@@ -255,14 +298,26 @@ class SafePolicyView(ContractModel):
     working_hours: dict[str, Any] | None
     duration_minutes: int | None
     limits: dict[str, int] | None
+    config_version: int | None = None
 
 
 class ConnectionSummaryView(ContractModel):
-    purpose: Literal["seller", "buyer_test"]
+    purpose: Literal["seller", "buyer_test"] | None = None
     status: Literal["pending", "connected", "reauth_required", "revoked"]
     account_email: str | None
     granted_scopes: list[str]
     calendar_id: str | None
+    connection_id: UUID | None = None
+
+
+class SourceView(ContractModel):
+    id: UUID
+    kind: Literal["website", "pasted_text"]
+    label: str
+    status: Literal["ingesting", "ready", "failed"]
+    retrieved_at: AwareDatetime | None
+    evidence_ids: list[UUID]
+    error: str | None = None
 
 
 class OrganizationView(ContractModel):
@@ -271,13 +326,24 @@ class OrganizationView(ContractModel):
     website_url: str | None
     timezone: str
     role: Literal["owner", "member"]
+    viewer_role: Literal["owner", "member"] | None = None
     profile_version: int
     approved_at: AwareDatetime | None
+    approved_by: UUID | None = None
     profile: ApprovedProfileView | None
+    approved_facts: list[dict[str, Any]] = Field(default_factory=list)
+    proposed_facts: list[dict[str, Any]] = Field(default_factory=list)
+    faq: list[dict[str, Any]] = Field(default_factory=list)
+    forbidden_promises: list[str] = Field(default_factory=list)
+    sources: list[SourceView] = Field(default_factory=list)
+    evidence: list[EvidenceView] = Field(default_factory=list)
     config_version: int
     policy: SafePolicyView
     connections: list[ConnectionSummaryView]
+    connection: ConnectionSummaryView | None = None
     worker: HealthReady
+    seller_brief: SellerBrief | None = None
+    ideal_customer: IdealCustomer | None = None
 
 
 class MissionDetail(CampaignView):

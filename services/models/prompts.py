@@ -14,15 +14,16 @@ SHARED_POLICY = (
     "is not the delivery identity."
 )
 
-NORMALIZE_MISSION_VERSION = "normalize_mission.v1"
+NORMALIZE_MISSION_VERSION = "normalize_mission.v3"
 
 NORMALIZE_MISSION = (
-    "Convert the operator's request and approved profile into NormalizedPlan. Preserve explicit must-haves, "
-    "exclusions, buyer roles and geography. Objective is book_demo. Identify contradictions and missing mandatory "
-    "fields. Suggest bounded company-first research intents, not provider-specific filter syntax. Do not relax "
-    "criteria to force a match. Do not infer a region, company size, business pain or seller capability without "
-    "labeling it an assumption. A new free-text request must alter the plan; never substitute a rehearsed ICP. "
-    "Return missing_required_fields when an autonomous next step would be unsafe or meaningless."
+    "Convert the founder's ideal_customer into NormalizedPlan. geography, industries (from customer_type), "
+    "buyer_roles and exclusions come only from ideal_customer. operator_request is optional notes (timing or "
+    "this-week urgency) and must not invent a different market, industry or buyer role. Objective is book_demo. "
+    "Identify contradictions and missing mandatory fields. Suggest bounded company-first research intents, not "
+    "provider-specific filter syntax. Do not relax criteria to force a match. Do not infer a region, company size, "
+    "business pain or seller capability without labeling it an assumption. Copy founder ICP even when notes mention "
+    "another vertical. Return missing_required_fields when an autonomous next step would be unsafe or meaningless."
 )
 
 

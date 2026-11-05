@@ -173,6 +173,16 @@
             "title": "Event Id",
             "type": "string"
           },
+          "execution_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionLabel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "html_link": {
             "anyOf": [
               {
@@ -217,6 +227,108 @@
           "mode"
         ],
         "title": "BookingReceipt",
+        "type": "object"
+      },
+      "BriefSave": {
+        "additionalProperties": false,
+        "description": "Founder brief: maps onto profile CAS plus policy hours/duration. Additive seller_brief/ideal_customer.",
+        "properties": {
+          "approved_fact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Approved Fact Ids",
+            "type": "array"
+          },
+          "description": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "duration_minutes": {
+            "enum": [
+              15,
+              30
+            ],
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "escalation_topics": {
+            "items": {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Escalation Topics",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceView"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "expected_profile_version": {
+            "minimum": 0.0,
+            "title": "Expected Profile Version",
+            "type": "integer"
+          },
+          "ideal_customer": {
+            "$ref": "#/components/schemas/IdealCustomer"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "proposed_facts": {
+            "items": {
+              "$ref": "#/components/schemas/ProposedFact"
+            },
+            "maxItems": 50,
+            "title": "Proposed Facts",
+            "type": "array"
+          },
+          "seller_brief": {
+            "$ref": "#/components/schemas/SellerBrief"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "website_url": {
+            "maxLength": 2048,
+            "pattern": "^https://",
+            "title": "Website Url",
+            "type": "string"
+          },
+          "working_hours": {
+            "$ref": "#/components/schemas/WorkingHours"
+          }
+        },
+        "required": [
+          "expected_profile_version",
+          "name",
+          "website_url",
+          "timezone",
+          "seller_brief",
+          "ideal_customer",
+          "description",
+          "approved_fact_ids",
+          "proposed_facts",
+          "evidence",
+          "escalation_topics",
+          "working_hours",
+          "duration_minutes"
+        ],
+        "title": "BriefSave",
         "type": "object"
       },
       "BusyRange": {
@@ -508,6 +620,16 @@
             "title": "Config Version",
             "type": "integer"
           },
+          "conversation_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -607,9 +729,19 @@
         "additionalProperties": false,
         "properties": {
           "config_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Config Version",
             "type": "integer"
+          },
+          "conversation_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "created_at": {
             "format": "date-time",
@@ -639,7 +771,7 @@
             "type": "string"
           },
           "profile_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Profile Version",
             "type": "integer"
           },
@@ -663,7 +795,7 @@
             "$ref": "#/components/schemas/Usage"
           },
           "version": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Version",
             "type": "integer"
           }
@@ -839,6 +971,18 @@
             ],
             "title": "Calendar Id"
           },
+          "connection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connection Id"
+          },
           "granted_scopes": {
             "items": {
               "type": "string"
@@ -847,12 +991,19 @@
             "type": "array"
           },
           "purpose": {
-            "enum": [
-              "seller",
-              "buyer_test"
+            "anyOf": [
+              {
+                "enum": [
+                  "seller",
+                  "buyer_test"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Purpose",
-            "type": "string"
+            "title": "Purpose"
           },
           "status": {
             "enum": [
@@ -866,7 +1017,6 @@
           }
         },
         "required": [
-          "purpose",
           "status",
           "account_email",
           "granted_scopes",
@@ -1137,6 +1287,16 @@
             "title": "Evidence Ids",
             "type": "array"
           },
+          "execution_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionLabel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -1237,6 +1397,57 @@
           "identity_is_simulated"
         ],
         "title": "Delivery",
+        "type": "object"
+      },
+      "DemoSessionView": {
+        "additionalProperties": false,
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "session_kind": {
+            "const": "demo",
+            "default": "demo",
+            "title": "Session Kind",
+            "type": "string"
+          },
+          "token_type": {
+            "const": "bearer",
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "expires_in",
+          "organization_id",
+          "organization_name",
+          "role"
+        ],
+        "title": "DemoSessionView",
         "type": "object"
       },
       "ErrorBody": {
@@ -1358,6 +1569,16 @@
           "excerpt": {
             "title": "Excerpt",
             "type": "string"
+          },
+          "execution_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionLabel"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "fact_status": {
             "$ref": "#/components/schemas/FactStatus"
@@ -1902,6 +2123,70 @@
         "title": "HealthReady",
         "type": "object"
       },
+      "IdealCustomer": {
+        "additionalProperties": false,
+        "properties": {
+          "buyer_roles": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Buyer Roles",
+            "type": "array"
+          },
+          "criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Criteria",
+            "type": "array"
+          },
+          "customer_type": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Customer Type",
+            "type": "string"
+          },
+          "exclusions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Exclusions",
+            "type": "array"
+          },
+          "regions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Regions",
+            "type": "array"
+          },
+          "timeline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeline"
+          }
+        },
+        "required": [
+          "customer_type",
+          "regions",
+          "buyer_roles",
+          "criteria",
+          "exclusions"
+        ],
+        "title": "IdealCustomer",
+        "type": "object"
+      },
       "Limits": {
         "additionalProperties": false,
         "description": "P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.",
@@ -1975,6 +2260,110 @@
         "title": "Limits",
         "type": "object"
       },
+      "ListData_CampaignView_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ListData[CampaignView]",
+        "type": "object"
+      },
+      "ListData_DecisionView_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "ListData[DecisionView]",
+        "type": "object"
+      },
+      "MembershipView": {
+        "additionalProperties": false,
+        "properties": {
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "organization_name": {
+            "title": "Organization Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_id",
+          "organization_name",
+          "role"
+        ],
+        "title": "MembershipView",
+        "type": "object"
+      },
+      "MembershipsView": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MembershipView"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MembershipsView",
+        "type": "object"
+      },
       "MessageDirection": {
         "enum": [
           "inbound",
@@ -2002,6 +2391,16 @@
           },
           "direction": {
             "$ref": "#/components/schemas/MessageDirection"
+          },
+          "execution_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionLabel"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "id": {
             "format": "uuid",
@@ -2076,6 +2475,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ConversationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conversation_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationState"
               },
               {
                 "type": "null"
@@ -2374,9 +2783,39 @@
             ],
             "title": "Approved At"
           },
+          "approved_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approved_facts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Approved Facts",
+            "type": "array"
+          },
           "config_version": {
             "title": "Config Version",
             "type": "integer"
+          },
+          "connection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConnectionSummaryView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "connections": {
             "items": {
@@ -2385,10 +2824,42 @@
             "title": "Connections",
             "type": "array"
           },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceView"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "faq": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Faq",
+            "type": "array"
+          },
+          "forbidden_promises": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Forbidden Promises",
+            "type": "array"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "ideal_customer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdealCustomer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "title": "Name",
@@ -2411,6 +2882,14 @@
             "title": "Profile Version",
             "type": "integer"
           },
+          "proposed_facts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Proposed Facts",
+            "type": "array"
+          },
           "role": {
             "enum": [
               "owner",
@@ -2419,9 +2898,41 @@
             "title": "Role",
             "type": "string"
           },
+          "seller_brief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SellerBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceView"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
           "timezone": {
             "title": "Timezone",
             "type": "string"
+          },
+          "viewer_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "owner",
+                  "member"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Viewer Role"
           },
           "website_url": {
             "anyOf": [
@@ -2817,6 +3328,38 @@
         "title": "ProfileUpdate",
         "type": "object"
       },
+      "ProposedFact": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9_.-]{1,80}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "evidence_ids"
+        ],
+        "title": "ProposedFact",
+        "type": "object"
+      },
       "ProspectCase": {
         "additionalProperties": false,
         "properties": {
@@ -3168,6 +3711,17 @@
       "SafePolicyView": {
         "additionalProperties": false,
         "properties": {
+          "config_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Version"
+          },
           "consented_recipients": {
             "items": {
               "additionalProperties": true,
@@ -3240,6 +3794,56 @@
         "title": "SafePolicyView",
         "type": "object"
       },
+      "SellerBrief": {
+        "additionalProperties": false,
+        "properties": {
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "founder_email": {
+            "title": "Founder Email",
+            "type": "string"
+          },
+          "founder_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Founder Name",
+            "type": "string"
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing"
+          },
+          "service": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Service",
+            "type": "string"
+          }
+        },
+        "required": [
+          "founder_name",
+          "founder_email",
+          "service"
+        ],
+        "title": "SellerBrief",
+        "type": "object"
+      },
       "Slot": {
         "additionalProperties": false,
         "properties": {
@@ -3277,6 +3881,78 @@
         "title": "Slot",
         "type": "object"
       },
+      "SourceView": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "website",
+              "pasted_text"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "status": {
+            "enum": [
+              "ingesting",
+              "ready",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "status",
+          "retrieved_at",
+          "evidence_ids"
+        ],
+        "title": "SourceView",
+        "type": "object"
+      },
       "SuccessEnvelope_CampaignLaunchView_": {
         "additionalProperties": false,
         "properties": {
@@ -3300,6 +3976,31 @@
           "correlation_id"
         ],
         "title": "SuccessEnvelope[CampaignLaunchView]",
+        "type": "object"
+      },
+      "SuccessEnvelope_DemoSessionView_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DemoSessionView"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[DemoSessionView]",
         "type": "object"
       },
       "SuccessEnvelope_EvidenceView_": {
@@ -3375,6 +4076,81 @@
           "correlation_id"
         ],
         "title": "SuccessEnvelope[HealthReady]",
+        "type": "object"
+      },
+      "SuccessEnvelope_ListData_CampaignView__": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ListData_CampaignView_"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[ListData[CampaignView]]",
+        "type": "object"
+      },
+      "SuccessEnvelope_ListData_DecisionView__": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ListData_DecisionView_"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[ListData[DecisionView]]",
+        "type": "object"
+      },
+      "SuccessEnvelope_MembershipsView_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MembershipsView"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[MembershipsView]",
         "type": "object"
       },
       "SuccessEnvelope_MissionDetail_": {
@@ -3623,6 +4399,65 @@
   "openapi": "3.1.0",
   "paths": {
     "/api/v1/campaigns": {
+      "get": {
+        "operationId": "get_campaigns_api_v1_campaigns_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_ListData_CampaignView__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Campaigns",
+        "tags": [
+          "campaigns"
+        ]
+      },
       "post": {
         "operationId": "create_campaign_api_v1_campaigns_post",
         "requestBody": {
@@ -3706,6 +4541,98 @@
         ]
       }
     },
+    "/api/v1/campaigns/{campaign_id}/ledger": {
+      "get": {
+        "operationId": "get_campaign_ledger_api_v1_campaigns__campaign_id__ledger_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_ListData_DecisionView__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Campaign Ledger",
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
+    "/api/v1/demo/session": {
+      "post": {
+        "operationId": "create_demo_session_api_v1_demo_session_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_DemoSessionView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Create Demo Session",
+        "tags": [
+          "demo"
+        ]
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "operationId": "health_live_api_v1_health_live_get",
@@ -3748,6 +4675,27 @@
         ]
       }
     },
+    "/api/v1/me/memberships": {
+      "get": {
+        "operationId": "get_memberships_api_v1_me_memberships_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_MembershipsView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Memberships",
+        "tags": [
+          "me"
+        ]
+      }
+    },
     "/api/v1/workspace": {
       "get": {
         "operationId": "get_workspace_api_v1_workspace_get",
@@ -3764,6 +4712,47 @@
           }
         },
         "summary": "Get Workspace",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
+    "/api/v1/workspace/brief": {
+      "put": {
+        "operationId": "put_brief_api_v1_workspace_brief_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BriefSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_OrganizationView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Brief",
         "tags": [
           "workspace"
         ]

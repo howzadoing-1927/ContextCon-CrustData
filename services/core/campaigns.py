@@ -14,6 +14,7 @@ from psycopg.types.json import Jsonb
 from .admin import REQUIRED_GOOGLE_SCOPES
 from .contracts.base import normalize_email
 from .contracts.enums import ErrorCode
+from .contracts.envelopes import ListData
 from .contracts.requests import CampaignCreate
 from .contracts.version import CONTRACT_VERSION
 from .contracts.views import (
@@ -21,11 +22,13 @@ from .contracts.views import (
     CampaignView,
     ConversationView,
     DecisionView,
+    MessageView,
     MissionDetail,
     ProspectCase,
     Usage,
 )
 from .errors import DomainError
+from .paging import decode_cursor, encode_cursor
 from .workspace import evidence_view
 
 ZERO_USAGE = {
@@ -43,7 +46,10 @@ c.id, c.request_key, c.request_hash, c.request_text, c.mode, c.status, c.version
 c.profile_version, c.config_version, c.budget_json, c.created_at, c.updated_at,
 (select d.id from decisions d
   where d.organization_id = c.organization_id and d.campaign_id = c.id
-  order by d.created_at desc, d.id desc limit 1) as last_decision_id
+  order by d.created_at desc, d.id desc limit 1) as last_decision_id,
+(select conv.state from conversations conv
+  where conv.organization_id = c.organization_id and conv.campaign_id = c.id
+  order by conv.created_at, conv.id limit 1) as conversation_state
 """
 
 
@@ -68,6 +74,7 @@ def _campaign_view(row: dict[str, Any]) -> CampaignView:
         config_version=row["config_version"],
         usage=Usage.model_validate(row["budget_json"].get("usage", ZERO_USAGE)),
         last_decision_id=row["last_decision_id"],
+        conversation_state=row.get("conversation_state"),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -108,6 +115,14 @@ def _complete_consent(recipient: dict) -> bool:
     return bool(recipient.get("consent_record")) and bool(recipient.get("consented_at"))
 
 
+def _complete_founder_icp(profile: dict) -> bool:
+    icp = profile.get("ideal_customer") or {}
+    customer_type = str(icp.get("customer_type") or "").strip()
+    roles = [str(role).strip() for role in icp.get("buyer_roles") or [] if str(role).strip()]
+    criteria = [str(item).strip() for item in icp.get("criteria") or [] if str(item).strip()]
+    return bool(customer_type and roles and criteria)
+
+
 def _check_launch_policy(
     conn: psycopg.Connection, organization_id: UUID, body: CampaignCreate
 ) -> tuple[list[dict], dict]:
@@ -131,6 +146,13 @@ def _check_launch_policy(
             ErrorCode.DOMAIN_INVALID,
             "Seller facts are not approved; approve at least one evidence-backed fact first.",
             details={"field": "profile"},
+        )
+    if not _complete_founder_icp(org["approved_profile_json"]):
+        raise DomainError(
+            422,
+            ErrorCode.DOMAIN_INVALID,
+            "Ideal customer is not set; the founder must enter who to sell to before launch.",
+            details={"field": "ideal_customer"},
         )
 
     policy = org["policy_json"]
@@ -162,7 +184,9 @@ def _check_launch_policy(
         (organization_id,),
     ).fetchone()
     missing_scopes = sorted(set(REQUIRED_GOOGLE_SCOPES) - set(connection["granted_scopes"] if connection else []))
-    if connection is None or connection["status"] != "connected" or missing_scopes:
+    google_ready = connection is not None and connection["status"] == "connected" and not missing_scopes
+    demo_waiver = policy.get("demo_allow_launch_without_google") is True
+    if not google_ready and not demo_waiver:
         raise DomainError(
             422,
             ErrorCode.DOMAIN_INVALID,
@@ -177,8 +201,19 @@ def _check_launch_policy(
         {"name": "recipient_allowlist", "pass": True, "reason": "buyer_test_email exactly matches a consented buyer_test"},
         {"name": "consent_complete", "pass": True, "reason": "buyer consent has a record reference and timestamp"},
         {"name": "limits_within_policy", "pass": True, "reason": "requested limits do not exceed workspace limits"},
-        {"name": "seller_google_ready", "pass": True, "reason": "seller connection connected with required scopes"},
+        {"name": "founder_icp", "pass": True, "reason": "founder entered customer type, buyer roles and fit criteria"},
     ]
+    if google_ready:
+        checks.append({"name": "seller_google_ready", "pass": True, "reason": "seller connection connected with required scopes"})
+    else:
+        checks.append(
+            {
+                "name": "seller_google_ready",
+                "pass": False,
+                "status": "waived (demo)",
+                "reason": "Seller Google is not connected; launch allowed only because demo_allow_launch_without_google=true",
+            }
+        )
     profile = org["approved_profile_json"]
     snapshot = {
         "profile_version": org["profile_version"],
@@ -189,6 +224,8 @@ def _check_launch_policy(
             "faq": profile.get("faq", []),
             "forbidden_promises": profile.get("forbidden_promises", []),
         },
+        "seller_brief": profile.get("seller_brief"),
+        "ideal_customer": profile.get("ideal_customer"),
         "policy": {
             "simulation": True,
             "buyer_test": next(r for r in buyers if normalize_email(r["email"]) == body.buyer_test_email),
@@ -292,6 +329,12 @@ def _contract_policy(policy: dict[str, Any]) -> dict[str, Any]:
 
 
 def _decision_view(row: dict[str, Any]) -> DecisionView:
+    actual = None
+    if row.get("action_id"):
+        actual = {"action_id": row["action_id"], "state": row["action_state"], "provider_ref": row.get("action_provider_ref")}
+    label = None
+    if row.get("action_result_json") and isinstance(row["action_result_json"], dict):
+        label = row["action_result_json"].get("execution_label")
     return DecisionView.model_validate(
         {
             "id": row["id"],
@@ -303,11 +346,63 @@ def _decision_view(row: dict[str, Any]) -> DecisionView:
             "model": row["model_metadata_json"],
             "policy": _contract_policy(row["policy_result_json"]),
             "proposed_action": row["proposed_action_json"],
-            "actual_action": None,
+            "actual_action": actual,
             "resolution": row["resolution_json"],
             "created_at": row["created_at"],
+            "execution_label": label,
         }
     )
+
+
+_DECISION_COLUMNS = """
+d.*, a.id as action_id, a.state as action_state, a.provider_ref as action_provider_ref, a.result_json as action_result_json
+"""
+
+
+def _select_decisions(conn: psycopg.Connection, organization_id: UUID, campaign_id: UUID, *, status: str | None = None):
+    where_status = "and d.status = %s" if status else ""
+    params: tuple = (organization_id, campaign_id, status) if status else (organization_id, campaign_id)
+    return conn.execute(
+        f"""
+        select {_DECISION_COLUMNS}
+        from decisions d
+        left join actions a on a.organization_id = d.organization_id and a.decision_id = d.id
+        where d.organization_id = %s and d.campaign_id = %s {where_status}
+        order by d.created_at, d.id
+        """,
+        params,
+    ).fetchall()
+
+
+def _message_view(row: dict[str, Any], execution_label: str | None = None) -> MessageView:
+    outbound = row["direction"] == "outbound"
+    return MessageView.model_validate(
+        {
+            "id": row["id"],
+            "direction": row["direction"],
+            "subject": row["subject"],
+            "body_text": row["body_text"],
+            "sent_at": row["received_at"] if outbound else None,
+            "received_at": None if outbound else row["received_at"],
+            "provider_message_id": row["provider_message_id"],
+            "status": row["status"],
+            "execution_label": execution_label,
+        }
+    )
+
+
+def _conversation_view(row: dict[str, Any], messages: list[MessageView]) -> ConversationView:
+    crm = row.get("crm_json") or {}
+    payload = {key: row[key] for key in ("id", "state", "version", "buyer_test_email", "provider_thread_id")}
+    payload.update(
+        {
+            "buyer_role_label": "simulated buyer",
+            "messages": [m.model_dump(mode="json") for m in messages],
+            "offered_slots": crm.get("offered_slots") or [],
+            "booking": crm.get("booking"),
+        }
+    )
+    return ConversationView.model_validate(payload)
 
 
 def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campaign_id: UUID) -> MissionDetail:
@@ -317,14 +412,7 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
     ).fetchone()
     if row is None:
         raise DomainError(404, ErrorCode.NOT_FOUND, "Campaign not found.")
-    exceptions = conn.execute(
-        """
-        select * from decisions
-        where organization_id = %s and campaign_id = %s and status = 'blocked'
-        order by created_at, id
-        """,
-        (organization_id, campaign_id),
-    ).fetchall()
+    exceptions = _select_decisions(conn, organization_id, campaign_id, status="blocked")
     buyer = conn.execute(
         "select buyer_test_email from campaigns where organization_id = %s and id = %s", (organization_id, campaign_id)
     ).fetchone()["buyer_test_email"]
@@ -338,21 +426,91 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         (organization_id, campaign_id),
     ).fetchall()
     conversation = conn.execute(
-        "select id, state, version, buyer_test_email, provider_thread_id from conversations "
-        "where organization_id = %s and campaign_id = %s order by created_at limit 1",
+        "select id, state, version, buyer_test_email, provider_thread_id, crm_json from conversations "
+        "where organization_id = %s and campaign_id = %s order by created_at, id limit 1",
         (organization_id, campaign_id),
     ).fetchone()
-    # Messages, slots, booking and handoff mapping arrive with B6-B7.
+    messages: list[MessageView] = []
+    if conversation:
+        message_rows = conn.execute(
+            """
+            select m.*, a.result_json as action_result_json
+            from messages m
+            left join actions a on a.organization_id = m.organization_id and a.id = m.action_id
+            where m.organization_id = %s and m.conversation_id = %s
+            order by m.created_at, m.id
+            """,
+            (organization_id, conversation["id"]),
+        ).fetchall()
+        messages = [
+            _message_view(
+                m,
+                (m["action_result_json"] or {}).get("execution_label") if m.get("action_result_json") else None,
+            )
+            for m in message_rows
+        ]
     return MissionDetail(
         **_campaign_view(row).model_dump(),
         prospects=[_prospect_case(p, evidence_rows, buyer) for p in prospect_rows],
-        conversation=ConversationView.model_validate(
-            {**conversation, "buyer_role_label": "simulated buyer", "messages": [], "offered_slots": [], "booking": None}
-        ) if conversation else None,
+        conversation=_conversation_view(conversation, messages) if conversation else None,
         open_exceptions=[_decision_view(d) for d in exceptions],
         evidence=[evidence_view(e) for e in evidence_rows],
         handoff=None,
     )
+
+
+def list_campaigns(
+    conn: psycopg.Connection, *, organization_id: UUID, cursor: str | None, limit: int
+) -> ListData[CampaignView]:
+    params: list[Any] = [organization_id]
+    page_filter = ""
+    if cursor:
+        created_at, row_id = decode_cursor(cursor)
+        page_filter = "and (c.created_at, c.id) < (%s, %s)"
+        params.extend([created_at, row_id])
+    rows = conn.execute(
+        f"""
+        select {_CAMPAIGN_COLUMNS}
+        from campaigns c
+        where c.organization_id = %s {page_filter}
+        order by c.created_at desc, c.id desc
+        limit %s
+        """,
+        (*params, limit + 1),
+    ).fetchall()
+    page, extra = rows[:limit], rows[limit:]
+    next_cursor = encode_cursor(page[-1]["created_at"], page[-1]["id"]) if extra else None
+    return ListData[CampaignView](items=[_campaign_view(r) for r in page], next_cursor=next_cursor)
+
+
+def list_ledger(
+    conn: psycopg.Connection, *, organization_id: UUID, campaign_id: UUID, cursor: str | None, limit: int
+) -> ListData[DecisionView]:
+    exists = conn.execute(
+        "select 1 from campaigns where organization_id = %s and id = %s", (organization_id, campaign_id)
+    ).fetchone()
+    if exists is None:
+        raise DomainError(404, ErrorCode.NOT_FOUND, "Campaign not found.")
+    params: list[Any] = [organization_id, campaign_id]
+    page_filter = ""
+    if cursor:
+        created_at, row_id = decode_cursor(cursor)
+        page_filter = "and (d.created_at, d.id) > (%s, %s)"
+        params.extend([created_at, row_id])
+    rows = conn.execute(
+        f"""
+        select {_DECISION_COLUMNS}
+        from decisions d
+        left join actions a on a.organization_id = d.organization_id and a.decision_id = d.id
+        where d.organization_id = %s and d.campaign_id = %s {page_filter}
+        order by d.created_at, d.id
+        limit %s
+        """,
+        (*params, limit + 1),
+    ).fetchall()
+    page, extra = rows[:limit], rows[limit:]
+    next_cursor = encode_cursor(page[-1]["created_at"], page[-1]["id"]) if extra else None
+    return ListData[DecisionView](items=[_decision_view(r) for r in page], next_cursor=next_cursor)
 
 
 def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buyer_test_email: str) -> ProspectCase:

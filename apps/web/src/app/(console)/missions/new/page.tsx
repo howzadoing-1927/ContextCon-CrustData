@@ -1,6 +1,5 @@
 "use client";
 
-import { FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
@@ -12,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { describeError, isApiError } from "@/lib/api/errors";
-import type { CampaignCreate, OrganizationView } from "@/lib/contracts";
+import type { CampaignCreate, IdealCustomer, OrganizationView } from "@/lib/contracts";
 import { readiness } from "@/lib/readiness";
 import { useSession } from "@/lib/session";
 import { useMutation } from "@/lib/use-mutation";
@@ -49,11 +48,15 @@ function Summary({ workspace, versions }: { workspace: OrganizationView; version
   );
 }
 
-function requestFromBrief(workspace: OrganizationView): string {
+function icpComplete(icp: IdealCustomer | null | undefined): icp is IdealCustomer {
+  return Boolean(icp?.customer_type.trim() && icp.buyer_roles.some((role) => role.trim()) && icp.criteria.some((c) => c.trim()));
+}
+
+function requestFromBrief(workspace: OrganizationView, notes: string): string {
   const icp = workspace.ideal_customer!;
   const where = icp.regions.length ? ` in ${icp.regions.join(" or ")}` : "";
   const who = icp.buyer_roles.length ? icp.buyer_roles.join(" or ") : "the right decision maker";
-  return [
+  const targeting = [
     `Find ${icp.customer_type.charAt(0).toLowerCase()}${icp.customer_type.slice(1)}${where}, reach their ${who}, explain the fit, and book a ${workspace.policy.duration_minutes}-minute call.`,
     icp.criteria.length ? `Good fit: ${icp.criteria.join("; ")}.` : null,
     icp.exclusions.length ? `Skip: ${icp.exclusions.join("; ")}.` : null,
@@ -62,6 +65,37 @@ function requestFromBrief(workspace: OrganizationView): string {
   ]
     .filter(Boolean)
     .join(" ");
+  const extra = notes.trim();
+  return extra ? `${targeting} Notes: ${extra}` : targeting;
+}
+
+function IcpLock({ icp }: { icp: IdealCustomer }) {
+  const rows: [string, string][] = [
+    ["Customer", icp.customer_type],
+    ["Roles", icp.buyer_roles.join(", ")],
+    ["Places", icp.regions.length ? icp.regions.join(", ") : "No place focus"],
+    ["Fit", icp.criteria.join("; ")],
+  ];
+  if (icp.exclusions.length) rows.push(["Skip", icp.exclusions.join("; ")]);
+  return (
+    <div className="rounded-lg border border-hairline px-3.5 py-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-medium">Who we will find</h2>
+        <Link href="/setup" className="text-2xs text-info underline">
+          Edit brief
+        </Link>
+      </div>
+      <p className="mt-0.5 text-2xs text-muted-foreground">From your brief. Notes below cannot change this.</p>
+      <dl className="mt-2 divide-y divide-hairline text-xs">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[5.5rem_1fr] gap-3 py-1.5">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd className="min-w-0 text-pretty break-words">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
 }
 
 export default function NewMissionPage() {
@@ -70,7 +104,6 @@ export default function NewMissionPage() {
   const { workspace } = useWorkspace();
   const data = workspace.data;
   const [text, setText] = useState("");
-  const [touched, setTouched] = useState(false);
   const [versions, setVersions] = useState<{ profile: number; config: number } | null>(null);
   const textId = useId();
   const create = useMutation("campaign", (input: CampaignCreate, key: string) => client.campaigns.create(input, key));
@@ -97,20 +130,19 @@ export default function NewMissionPage() {
 
   const trimmed = text.trim();
   const tooLong = text.length > MAX;
-  const empty = trimmed.length === 0;
   const blockers = readiness(data).filter((i) => !i.done);
   const buyer = data.policy.consented_recipients.find((r) => r.role === "buyer_test");
   const canLaunch = data.viewer_role === "owner";
+  const hasIcp = icpComplete(data.ideal_customer);
   const stale = data.profile_version !== versions.profile || data.policy.config_version !== versions.config;
   const error = create.error;
-  const fieldError = touched && empty ? "Describe who to find and what meeting to book." : tooLong ? `Keep it under ${MAX} characters.` : null;
+  const fieldError = tooLong ? `Keep it under ${MAX} characters.` : null;
   const serverFieldError = isApiError(error) && error.code === "VALIDATION_FAILED" ? error.message : null;
 
   async function submit() {
-    setTouched(true);
-    if (empty || tooLong || !buyer || !versions) return;
+    if (!hasIcp || tooLong || !buyer || !versions) return;
     const result = await create.run({
-      request_text: trimmed,
+      request_text: requestFromBrief(data!, trimmed),
       mode: "simulation",
       buyer_test_email: buyer.email,
       profile_version: versions.profile,
@@ -140,44 +172,52 @@ export default function NewMissionPage() {
           }}
           className="flex flex-col gap-3"
         >
-          <div className="flex items-end justify-between gap-3">
-            <label htmlFor={textId} className="text-sm font-medium">
-              What should the agent accomplish?
-            </label>
-            {data.ideal_customer && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => setText(requestFromBrief(data))} className="shrink-0">
-                <FileText data-icon="inline-start" />
-                {trimmed ? "Replace with your brief" : "Start from your brief"}
-              </Button>
-            )}
-          </div>
-          <Textarea
-            id={textId}
-            rows={9}
-            value={text}
-            autoFocus
-            onChange={(e) => setText(e.target.value)}
-            onBlur={() => setTouched(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                void submit();
+          {hasIcp ? (
+            <IcpLock icp={data.ideal_customer} />
+          ) : (
+            <Notice
+              tone="attention"
+              title="Tell us who you sell to first"
+              actions={
+                <Link href="/setup" className="text-xs text-signal underline">
+                  Open setup
+                </Link>
               }
-            }}
-            aria-invalid={Boolean(fieldError || serverFieldError) || undefined}
-            aria-describedby={`${textId}-hint`}
-            placeholder="Find a mid-market logistics company in India and its sales leader, explain the fit, and book a 15-minute demo. Don't assume a problem we can't verify."
-            className="min-h-48 text-sm leading-relaxed placeholder:text-faint"
-          />
-          <div id={`${textId}-hint`} className="flex items-start justify-between gap-4 text-2xs">
-            <p className={cn(fieldError || serverFieldError ? "text-bad" : "text-muted-foreground")}>
-              {fieldError ??
-                serverFieldError ??
-                "Who to find, what qualifies them, and what meeting to book. The agent asks for help instead of\u00a0guessing."}
-            </p>
-            <span className={cn("shrink-0 tabular", tooLong ? "text-bad" : "text-faint")}>
-              {text.length.toLocaleString("en-US")} / {MAX.toLocaleString("en-US")}
-            </span>
+            >
+              Research uses the founder brief, not a guessed market. Add customer type, buyer roles, and fit criteria, then come back.
+            </Notice>
+          )}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={textId} className="text-sm font-medium">
+              Anything else for this run? <span className="font-normal text-faint">· optional</span>
+            </label>
+            <Textarea
+              id={textId}
+              rows={5}
+              value={text}
+              autoFocus={hasIcp}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  void submit();
+                }
+              }}
+              aria-invalid={Boolean(fieldError || serverFieldError) || undefined}
+              aria-describedby={`${textId}-hint`}
+              placeholder="e.g. This week only. Do not change who we sell to."
+              className="min-h-32 text-sm leading-relaxed placeholder:text-faint"
+            />
+            <div id={`${textId}-hint`} className="flex items-start justify-between gap-4 text-2xs">
+              <p className={cn(fieldError || serverFieldError ? "text-bad" : "text-muted-foreground")}>
+                {fieldError ??
+                  serverFieldError ??
+                  "Timing or extra context. This cannot change customer type, roles, or places from the brief."}
+              </p>
+              <span className={cn("shrink-0 tabular", tooLong ? "text-bad" : "text-faint")}>
+                {text.length.toLocaleString("en-US")} / {MAX.toLocaleString("en-US")}
+              </span>
+            </div>
           </div>
 
           {blockers.length > 0 && (
@@ -236,7 +276,7 @@ export default function NewMissionPage() {
 
           <div className="flex items-center justify-end gap-3 pt-1">
             <span className="text-2xs text-faint">⌘ Enter to launch</span>
-            <Button type="submit" size="lg" disabled={create.pending || blockers.length > 0 || !canLaunch || tooLong}>
+            <Button type="submit" size="lg" disabled={create.pending || blockers.length > 0 || !canLaunch || !hasIcp || tooLong}>
               {create.pending ? "Launching…" : "Launch mission"}
             </Button>
           </div>

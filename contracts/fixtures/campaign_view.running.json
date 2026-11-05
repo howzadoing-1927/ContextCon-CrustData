@@ -20,6 +20,7 @@
       "estimated_cost": null
     },
     "last_decision_id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+    "conversation_state": null,
     "created_at": "2026-11-05T18:05:00Z",
     "updated_at": "2026-11-05T18:07:12Z"
   },
