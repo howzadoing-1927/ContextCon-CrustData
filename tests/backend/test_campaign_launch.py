@@ -13,9 +13,9 @@ def _post(api, tenant, key, body):
 def _counts(conn, org):
     return conn.execute(
         """
-        select (select count(*) from public.campaigns where organization_id = %(o)s) as campaigns,
-               (select count(*) from public.tasks where organization_id = %(o)s) as tasks,
-               (select count(*) from public.decisions where organization_id = %(o)s) as decisions
+        select (select count(*) from campaigns where organization_id = %(o)s) as campaigns,
+               (select count(*) from tasks where organization_id = %(o)s) as tasks,
+               (select count(*) from decisions where organization_id = %(o)s) as decisions
         """,
         {"o": org},
     ).fetchone()
@@ -31,7 +31,7 @@ def test_launch_persists_campaign_task_and_decision_atomically(api, make_tenant,
     assert view.status == "running" and view.stage == "normalize_mission" and view.version == 1
     assert view.usage.estimated_cost is None
     task = conn.execute(
-        "select kind, status, dedupe_key, payload_json, attempt, lease_generation from public.tasks "
+        "select kind, status, dedupe_key, payload_json, attempt, lease_generation from tasks "
         "where organization_id = %s and id = %s",
         (tenant.organization_id, view.task_id),
     ).fetchone()
@@ -40,7 +40,7 @@ def test_launch_persists_campaign_task_and_decision_atomically(api, make_tenant,
     assert task["payload_json"]["campaign_id"] == str(view.id)
     assert (task["attempt"], task["lease_generation"]) == (0, 0)
     decision = conn.execute(
-        "select id, kind, status, task_id, policy_result_json from public.decisions where organization_id = %s",
+        "select id, kind, status, task_id, policy_result_json from decisions where organization_id = %s",
         (tenant.organization_id,),
     ).fetchone()
     assert decision["kind"] == "campaign_launch" and decision["status"] == "accepted"

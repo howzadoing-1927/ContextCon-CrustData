@@ -63,7 +63,7 @@ def test_member_of_other_org_is_403_and_enqueues_nothing(api, make_tenant, conn)
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "FORBIDDEN"
     count = conn.execute(
-        "select count(*) as n from public.campaigns where organization_id = %s", (tenant_b.organization_id,)
+        "select count(*) as n from campaigns where organization_id = %s", (tenant_b.organization_id,)
     ).fetchone()["n"]
     assert count == 0
 

@@ -2,7 +2,7 @@
 
 - Contract: `outcome.v1`, planning baseline 1.0, prefix `/api/v1`. B2 additions are additive: `CampaignLaunchView`, `HealthReady`.
 - Base: `main` @ `a660f11`; branch `feat/backend-core` (B1 `fb39b82`, then B2).
-- Database: `db/migrations/0001_b2_foundation.sql`.
+- Database: `db/migrations/0001_b2_foundation.sql`, applied with `python -m services.core.migrate`. Tables live in `OUTCOME_DB_SCHEMA` (`outcome` in our `.env`), not `public`. The browser does not read them through the Supabase Data API; it uses this API.
 - Source of truth: `services/core/contracts/*.py` (Pydantic, `extra="forbid"`). Generated: `contracts/openapi.json`, `contracts/schemas/<Model>.json`. Regenerate with `python -m services.core.contracts.export`; a test fails if they drift.
 
 ## Run the API locally

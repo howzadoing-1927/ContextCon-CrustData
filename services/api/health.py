@@ -35,7 +35,7 @@ def readiness() -> HealthReady:
                     """
                     select floor(extract(epoch from now() - (runtime_json -> 'worker' ->> 'last_seen_at')::timestamptz))::int
                            as age
-                    from public.organizations where id = %s
+                    from organizations where id = %s
                     """,
                     (settings.runtime_organization_id,),
                 ).fetchone()

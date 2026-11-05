@@ -1,4 +1,5 @@
 import os
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -37,9 +38,22 @@ def _optional(name: str) -> str | None:
     return value or None
 
 
+_IDENTIFIER = re.compile(r"^[a-z_][a-z0-9_]{0,40}$")
+_BUCKET = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
+
+
+def _identifier(name: str, default: str, pattern: re.Pattern[str]) -> str:
+    value = os.environ.get(name, "").strip() or default
+    if not pattern.match(value):
+        raise ValueError(f"{name}={value!r} is not a safe identifier")
+    return value
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str | None
+    db_schema: str
+    storage_bucket: str
     supabase_url: str | None
     supabase_anon_key: str | None
     supabase_service_role_key: str | None
@@ -54,6 +68,10 @@ class Settings:
     action_executing_timeout_seconds: int
     simulation_only: bool
     live_effects_enabled: bool
+
+    @property
+    def private_schema(self) -> str:
+        return "app_private" if self.db_schema == "public" else f"{self.db_schema}_private"
 
     @property
     def jwt_issuer(self) -> str | None:
@@ -72,6 +90,8 @@ def get_settings() -> Settings:
     runtime_org = _optional("RUNTIME_ORGANIZATION_ID")
     return Settings(
         database_url=_optional("DATABASE_URL"),
+        db_schema=_identifier("OUTCOME_DB_SCHEMA", "public", _IDENTIFIER),
+        storage_bucket=_identifier("STORAGE_BUCKET", "evidence", _BUCKET),
         supabase_url=_optional("SUPABASE_URL"),
         supabase_anon_key=_optional("SUPABASE_ANON_KEY"),
         supabase_service_role_key=_optional("SUPABASE_SERVICE_ROLE_KEY"),

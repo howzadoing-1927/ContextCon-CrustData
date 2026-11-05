@@ -42,7 +42,7 @@ def prepare(
 ) -> dict[str, Any]:
     row = conn.execute(
         """
-        insert into public.actions
+        insert into actions
           (organization_id, campaign_id, conversation_id, decision_id, kind, idempotency_key, request_hash,
            state, payload_json)
         values (%s, %s, %s, %s, %s, %s, %s, 'prepared', %s)
@@ -54,7 +54,7 @@ def prepare(
     if row is not None:
         return row
     existing = conn.execute(
-        "select * from public.actions where organization_id = %s and idempotency_key = %s",
+        "select * from actions where organization_id = %s and idempotency_key = %s",
         (organization_id, idempotency_key),
     ).fetchone()
     if existing["request_hash"] != request_hash:
@@ -76,7 +76,7 @@ def begin_execute(conn: psycopg.Connection, lease: Lease, action_id: UUID) -> di
     """Atomically move prepared->executing while the lease is current. Commit this before the provider call."""
     with fenced(conn, lease):
         action = conn.execute(
-            "select * from public.actions where organization_id = %s and id = %s for update",
+            "select * from actions where organization_id = %s and id = %s for update",
             (lease.organization_id, action_id),
         ).fetchone()
         if action is None:
@@ -84,7 +84,7 @@ def begin_execute(conn: psycopg.Connection, lease: Lease, action_id: UUID) -> di
         if action["state"] != "prepared":
             raise ActionNotExecutable(f"action state is {action['state']}")
         campaign = conn.execute(
-            "select status from public.campaigns where organization_id = %s and id = %s for share",
+            "select status from campaigns where organization_id = %s and id = %s for share",
             (lease.organization_id, action["campaign_id"]),
         ).fetchone()
         if campaign["status"] not in EXECUTABLE_CAMPAIGN_STATUSES:
@@ -93,7 +93,7 @@ def begin_execute(conn: psycopg.Connection, lease: Lease, action_id: UUID) -> di
         if identities:
             hit = conn.execute(
                 """
-                select 1 from public.suppressions
+                select 1 from suppressions
                 where organization_id = %s
                   and (identity_kind, identity_value) in (select * from unnest(%s::text[], %s::text[]))
                 limit 1
@@ -104,7 +104,7 @@ def begin_execute(conn: psycopg.Connection, lease: Lease, action_id: UUID) -> di
                 raise ActionNotExecutable("recipient or prospect is suppressed")
         return conn.execute(
             """
-            update public.actions
+            update actions
             set state = 'executing', started_at = now(), attempt = attempt + 1
             where organization_id = %s and id = %s
             returning *
@@ -125,14 +125,14 @@ def record_result(
     """Persist a provider outcome. Not lease-fenced: a provider receipt is fact even if the lease was lost."""
     with conn.transaction():
         action = conn.execute(
-            "select state from public.actions where organization_id = %s and id = %s for update",
+            "select state from actions where organization_id = %s and id = %s for update",
             (organization_id, action_id),
         ).fetchone()
         if action is None or state not in _ALLOWED_RESULTS.get(action["state"], set()):
             raise ActionNotExecutable(f"cannot record {state} for action in state {action and action['state']}")
         return conn.execute(
             """
-            update public.actions
+            update actions
             set state = %s, provider_ref = coalesce(%s, provider_ref), result_json = %s,
                 completed_at = case when %s in ('succeeded', 'failed') then now() else completed_at end
             where organization_id = %s and id = %s
@@ -149,7 +149,7 @@ def expire_executing(
     with conn.transaction():
         rows = conn.execute(
             """
-            update public.actions
+            update actions
             set state = 'unknown',
                 result_json = coalesce(result_json, '{}'::jsonb) || jsonb_build_object('unknown_reason', 'executing_timeout')
             where state = 'executing' and started_at < now() - make_interval(secs => %s)
@@ -161,7 +161,7 @@ def expire_executing(
         for row in rows:
             conn.execute(
                 """
-                insert into public.tasks (organization_id, campaign_id, conversation_id, kind, dedupe_key, payload_json, status)
+                insert into tasks (organization_id, campaign_id, conversation_id, kind, dedupe_key, payload_json, status)
                 values (%s, %s, %s, 'reconcile_action', %s, %s, 'ready')
                 on conflict (organization_id, dedupe_key) do nothing
                 """,

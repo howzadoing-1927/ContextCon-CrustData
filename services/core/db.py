@@ -1,10 +1,15 @@
 """Server-side Postgres access. API and worker connect with server credentials that bypass RLS,
-so every query must filter by organization_id itself."""
+so every query must filter by organization_id itself.
+
+Sessions use search_path = OUTCOME_DB_SCHEMA only, so application SQL is written unqualified and never
+falls through to another app's same-named table. This needs a direct or session-mode connection.
+"""
 
 from collections.abc import Iterator
 from contextlib import contextmanager
 
 import psycopg
+from psycopg import sql
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -22,9 +27,18 @@ def connect_kwargs() -> dict:
     return {"row_factory": dict_row, "autocommit": True, "prepare_threshold": None, "connect_timeout": 5}
 
 
-def _configure(conn: psycopg.Connection) -> None:
-    # Instants are persisted and returned in UTC. Needs a session-mode or direct connection.
+def configure_session(conn: psycopg.Connection) -> None:
     conn.execute("set time zone 'UTC'")
+    conn.execute(sql.SQL("set search_path to {}").format(sql.Identifier(get_settings().db_schema)))
+
+
+def connect(url: str | None = None) -> psycopg.Connection:
+    url = url or get_settings().database_url
+    if not url:
+        raise DatabaseNotConfigured("DATABASE_URL is not set")
+    conn = psycopg.connect(url, **connect_kwargs())
+    configure_session(conn)
+    return conn
 
 
 def get_pool() -> ConnectionPool:
@@ -34,7 +48,7 @@ def get_pool() -> ConnectionPool:
         if not url:
             raise DatabaseNotConfigured("DATABASE_URL is not set")
         _pool = ConnectionPool(
-            url, min_size=1, max_size=5, kwargs=connect_kwargs(), configure=_configure, open=False
+            url, min_size=1, max_size=5, kwargs=connect_kwargs(), configure=configure_session, open=False
         )
         _pool.open(wait=False)
     return _pool

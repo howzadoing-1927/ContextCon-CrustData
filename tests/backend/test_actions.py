@@ -15,7 +15,7 @@ HASH_B = "b" * 64
 def setup(make_tenant, database_url, conn):
     tenant = make_tenant()
     launched = launch(database_url, tenant)
-    with psycopg.connect(database_url, **db.connect_kwargs()) as c:
+    with db.connect(database_url) as c:
         lease = queue.claim(
             c, owner="action-worker", kinds=["normalize_mission"], lease_seconds=30, organization_id=tenant.organization_id
         )
@@ -61,18 +61,18 @@ def test_begin_execute_moves_prepared_to_executing_once(setup, conn):
 def test_stopped_campaign_blocks_execution(setup, conn):
     tenant, launched, lease = setup
     action = _prepare(conn, tenant, launched)
-    conn.execute("update public.campaigns set status = 'stopped' where id = %s", (launched.id,))
+    conn.execute("update campaigns set status = 'stopped' where id = %s", (launched.id,))
 
     with pytest.raises(actions.ActionNotExecutable, match="stopped"):
         actions.begin_execute(conn, lease, action["id"])
-    assert conn.execute("select state from public.actions where id = %s", (action["id"],)).fetchone()["state"] == "prepared"
+    assert conn.execute("select state from actions where id = %s", (action["id"],)).fetchone()["state"] == "prepared"
 
 
 def test_suppressed_recipient_blocks_execution(setup, conn):
     tenant, launched, lease = setup
     action = _prepare(conn, tenant, launched)
     conn.execute(
-        "insert into public.suppressions (organization_id, identity_kind, identity_value, reason) "
+        "insert into suppressions (organization_id, identity_kind, identity_value, reason) "
         "values (%s, 'email', %s, 'opt_out')",
         (tenant.organization_id, tenant.buyer_test_email),
     )
@@ -84,7 +84,7 @@ def test_suppressed_recipient_blocks_execution(setup, conn):
 def test_stale_lease_cannot_begin_execution(make_tenant, database_url, conn):
     tenant = make_tenant()
     launched = launch(database_url, tenant)
-    with psycopg.connect(database_url, **db.connect_kwargs()) as c:
+    with db.connect(database_url) as c:
         lease = queue.claim(c, owner="w", kinds=["normalize_mission"], lease_seconds=1, organization_id=tenant.organization_id)
     action = _prepare(conn, tenant, launched)
 
@@ -98,16 +98,16 @@ def test_expired_executing_becomes_unknown_with_one_reconcile_task_and_no_reexec
     tenant, launched, lease = setup
     action = _prepare(conn, tenant, launched)
     actions.begin_execute(conn, lease, action["id"])
-    conn.execute("update public.actions set started_at = now() - interval '1 hour' where id = %s", (action["id"],))
+    conn.execute("update actions set started_at = now() - interval '1 hour' where id = %s", (action["id"],))
 
     expired = actions.expire_executing(conn, timeout_seconds=60, organization_id=tenant.organization_id)
     again = actions.expire_executing(conn, timeout_seconds=60, organization_id=tenant.organization_id)
 
     assert expired == [action["id"]] and again == []
-    row = conn.execute("select state, result_json from public.actions where id = %s", (action["id"],)).fetchone()
+    row = conn.execute("select state, result_json from actions where id = %s", (action["id"],)).fetchone()
     assert row["state"] == "unknown" and row["result_json"]["unknown_reason"] == "executing_timeout"
     reconcile = conn.execute(
-        "select kind, status from public.tasks where organization_id = %s and dedupe_key = %s",
+        "select kind, status from tasks where organization_id = %s and dedupe_key = %s",
         (tenant.organization_id, f"reconcile:{action['id']}"),
     ).fetchall()
     assert [(r["kind"], r["status"]) for r in reconcile] == [("reconcile_action", "ready")]

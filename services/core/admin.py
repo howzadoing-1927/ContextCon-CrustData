@@ -71,7 +71,7 @@ def seed_organization(
     profile = {"approved_facts": [], "placeholder": True} if approve_placeholder_profile else {}
     conn.execute(
         """
-        insert into public.organizations
+        insert into organizations
           (id, name, timezone, approved_profile_json, profile_version, approved_at, approved_by,
            policy_json, config_version)
         values (%s, %s, %s, %s, %s, %s, %s, %s, 1)
@@ -90,7 +90,7 @@ def seed_organization(
 
 def add_membership(conn: psycopg.Connection, *, organization_id: UUID, user_id: UUID, role: str) -> None:
     conn.execute(
-        "insert into public.memberships (organization_id, user_id, role) values (%s, %s, %s)",
+        "insert into memberships (organization_id, user_id, role) values (%s, %s, %s)",
         (organization_id, user_id, role),
     )
 
@@ -102,7 +102,7 @@ def seed_seller_connection_without_oauth(
     can be exercised before D2's OAuth exists. No Google call can succeed through this row."""
     row = conn.execute(
         """
-        insert into public.connections (organization_id, provider, purpose, status, account_email, granted_scopes, calendar_id)
+        insert into connections (organization_id, provider, purpose, status, account_email, granted_scopes, calendar_id)
         values (%s, 'google', 'seller', 'connected', %s, %s, 'primary')
         returning id
         """,
@@ -114,8 +114,8 @@ def seed_seller_connection_without_oauth(
 def purge_organization(conn: psycopg.Connection, organization_id: UUID) -> None:
     conn.execute("select set_config('app.purge_tenant', %s, true)", (str(organization_id),))
     for table in _PURGE_ORDER:
-        conn.execute(f"delete from public.{table} where organization_id = %s", (organization_id,))
-    conn.execute("delete from public.organizations where id = %s", (organization_id,))
+        conn.execute(f"delete from {table} where organization_id = %s", (organization_id,))
+    conn.execute("delete from organizations where id = %s", (organization_id,))
 
 
 def _user_id_for_email(conn: psycopg.Connection, email: str) -> UUID:

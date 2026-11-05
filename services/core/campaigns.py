@@ -32,7 +32,7 @@ ZERO_USAGE = {
 _CAMPAIGN_COLUMNS = """
 c.id, c.request_key, c.request_hash, c.request_text, c.mode, c.status, c.version, c.stage,
 c.profile_version, c.config_version, c.budget_json, c.created_at, c.updated_at,
-(select d.id from public.decisions d
+(select d.id from decisions d
   where d.organization_id = c.organization_id and d.campaign_id = c.id
   order by d.created_at desc, d.id desc limit 1) as last_decision_id
 """
@@ -66,7 +66,7 @@ def _campaign_view(row: dict[str, Any]) -> CampaignView:
 
 def _select_campaign_by_key(conn: psycopg.Connection, organization_id: UUID, key: str) -> dict | None:
     return conn.execute(
-        f"select {_CAMPAIGN_COLUMNS} from public.campaigns c where c.organization_id = %s and c.request_key = %s",
+        f"select {_CAMPAIGN_COLUMNS} from campaigns c where c.organization_id = %s and c.request_key = %s",
         (organization_id, key),
     ).fetchone()
 
@@ -80,7 +80,7 @@ def _replay(conn: psycopg.Connection, organization_id: UUID, row: dict, body_has
             details={"field": "Idempotency-Key"},
         )
     task = conn.execute(
-        "select id from public.tasks where organization_id = %s and dedupe_key = %s",
+        "select id from tasks where organization_id = %s and dedupe_key = %s",
         (organization_id, launch_task_dedupe_key(row["id"])),
     ).fetchone()
     return CampaignLaunchView(**_campaign_view(row).model_dump(), task_id=task["id"])
@@ -88,7 +88,7 @@ def _replay(conn: psycopg.Connection, organization_id: UUID, row: dict, body_has
 
 def _check_launch_policy(conn: psycopg.Connection, organization_id: UUID, body: CampaignCreate) -> list[dict]:
     org = conn.execute(
-        "select profile_version, config_version, approved_at, policy_json from public.organizations where id = %s",
+        "select profile_version, config_version, approved_at, policy_json from organizations where id = %s",
         (organization_id,),
     ).fetchone()
     if body.profile_version != org["profile_version"] or body.config_version != org["config_version"]:
@@ -127,7 +127,7 @@ def _check_launch_policy(conn: psycopg.Connection, organization_id: UUID, body: 
 
     connection = conn.execute(
         """
-        select status, granted_scopes from public.connections
+        select status, granted_scopes from connections
         where organization_id = %s and provider = 'google' and purpose = 'seller'
         """,
         (organization_id,),
@@ -165,7 +165,7 @@ def launch_campaign(
     campaign_id = uuid4()
     inserted = conn.execute(
         """
-        insert into public.campaigns
+        insert into campaigns
           (id, organization_id, request_key, request_hash, request_text, mode, buyer_test_email, status, stage,
            version, profile_version, config_version, limits_json, budget_json, started_at)
         values (%s, %s, %s, %s, %s, 'simulation', %s, 'running', 'normalize_mission', 1, %s, %s, %s, %s, now())
@@ -183,7 +183,7 @@ def launch_campaign(
 
     task = conn.execute(
         """
-        insert into public.tasks (organization_id, campaign_id, kind, dedupe_key, payload_json, status)
+        insert into tasks (organization_id, campaign_id, kind, dedupe_key, payload_json, status)
         values (%s, %s, 'normalize_mission', %s, %s, 'ready')
         returning id
         """,
@@ -206,7 +206,7 @@ def launch_campaign(
     ).fetchone()
     conn.execute(
         """
-        insert into public.decisions
+        insert into decisions
           (organization_id, campaign_id, task_id, kind, status, reason, input_refs_json, policy_result_json)
         values (%s, %s, %s, 'campaign_launch', 'accepted', %s, %s, %s)
         """,
@@ -251,14 +251,14 @@ def _decision_view(row: dict[str, Any]) -> DecisionView:
 
 def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campaign_id: UUID) -> MissionDetail:
     row = conn.execute(
-        f"select {_CAMPAIGN_COLUMNS} from public.campaigns c where c.organization_id = %s and c.id = %s",
+        f"select {_CAMPAIGN_COLUMNS} from campaigns c where c.organization_id = %s and c.id = %s",
         (organization_id, campaign_id),
     ).fetchone()
     if row is None:
         raise DomainError(404, ErrorCode.NOT_FOUND, "Campaign not found.")
     exceptions = conn.execute(
         """
-        select * from public.decisions
+        select * from decisions
         where organization_id = %s and campaign_id = %s and status = 'blocked'
         order by created_at, id
         """,

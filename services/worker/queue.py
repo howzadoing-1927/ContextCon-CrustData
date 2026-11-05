@@ -34,7 +34,7 @@ class Lease:
 
 
 _CLAIM_SQL = """
-update public.tasks t
+update tasks t
 set status = 'leased',
     attempt = t.attempt + 1,
     lease_generation = t.lease_generation + 1,
@@ -42,7 +42,7 @@ set status = 'leased',
     lease_until = now() + make_interval(secs => %(lease_seconds)s)
 from (
     select id
-    from public.tasks
+    from tasks
     where kind = any(%(kinds)s)
       and (%(org)s::uuid is null or organization_id = %(org)s::uuid)
       and attempt < max_attempts
@@ -102,7 +102,7 @@ def claim(
 def heartbeat(conn: psycopg.Connection, lease: Lease, lease_seconds: int) -> None:
     with conn.transaction():
         cur = conn.execute(
-            f"update public.tasks set lease_until = now() + make_interval(secs => %(lease_seconds)s) where {_FENCE_PREDICATE}",
+            f"update tasks set lease_until = now() + make_interval(secs => %(lease_seconds)s) where {_FENCE_PREDICATE}",
             {**_fence_params(lease), "lease_seconds": lease_seconds},
         )
     if cur.rowcount != 1:
@@ -113,7 +113,7 @@ def heartbeat(conn: psycopg.Connection, lease: Lease, lease_seconds: int) -> Non
 def fenced(conn: psycopg.Connection, lease: Lease) -> Iterator[psycopg.Connection]:
     """Transaction in which the task row is locked and the lease proven current. Raises LeaseLost otherwise."""
     with conn.transaction():
-        row = conn.execute(f"select id from public.tasks where {_FENCE_PREDICATE} for update", _fence_params(lease)).fetchone()
+        row = conn.execute(f"select id from tasks where {_FENCE_PREDICATE} for update", _fence_params(lease)).fetchone()
         if row is None:
             raise LeaseLost(f"task {lease.task_id} generation {lease.generation}")
         yield conn
@@ -122,7 +122,7 @@ def fenced(conn: psycopg.Connection, lease: Lease) -> Iterator[psycopg.Connectio
 def complete(conn: psycopg.Connection, lease: Lease) -> None:
     """Mark succeeded. Must be called inside `fenced` so it commits atomically with the caller's state writes."""
     conn.execute(
-        "update public.tasks set status = 'succeeded', lease_until = null, last_error_json = null "
+        "update tasks set status = 'succeeded', lease_until = null, last_error_json = null "
         "where id = %(task_id)s and organization_id = %(org)s and lease_generation = %(generation)s",
         _fence_params(lease),
     )
@@ -134,7 +134,7 @@ def fail(conn: psycopg.Connection, lease: Lease, error: dict[str, Any], *, retry
     status = "ready" if retry else "failed"
     conn.execute(
         """
-        update public.tasks
+        update tasks
         set status = %(status)s, lease_until = null, last_error_json = %(error)s,
             run_after = case when %(retry)s then now() + make_interval(secs => %(delay)s) else run_after end
         where id = %(task_id)s and organization_id = %(org)s and lease_generation = %(generation)s
@@ -149,7 +149,7 @@ def sweep_exhausted(conn: psycopg.Connection) -> list[UUID]:
     with conn.transaction():
         rows = conn.execute(
             """
-            update public.tasks
+            update tasks
             set status = 'failed', lease_until = null,
                 last_error_json = jsonb_build_object('reason', 'lease_expired_attempts_exhausted', 'attempt', attempt)
             where status = 'leased' and lease_until < now() and attempt >= max_attempts

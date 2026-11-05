@@ -12,12 +12,12 @@ KINDS = ["normalize_mission"]
 
 
 def _claim(database_url, org, owner, lease_seconds=30):
-    with psycopg.connect(database_url, **db.connect_kwargs()) as c:
+    with db.connect(database_url) as c:
         return queue.claim(c, owner=owner, kinds=KINDS, lease_seconds=lease_seconds, organization_id=org)
 
 
 def _task(conn, lease):
-    return conn.execute("select * from public.tasks where id = %s", (lease.task_id,)).fetchone()
+    return conn.execute("select * from tasks where id = %s", (lease.task_id,)).fetchone()
 
 
 def test_concurrent_claims_never_share_a_task(make_tenant, database_url):
@@ -102,7 +102,7 @@ def test_heartbeat_extends_lease(make_tenant, database_url, conn):
 def test_failure_retries_then_exhausted_task_is_failed(make_tenant, database_url, conn):
     tenant = make_tenant()
     launched = launch(database_url, tenant)
-    conn.execute("update public.tasks set max_attempts = 2 where id = %s", (launched.task_id,))
+    conn.execute("update tasks set max_attempts = 2 where id = %s", (launched.task_id,))
 
     first = _claim(database_url, tenant.organization_id, "w1")
     with queue.fenced(conn, first):

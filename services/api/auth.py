@@ -89,7 +89,7 @@ def require_member(request: Request) -> Principal:
     organization_id = _organization_header(request)
     with db.connection() as conn:
         row = conn.execute(
-            "select role from public.memberships where organization_id = %s and user_id = %s",
+            "select role from memberships where organization_id = %s and user_id = %s",
             (organization_id, user_id),
         ).fetchone()
     if row is None:

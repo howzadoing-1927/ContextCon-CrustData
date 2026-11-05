@@ -35,7 +35,7 @@ def test_ready_is_503_without_or_with_stale_heartbeat(runtime_tenant, conn):
     missing = TestClient(create_app()).get("/api/v1/health/ready")
     write_heartbeat(conn, get_settings(), "pytest-worker")
     conn.execute(
-        "update public.organizations set runtime_json = jsonb_set(runtime_json, '{worker,last_seen_at}', "
+        "update organizations set runtime_json = jsonb_set(runtime_json, '{worker,last_seen_at}', "
         "to_jsonb(now() - interval '10 minutes')) where id = %s",
         (runtime_tenant.organization_id,),
     )
@@ -70,13 +70,13 @@ def test_second_worker_refused_while_first_is_fresh(runtime_tenant, conn):
         write_heartbeat(conn, settings, "worker-2")
 
     conn.execute(
-        "update public.organizations set runtime_json = jsonb_set(runtime_json, '{worker,last_seen_at}', "
+        "update organizations set runtime_json = jsonb_set(runtime_json, '{worker,last_seen_at}', "
         "to_jsonb(now() - interval '10 minutes')) where id = %s",
         (runtime_tenant.organization_id,),
     )
     write_heartbeat(conn, settings, "worker-2")
     worker = conn.execute(
-        "select runtime_json -> 'worker' ->> 'worker_id' as id from public.organizations where id = %s",
+        "select runtime_json -> 'worker' ->> 'worker_id' as id from organizations where id = %s",
         (runtime_tenant.organization_id,),
     ).fetchone()
     assert worker["id"] == "worker-2"

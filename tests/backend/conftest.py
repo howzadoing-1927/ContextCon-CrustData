@@ -48,7 +48,7 @@ class Tenant:
 
 
 def _connect(url: str) -> psycopg.Connection:
-    return psycopg.connect(url, **db.connect_kwargs())
+    return db.connect(url)
 
 
 @pytest.fixture(scope="session")

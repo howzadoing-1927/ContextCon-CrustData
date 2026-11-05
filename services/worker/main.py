@@ -36,7 +36,7 @@ def write_heartbeat(conn: psycopg.Connection, settings: Settings, worker_id: str
     with conn.transaction():
         cur = conn.execute(
             """
-            update public.organizations
+            update organizations
             set runtime_json = jsonb_set(runtime_json, '{worker}', %(worker)s::jsonb || jsonb_build_object('last_seen_at', now()))
             where id = %(org)s
               and (runtime_json -> 'worker' is null
