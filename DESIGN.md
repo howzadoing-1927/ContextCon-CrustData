@@ -1,56 +1,69 @@
----
-name: Outcome AI
-description: Dark operator console for an autonomous SDR worker. Proof-first, calm density, honest provenance.
----
+# Outcome AI — Design system (as built)
 
-<!-- SEED: established with the user before implementation; re-run /impeccable document once there's code to capture the actual tokens and components. -->
+Operator console, dark. One screen per job: set up authority, launch a mission, watch it run, step in only when the worker is blocked. Source of truth for tokens: `apps/web/src/app/globals.css`. Machine-readable copy: `.impeccable/design.json`.
 
-# Design
+## Ground and layers
 
-## Overview
+| Token | Value | Use |
+| --- | --- | --- |
+| `--background` | `oklch(0.168 0.014 248)` | Page ground, blue-tinted ink-slate |
+| `--shell` | `oklch(0.198 0.02 250)` | Top bar, fixture bar, sticky rails |
+| `--raised` / `--card` | `oklch(0.212 0.017 248)` | Message cards, notices, inputs |
+| `--popover` | `oklch(0.238 0.019 248)` | Popovers, drawer |
+| `--hairline` / `--border` | `oklch(0.285 0.017 248)` | All separation. Hairlines, never shadows |
+| `--input` | `oklch(0.34 0.018 248)` | Field borders |
 
-Outcome AI is a working console. Someone launches a mission and watches an autonomous worker research, email, read a reply and book a meeting, and every step has to read as proven. The thesis is **proof as the interface**: provider IDs, hashes and timestamps are part of the visible design, not hidden in a debug panel.
+Ink: `--foreground oklch(0.95 0.006 248)`, `--muted-foreground oklch(0.76 0.014 248)`, `--faint oklch(0.66 0.014 248)`. Every text pair meets WCAG AA on its ground.
 
-Scene: a founder at a laptop late at night, with Gmail and Google Calendar open in the next window, screen-recording for evaluators. That scene sets a dark ground. The dim room and long session call for low glare, and the screen must sit calmly beside Google's light UIs without competing with them.
+## Colour roles
 
-Signature move: **the mission route.** The conversation state machine is drawn as a single vertical transit line. Passed stations are filled, the current station is ringed in the signal colour, and terminal outcomes (declined, suppressed, needs human, send unknown, stopped) branch off as a short spur at the point where they happened. The same route appears in miniature on mission list rows.
+- **Primary is light ink.** `--primary oklch(0.92 0.008 245)` on `--primary-foreground oklch(0.19 0.014 248)`. Used for the main action, the logo mark, checked controls.
+- **Amber is signal only.** `--signal oklch(0.81 0.135 76)`, also `--ring`. Reserved for: needs-you state and the exception strip, the current route station, stale/unhealthy system banners, the focus ring. Never decoration, never the active tab.
+- Status: `--ok oklch(0.79 0.13 158)`, `--info oklch(0.78 0.095 238)`, `--warn oklch(0.83 0.13 82)`, `--bad` / `--destructive oklch(0.72 0.16 25)`, `--quiet oklch(0.7 0.014 248)`.
 
-Motion conveys state only. A station advancing, a chip changing, or a drawer opening takes 150–200 ms with exponential ease-out. Waiting is still, never animated. Active work gets one slow ring pulse on the current station and nothing else. `prefers-reduced-motion` removes the pulse.
+## Provenance stamps
 
-## Colors
+Square (no radius), uppercase, 11px, 0.06em tracking, icon + label. Every external fact or action carries one.
 
-Strategy: Restrained, with colour doing real jobs. The ground is a blue-tinted ink slate with a slightly cooler second layer for the shell rail and panels. One warm signal colour marks "needs attention" and the current station. Semantic state hues sit on top only where they carry meaning.
+| Stamp | Treatment |
+| --- | --- |
+| LIVE | Solid `--live oklch(0.79 0.13 158)` fill, dark text, radio glyph |
+| CACHED | `--cached oklch(0.78 0.095 238)` outline, history glyph |
+| FIXTURE | `--fixture oklch(0.8 0.02 248)` **dashed** outline, flask glyph. Cool neutral: "not real" without a hue |
+| SIMULATED BUYER | `--simbuyer oklch(0.83 0.095 196)` outline, mask glyph |
 
-Roles (values to be finalized in implementation, starting from these OKLCH targets):
+`ModeBadge` ("Live tools · simulated buyer") is visible at every width: full at `xl+`, compact (icons + "Simulated buyer") from `sm` to `xl` in the top bar, and in the mission header row below `sm`.
 
-- ground, shell, raised surface, hairline: ink-slate ramp around hue 245
-- text, muted, faint: tinted neutrals from the same hue, never pure grey
-- signal (attention, current station, primary action): warm amber
-- success (booked, completed, criterion pass), info (running, evaluating), warning (waiting, needs human), danger (failed, suppressed, stopped, criterion fail), muted (draft, no match, declined, unknown)
-- provenance: LIVE solid green; CACHED blue outline; FIXTURE violet with a hatched fill; SIMULATED BUYER cyan outline with a mask glyph. These four treatments are never reused for anything else.
+## Type
 
-## Typography
+IBM Plex Sans for everything; IBM Plex Mono only for machine data (IDs, emails, timestamps, counts, versions). `font-variant-numeric: tabular-nums` everywhere numbers align; mono adds slashed zero. `text-wrap: pretty` on `p`, `li`, `dd`.
 
-One workhorse family, chosen for Operate mode: IBM Plex Sans for every UI role and IBM Plex Mono only for data that really is machine data (UUIDs, provider refs, hashes, RFC3339 timestamps, field paths, counters). Mono is never used as a "technical" costume for labels or headings. Fixed rem scale with a tight ratio: 12 / 13 / 14 / 16 / 20 / 26. Tabular numerals everywhere numbers align.
+| Step | Size / line |
+| --- | --- |
+| `2xs` | 12 / 16 — metadata, mono IDs |
+| `xs` | 13 / 18 — dense body, table cells |
+| `sm` | 14 / 20 — body, section headings (`h2`, semibold) |
+| `base` | 16 / 24 — handoff heading |
+| `lg` | 20 / 28 — mission title (`h1`) |
+| `xl` | 26 / 32 — page titles |
+
+Measure: prose capped at 60–68ch.
+
+## Shape and motion
+
+Radius `0.375rem` (`sm 0.25`, `md 0.3125`, `lg 0.375`, `xl 0.5`). Stamps are square. Easing `--ease-out-expo cubic-bezier(0.16, 1, 0.3, 1)`. Motion: `station-pulse` on the active station (1.8s), `row-arrive` for ledger rows that land after first load. Both disabled under `prefers-reduced-motion`.
 
 ## Layout
 
-App shell: a top bar (product, organization, mode badge, worker health) and a narrow left nav. Mission detail is a three-zone working screen: the route rail on the left, the case (prospect, conversation, slots, booking, handoff) in the centre at a readable measure, and the decision ledger on the right as a scrollable column. Below 1280 px the ledger collapses under the case; below 1024 px the route rail becomes a horizontal strip. Spacing is on a 4 px grid, with tight groups and generous separation between sections.
+- Navigation lives in the top bar (Missions, New mission, Setup), active tab underlined in foreground. Below `md` the bar wraps to two rows, nav on its own row.
+- Mission detail: grid `13.75rem / 1fr / 23.75rem` — route rail, case + conversation, decision ledger. Rails are sticky under the top bar. Below `xl` the ledger moves under the centre; below `lg` the route becomes `CompactRoute` (dots, current station named, terminal spur chip).
+- Setup: sticky readiness checklist (n/4) beside the sections.
+- One amber exception strip under the mission header opens a right drawer (34rem) with typed resolutions. `#resolve` deep-links into it.
 
-## Elevation & Depth
+## Signature: the mission route
 
-Flat layers separated by tone and 1 px hairlines. No nested cards. Only overlays (popovers, drawers) get a shadow, and it is soft and offset to read as lifted above the console.
+Ten stations from Research to Handoff written. Passed stations are filled grey, the current one is an amber ring (pulsing while running, hollow while waiting or paused), terminal outcomes branch off as a spur chip ("Needs you", "Stopped", "Failed", "No match", "Buyer declined").
 
-## Shapes
+## Bans
 
-Small radii (4–6 px) on controls and panels and full rounding only on status chips. Provenance stamps are square-cornered so they read as stamps, not pills.
-
-## Do's and Don'ts
-
-- Do show the evidence one click from every claim.
-- Do keep the real researched identity and the simulated buyer visually separate. The buyer always carries the SIMULATED BUYER stamp.
-- Do render unknown as "unknown". Never render it as zero, blank, or a guess.
-- Don't put a spinner on waiting states; show the last check and what happens next.
-- Don't add approve-all, force-send, or mark-complete controls.
-- Don't use gradients, glass, glow, eyebrow labels, or icon tiles above headings.
-- Don't label calendar attendees as accepted.
+No gradients, no glass or backdrop blur (sheet overlay is flat `black/45`), no nested cards, no eyebrow labels, no hatched or violet stripes, no shadows for separation. Fixture data is never labelled LIVE; unknown cost reads "Cost unknown", never 0; attendees are never "accepted"; no approve-all, force-send or mark-complete controls.
