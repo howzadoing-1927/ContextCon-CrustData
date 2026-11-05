@@ -1,0 +1,299 @@
+{
+  "$defs": {
+    "BookingReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "format": "uuid",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "attendee_acceptance": {
+          "const": "not_verified",
+          "title": "Attendee Acceptance",
+          "type": "string"
+        },
+        "calendar_id": {
+          "minLength": 1,
+          "title": "Calendar Id",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "event_id": {
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "html_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Html Link"
+        },
+        "mode": {
+          "const": "simulation",
+          "title": "Mode",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        },
+        "verified_at": {
+          "format": "date-time",
+          "title": "Verified At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "event_id",
+        "calendar_id",
+        "start",
+        "end",
+        "timezone",
+        "html_link",
+        "verified_at",
+        "attendee_acceptance",
+        "mode"
+      ],
+      "title": "BookingReceipt",
+      "type": "object"
+    },
+    "ConversationState": {
+      "enum": [
+        "researching",
+        "qualified",
+        "drafting",
+        "waiting_reply",
+        "evaluating_reply",
+        "offering_slots",
+        "waiting_slot_acceptance",
+        "booking",
+        "booked",
+        "completed",
+        "declined",
+        "suppressed",
+        "needs_human",
+        "send_unknown",
+        "stopped"
+      ],
+      "title": "ConversationState",
+      "type": "string"
+    },
+    "MessageDirection": {
+      "enum": [
+        "inbound",
+        "outbound"
+      ],
+      "title": "MessageDirection",
+      "type": "string"
+    },
+    "MessageStatus": {
+      "enum": [
+        "planned",
+        "sent",
+        "received",
+        "unknown"
+      ],
+      "title": "MessageStatus",
+      "type": "string"
+    },
+    "MessageView": {
+      "additionalProperties": false,
+      "properties": {
+        "body_text": {
+          "title": "Body Text",
+          "type": "string"
+        },
+        "direction": {
+          "$ref": "#/$defs/MessageDirection"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "provider_message_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider Message Id"
+        },
+        "received_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Received At"
+        },
+        "sent_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sent At"
+        },
+        "status": {
+          "$ref": "#/$defs/MessageStatus"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "direction",
+        "subject",
+        "body_text",
+        "sent_at",
+        "received_at",
+        "provider_message_id",
+        "status"
+      ],
+      "title": "MessageView",
+      "type": "object"
+    },
+    "Slot": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "freebusy_checked_at": {
+          "format": "date-time",
+          "title": "Freebusy Checked At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "start",
+        "end",
+        "timezone",
+        "freebusy_checked_at"
+      ],
+      "title": "Slot",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ConversationView",
+  "additionalProperties": false,
+  "properties": {
+    "booking": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BookingReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "buyer_role_label": {
+      "const": "simulated buyer",
+      "title": "Buyer Role Label",
+      "type": "string"
+    },
+    "buyer_test_email": {
+      "title": "Buyer Test Email",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/MessageView"
+      },
+      "title": "Messages",
+      "type": "array"
+    },
+    "offered_slots": {
+      "items": {
+        "$ref": "#/$defs/Slot"
+      },
+      "title": "Offered Slots",
+      "type": "array"
+    },
+    "provider_thread_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Provider Thread Id"
+    },
+    "state": {
+      "$ref": "#/$defs/ConversationState"
+    },
+    "version": {
+      "minimum": 0,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "state",
+    "version",
+    "buyer_role_label",
+    "buyer_test_email",
+    "provider_thread_id",
+    "messages",
+    "offered_slots",
+    "booking"
+  ],
+  "title": "ConversationView",
+  "type": "object"
+}

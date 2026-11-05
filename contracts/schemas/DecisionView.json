@@ -1,0 +1,241 @@
+{
+  "$defs": {
+    "ActionState": {
+      "enum": [
+        "prepared",
+        "executing",
+        "succeeded",
+        "failed",
+        "unknown",
+        "cancelled"
+      ],
+      "title": "ActionState",
+      "type": "string"
+    },
+    "ActualAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "format": "uuid",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "provider_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider Ref"
+        },
+        "state": {
+          "$ref": "#/$defs/ActionState"
+        }
+      },
+      "required": [
+        "action_id",
+        "state",
+        "provider_ref"
+      ],
+      "title": "ActualAction",
+      "type": "object"
+    },
+    "DecisionModelMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "deployment": {
+          "title": "Deployment",
+          "type": "string"
+        },
+        "model_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model Version"
+        },
+        "prompt_version": {
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "usage": {
+          "additionalProperties": true,
+          "title": "Usage",
+          "type": "object"
+        }
+      },
+      "required": [
+        "deployment",
+        "model_version",
+        "prompt_version",
+        "usage"
+      ],
+      "title": "DecisionModelMeta",
+      "type": "object"
+    },
+    "DecisionStatus": {
+      "enum": [
+        "accepted",
+        "rejected",
+        "blocked",
+        "resolved"
+      ],
+      "title": "DecisionStatus",
+      "type": "string"
+    },
+    "PolicyCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "pass": {
+          "title": "Pass",
+          "type": "boolean"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "pass",
+        "reason"
+      ],
+      "title": "PolicyCheck",
+      "type": "object"
+    },
+    "PolicyResult": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/PolicyCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "pass": {
+          "title": "Pass",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pass",
+        "checks"
+      ],
+      "title": "PolicyResult",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:DecisionView",
+  "additionalProperties": false,
+  "properties": {
+    "actual_action": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ActualAction"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "input_refs": {
+      "additionalProperties": true,
+      "title": "Input Refs",
+      "type": "object"
+    },
+    "kind": {
+      "title": "Kind",
+      "type": "string"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DecisionModelMeta"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "policy": {
+      "$ref": "#/$defs/PolicyResult"
+    },
+    "proposed_action": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Proposed Action"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    },
+    "resolution": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Resolution"
+    },
+    "status": {
+      "$ref": "#/$defs/DecisionStatus"
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "status",
+    "reason",
+    "evidence_ids",
+    "input_refs",
+    "model",
+    "policy",
+    "proposed_action",
+    "actual_action",
+    "resolution",
+    "created_at"
+  ],
+  "title": "DecisionView",
+  "type": "object"
+}

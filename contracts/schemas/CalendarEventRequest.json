@@ -1,0 +1,74 @@
+{
+  "$id": "urn:outcome:outcome.v1:CalendarEventRequest",
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "format": "uuid",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "attendees": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 2,
+      "minItems": 1,
+      "title": "Attendees",
+      "type": "array"
+    },
+    "booking_fingerprint": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Booking Fingerprint",
+      "type": "string"
+    },
+    "calendar_id": {
+      "minLength": 1,
+      "title": "Calendar Id",
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 4000,
+      "title": "Description",
+      "type": "string"
+    },
+    "end": {
+      "format": "date-time",
+      "title": "End",
+      "type": "string"
+    },
+    "event_id": {
+      "pattern": "^[a-v0-9]{5,1024}$",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "start": {
+      "format": "date-time",
+      "title": "Start",
+      "type": "string"
+    },
+    "summary": {
+      "maxLength": 200,
+      "pattern": "^\\[Outcome simulation\\] ",
+      "title": "Summary",
+      "type": "string"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_id",
+    "calendar_id",
+    "event_id",
+    "booking_fingerprint",
+    "summary",
+    "description",
+    "start",
+    "end",
+    "timezone",
+    "attendees"
+  ],
+  "title": "CalendarEventRequest",
+  "type": "object"
+}

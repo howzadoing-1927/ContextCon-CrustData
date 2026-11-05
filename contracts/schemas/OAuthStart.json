@@ -1,0 +1,40 @@
+{
+  "$id": "urn:outcome:outcome.v1:OAuthStart",
+  "additionalProperties": false,
+  "properties": {
+    "connection_id": {
+      "format": "uuid",
+      "title": "Connection Id",
+      "type": "string"
+    },
+    "initiator_user_id": {
+      "format": "uuid",
+      "title": "Initiator User Id",
+      "type": "string"
+    },
+    "organization_id": {
+      "format": "uuid",
+      "title": "Organization Id",
+      "type": "string"
+    },
+    "purpose": {
+      "const": "seller",
+      "title": "Purpose",
+      "type": "string"
+    },
+    "return_path": {
+      "const": "/setup",
+      "title": "Return Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "connection_id",
+    "initiator_user_id",
+    "purpose",
+    "return_path"
+  ],
+  "title": "OAuthStart",
+  "type": "object"
+}

@@ -1,0 +1,38 @@
+{
+  "$id": "urn:outcome:outcome.v1:Slot",
+  "additionalProperties": false,
+  "properties": {
+    "end": {
+      "format": "date-time",
+      "title": "End",
+      "type": "string"
+    },
+    "freebusy_checked_at": {
+      "format": "date-time",
+      "title": "Freebusy Checked At",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "start": {
+      "format": "date-time",
+      "title": "Start",
+      "type": "string"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "start",
+    "end",
+    "timezone",
+    "freebusy_checked_at"
+  ],
+  "title": "Slot",
+  "type": "object"
+}

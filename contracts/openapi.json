@@ -1,0 +1,2532 @@
+{
+  "components": {
+    "schemas": {
+      "ActionState": {
+        "enum": [
+          "prepared",
+          "executing",
+          "succeeded",
+          "failed",
+          "unknown",
+          "cancelled"
+        ],
+        "title": "ActionState",
+        "type": "string"
+      },
+      "ActualAction": {
+        "additionalProperties": false,
+        "properties": {
+          "action_id": {
+            "format": "uuid",
+            "title": "Action Id",
+            "type": "string"
+          },
+          "provider_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ref"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ActionState"
+          }
+        },
+        "required": [
+          "action_id",
+          "state",
+          "provider_ref"
+        ],
+        "title": "ActualAction",
+        "type": "object"
+      },
+      "BookingReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "action_id": {
+            "format": "uuid",
+            "title": "Action Id",
+            "type": "string"
+          },
+          "attendee_acceptance": {
+            "const": "not_verified",
+            "title": "Attendee Acceptance",
+            "type": "string"
+          },
+          "calendar_id": {
+            "minLength": 1,
+            "title": "Calendar Id",
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "event_id": {
+            "minLength": 1,
+            "title": "Event Id",
+            "type": "string"
+          },
+          "html_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html Link"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "verified_at": {
+            "format": "date-time",
+            "title": "Verified At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_id",
+          "event_id",
+          "calendar_id",
+          "start",
+          "end",
+          "timezone",
+          "html_link",
+          "verified_at",
+          "attendee_acceptance",
+          "mode"
+        ],
+        "title": "BookingReceipt",
+        "type": "object"
+      },
+      "BusyRange": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "BusyRange",
+        "type": "object"
+      },
+      "BuyerStatedNeed": {
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "message_id"
+        ],
+        "title": "BuyerStatedNeed",
+        "type": "object"
+      },
+      "CalendarEventLookup": {
+        "additionalProperties": false,
+        "properties": {
+          "event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CalendarEventReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "execution_label": {
+            "$ref": "#/components/schemas/ExecutionLabel"
+          },
+          "found": {
+            "title": "Found",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "found",
+          "event",
+          "execution_label"
+        ],
+        "title": "CalendarEventLookup",
+        "type": "object"
+      },
+      "CalendarEventReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "attendees": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Attendees",
+            "type": "array"
+          },
+          "booking_fingerprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Fingerprint"
+          },
+          "calendar_id": {
+            "minLength": 1,
+            "title": "Calendar Id",
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "event_id": {
+            "pattern": "^[a-v0-9]{5,1024}$",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "execution_label": {
+            "$ref": "#/components/schemas/ExecutionLabel"
+          },
+          "html_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Html Link"
+          },
+          "read_at": {
+            "format": "date-time",
+            "title": "Read At",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "calendar_id",
+          "start",
+          "end",
+          "timezone",
+          "attendees",
+          "booking_fingerprint",
+          "html_link",
+          "status",
+          "read_at",
+          "execution_label"
+        ],
+        "title": "CalendarEventReceipt",
+        "type": "object"
+      },
+      "CalendarEventRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action_id": {
+            "format": "uuid",
+            "title": "Action Id",
+            "type": "string"
+          },
+          "attendees": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Attendees",
+            "type": "array"
+          },
+          "booking_fingerprint": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Booking Fingerprint",
+            "type": "string"
+          },
+          "calendar_id": {
+            "minLength": 1,
+            "title": "Calendar Id",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 4000,
+            "title": "Description",
+            "type": "string"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "event_id": {
+            "pattern": "^[a-v0-9]{5,1024}$",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 200,
+            "pattern": "^\\[Outcome simulation\\] ",
+            "title": "Summary",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_id",
+          "calendar_id",
+          "event_id",
+          "booking_fingerprint",
+          "summary",
+          "description",
+          "start",
+          "end",
+          "timezone",
+          "attendees"
+        ],
+        "title": "CalendarEventRequest",
+        "type": "object"
+      },
+      "CampaignControl": {
+        "enum": [
+          "pause",
+          "resume",
+          "stop"
+        ],
+        "title": "CampaignControl",
+        "type": "string"
+      },
+      "CampaignCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "buyer_test_email": {
+            "title": "Buyer Test Email",
+            "type": "string"
+          },
+          "config_version": {
+            "minimum": 1,
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "profile_version": {
+            "minimum": 1,
+            "title": "Profile Version",
+            "type": "integer"
+          },
+          "request_text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Request Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_text",
+          "mode",
+          "buyer_test_email",
+          "profile_version",
+          "config_version",
+          "limits"
+        ],
+        "title": "CampaignCreate",
+        "type": "object"
+      },
+      "CampaignState": {
+        "enum": [
+          "draft",
+          "running",
+          "waiting_reply",
+          "completed",
+          "no_match",
+          "needs_human",
+          "paused",
+          "stopped",
+          "failed"
+        ],
+        "title": "CampaignState",
+        "type": "string"
+      },
+      "CampaignView": {
+        "additionalProperties": false,
+        "properties": {
+          "config_version": {
+            "minimum": 1,
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_decision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Decision Id"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "profile_version": {
+            "minimum": 1,
+            "title": "Profile Version",
+            "type": "integer"
+          },
+          "request_text": {
+            "title": "Request Text",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CampaignState"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          },
+          "version": {
+            "minimum": 0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "request_text",
+          "mode",
+          "status",
+          "version",
+          "stage",
+          "profile_version",
+          "config_version",
+          "usage",
+          "last_decision_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CampaignView",
+        "type": "object"
+      },
+      "ConnectionStatus": {
+        "enum": [
+          "pending",
+          "connected",
+          "reauth_required",
+          "revoked"
+        ],
+        "title": "ConnectionStatus",
+        "type": "string"
+      },
+      "ConnectionSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "account_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Email"
+          },
+          "calendar_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calendar Id"
+          },
+          "connection_id": {
+            "format": "uuid",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "granted_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Granted Scopes",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConnectionStatus"
+          }
+        },
+        "required": [
+          "connection_id",
+          "status",
+          "account_email",
+          "granted_scopes",
+          "calendar_id"
+        ],
+        "title": "ConnectionSummary",
+        "type": "object"
+      },
+      "ControlInput": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/CampaignControl"
+          },
+          "expected_version": {
+            "minimum": 0,
+            "title": "Expected Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action",
+          "expected_version"
+        ],
+        "title": "ControlInput",
+        "type": "object"
+      },
+      "ConversationState": {
+        "enum": [
+          "researching",
+          "qualified",
+          "drafting",
+          "waiting_reply",
+          "evaluating_reply",
+          "offering_slots",
+          "waiting_slot_acceptance",
+          "booking",
+          "booked",
+          "completed",
+          "declined",
+          "suppressed",
+          "needs_human",
+          "send_unknown",
+          "stopped"
+        ],
+        "title": "ConversationState",
+        "type": "string"
+      },
+      "ConversationView": {
+        "additionalProperties": false,
+        "properties": {
+          "booking": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BookingReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "buyer_role_label": {
+            "const": "simulated buyer",
+            "title": "Buyer Role Label",
+            "type": "string"
+          },
+          "buyer_test_email": {
+            "title": "Buyer Test Email",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/MessageView"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "offered_slots": {
+            "items": {
+              "$ref": "#/components/schemas/Slot"
+            },
+            "title": "Offered Slots",
+            "type": "array"
+          },
+          "provider_thread_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Thread Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ConversationState"
+          },
+          "version": {
+            "minimum": 0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "version",
+          "buyer_role_label",
+          "buyer_test_email",
+          "provider_thread_id",
+          "messages",
+          "offered_slots",
+          "booking"
+        ],
+        "title": "ConversationView",
+        "type": "object"
+      },
+      "CriterionResult": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "pass",
+              "fail",
+              "unknown"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "result",
+          "evidence_ids",
+          "reason"
+        ],
+        "title": "CriterionResult",
+        "type": "object"
+      },
+      "DecisionModelMeta": {
+        "additionalProperties": false,
+        "properties": {
+          "deployment": {
+            "title": "Deployment",
+            "type": "string"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "title": "Usage",
+            "type": "object"
+          }
+        },
+        "required": [
+          "deployment",
+          "model_version",
+          "prompt_version",
+          "usage"
+        ],
+        "title": "DecisionModelMeta",
+        "type": "object"
+      },
+      "DecisionStatus": {
+        "enum": [
+          "accepted",
+          "rejected",
+          "blocked",
+          "resolved"
+        ],
+        "title": "DecisionStatus",
+        "type": "string"
+      },
+      "DecisionView": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActualAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_refs": {
+            "additionalProperties": true,
+            "title": "Input Refs",
+            "type": "object"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionModelMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "policy": {
+            "$ref": "#/components/schemas/PolicyResult"
+          },
+          "proposed_action": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Action"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DecisionStatus"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "reason",
+          "evidence_ids",
+          "input_refs",
+          "model",
+          "policy",
+          "proposed_action",
+          "actual_action",
+          "resolution",
+          "created_at"
+        ],
+        "title": "DecisionView",
+        "type": "object"
+      },
+      "Delivery": {
+        "additionalProperties": false,
+        "properties": {
+          "buyer_test_email": {
+            "title": "Buyer Test Email",
+            "type": "string"
+          },
+          "identity_is_simulated": {
+            "const": true,
+            "title": "Identity Is Simulated",
+            "type": "boolean"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "buyer_test_email",
+          "identity_is_simulated"
+        ],
+        "title": "Delivery",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "retryable"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorCode": {
+        "enum": [
+          "VALIDATION_FAILED",
+          "UNAUTHENTICATED",
+          "FORBIDDEN",
+          "NOT_FOUND",
+          "CONFLICT",
+          "DOMAIN_INVALID",
+          "RECIPIENT_NOT_ALLOWED",
+          "RATE_LIMITED",
+          "DEPENDENCY_UNAVAILABLE",
+          "INTERNAL"
+        ],
+        "title": "ErrorCode",
+        "type": "string"
+      },
+      "ErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "correlation_id"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EstimatedCost": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "currency": {
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency",
+            "type": "string"
+          },
+          "pricing_source": {
+            "minLength": 1,
+            "title": "Pricing Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "pricing_source"
+        ],
+        "title": "EstimatedCost",
+        "type": "object"
+      },
+      "EvidenceSourceKind": {
+        "enum": [
+          "crustdata",
+          "seller_website",
+          "operator",
+          "google_message",
+          "google_calendar",
+          "policy"
+        ],
+        "title": "EvidenceSourceKind",
+        "type": "string"
+      },
+      "EvidenceView": {
+        "additionalProperties": false,
+        "properties": {
+          "content_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Content Sha256",
+            "type": "string"
+          },
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "fact_status": {
+            "$ref": "#/components/schemas/FactStatus"
+          },
+          "field_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Path"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "provider_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ref"
+          },
+          "retrieved_at": {
+            "format": "date-time",
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "source_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source As Of"
+          },
+          "source_kind": {
+            "$ref": "#/components/schemas/EvidenceSourceKind"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          }
+        },
+        "required": [
+          "id",
+          "source_kind",
+          "source_url",
+          "provider_ref",
+          "field_path",
+          "excerpt",
+          "retrieved_at",
+          "source_as_of",
+          "content_sha256",
+          "fact_status"
+        ],
+        "title": "EvidenceView",
+        "type": "object"
+      },
+      "ExecutionLabel": {
+        "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+        "enum": [
+          "LIVE",
+          "CACHED",
+          "FIXTURE",
+          "SIMULATED_BUYER"
+        ],
+        "title": "ExecutionLabel",
+        "type": "string"
+      },
+      "FactStatus": {
+        "enum": [
+          "observed",
+          "operator_approved",
+          "hypothesis",
+          "conflicted"
+        ],
+        "title": "FactStatus",
+        "type": "string"
+      },
+      "FailurePhase": {
+        "enum": [
+          "preflight",
+          "auth",
+          "request_build",
+          "dispatch",
+          "response",
+          "read_back"
+        ],
+        "title": "FailurePhase",
+        "type": "string"
+      },
+      "FreeBusyResult": {
+        "additionalProperties": false,
+        "description": "An `error` result means unavailable. An `ok` result with no busy ranges is the only free signal.",
+        "properties": {
+          "busy": {
+            "items": {
+              "$ref": "#/components/schemas/BusyRange"
+            },
+            "title": "Busy",
+            "type": "array"
+          },
+          "calendar_id": {
+            "minLength": 1,
+            "title": "Calendar Id",
+            "type": "string"
+          },
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "error_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Error Reasons",
+            "type": "array"
+          },
+          "execution_label": {
+            "$ref": "#/components/schemas/ExecutionLabel"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "time_max": {
+            "format": "date-time",
+            "title": "Time Max",
+            "type": "string"
+          },
+          "time_min": {
+            "format": "date-time",
+            "title": "Time Min",
+            "type": "string"
+          }
+        },
+        "required": [
+          "calendar_id",
+          "time_min",
+          "time_max",
+          "status",
+          "busy",
+          "error_reasons",
+          "checked_at",
+          "execution_label"
+        ],
+        "title": "FreeBusyResult",
+        "type": "object"
+      },
+      "GmailSendReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_label": {
+            "$ref": "#/components/schemas/ExecutionLabel"
+          },
+          "provider_message_id": {
+            "minLength": 1,
+            "title": "Provider Message Id",
+            "type": "string"
+          },
+          "provider_thread_id": {
+            "minLength": 1,
+            "title": "Provider Thread Id",
+            "type": "string"
+          },
+          "rfc_message_id": {
+            "maxLength": 200,
+            "title": "Rfc Message Id",
+            "type": "string"
+          },
+          "sent_at": {
+            "format": "date-time",
+            "title": "Sent At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider_message_id",
+          "provider_thread_id",
+          "rfc_message_id",
+          "sent_at",
+          "execution_label"
+        ],
+        "title": "GmailSendReceipt",
+        "type": "object"
+      },
+      "GoogleConnectionRef": {
+        "additionalProperties": false,
+        "description": "Server-selected connection. Adapters load and refresh tokens themselves; tokens never cross this boundary.",
+        "properties": {
+          "account_email": {
+            "title": "Account Email",
+            "type": "string"
+          },
+          "connection_id": {
+            "format": "uuid",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_id",
+          "connection_id",
+          "account_email"
+        ],
+        "title": "GoogleConnectionRef",
+        "type": "object"
+      },
+      "GoogleFailure": {
+        "additionalProperties": false,
+        "properties": {
+          "explicit_rejection": {
+            "default": false,
+            "description": "True only when a documented adapter classifier proves the provider rejected the request before accepting it.",
+            "title": "Explicit Rejection",
+            "type": "boolean"
+          },
+          "may_have_applied": {
+            "title": "May Have Applied",
+            "type": "boolean"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/GoogleOperation"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/FailurePhase"
+          },
+          "provider_status": {
+            "anyOf": [
+              {
+                "maximum": 599,
+                "minimum": 100,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Status"
+          },
+          "redacted_detail": {
+            "maxLength": 500,
+            "title": "Redacted Detail",
+            "type": "string"
+          },
+          "retryability": {
+            "$ref": "#/components/schemas/Retryability"
+          }
+        },
+        "required": [
+          "operation",
+          "phase",
+          "retryability",
+          "may_have_applied",
+          "provider_status",
+          "redacted_detail"
+        ],
+        "title": "GoogleFailure",
+        "type": "object"
+      },
+      "GoogleOperation": {
+        "enum": [
+          "google.start_oauth",
+          "google.complete_oauth",
+          "gmail.send",
+          "gmail.poll_thread",
+          "gmail.reconcile_send",
+          "calendar.freebusy",
+          "calendar.insert",
+          "calendar.get"
+        ],
+        "title": "GoogleOperation",
+        "type": "string"
+      },
+      "Handoff": {
+        "additionalProperties": false,
+        "properties": {
+          "booking": {
+            "$ref": "#/components/schemas/BookingReceipt"
+          },
+          "buyer_stated_needs": {
+            "items": {
+              "$ref": "#/components/schemas/BuyerStatedNeed"
+            },
+            "title": "Buyer Stated Needs",
+            "type": "array"
+          },
+          "campaign_id": {
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "fit_evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Fit Evidence Ids",
+            "type": "array"
+          },
+          "fit_summary": {
+            "title": "Fit Summary",
+            "type": "string"
+          },
+          "hypotheses": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hypotheses",
+            "type": "array"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "next_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Next Steps",
+            "type": "array"
+          },
+          "notification_status": {
+            "enum": [
+              "not_requested",
+              "pending",
+              "sent",
+              "failed"
+            ],
+            "title": "Notification Status",
+            "type": "string"
+          },
+          "open_questions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Open Questions",
+            "type": "array"
+          },
+          "owner_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Email"
+          },
+          "prospect_id": {
+            "format": "uuid",
+            "title": "Prospect Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "complete",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "const": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "mode",
+          "campaign_id",
+          "prospect_id",
+          "conversation_id",
+          "booking",
+          "fit_summary",
+          "fit_evidence_ids",
+          "buyer_stated_needs",
+          "hypotheses",
+          "open_questions",
+          "next_steps",
+          "owner_email",
+          "notification_status"
+        ],
+        "title": "Handoff",
+        "type": "object"
+      },
+      "HealthLive": {
+        "additionalProperties": false,
+        "properties": {
+          "contract_version": {
+            "const": "outcome.v1",
+            "title": "Contract Version",
+            "type": "string"
+          },
+          "service": {
+            "const": "api",
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "const": "alive",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "contract_version"
+        ],
+        "title": "HealthLive",
+        "type": "object"
+      },
+      "Limits": {
+        "additionalProperties": false,
+        "description": "P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.",
+        "properties": {
+          "max_conversations": {
+            "maximum": 1,
+            "minimum": 1,
+            "title": "Max Conversations",
+            "type": "integer"
+          },
+          "max_discovered": {
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Max Discovered",
+            "type": "integer"
+          },
+          "max_enriched": {
+            "maximum": 3,
+            "minimum": 1,
+            "title": "Max Enriched",
+            "type": "integer"
+          },
+          "max_model_calls": {
+            "maximum": 20,
+            "minimum": 1,
+            "title": "Max Model Calls",
+            "type": "integer"
+          },
+          "max_outbound_messages": {
+            "maximum": 6,
+            "minimum": 1,
+            "title": "Max Outbound Messages",
+            "type": "integer"
+          },
+          "max_reply_turns": {
+            "maximum": 4,
+            "minimum": 1,
+            "title": "Max Reply Turns",
+            "type": "integer"
+          },
+          "max_research_calls": {
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Max Research Calls",
+            "type": "integer"
+          },
+          "max_runtime_seconds": {
+            "maximum": 600,
+            "minimum": 1,
+            "title": "Max Runtime Seconds",
+            "type": "integer"
+          },
+          "no_reply_followups": {
+            "maximum": 0,
+            "minimum": 0,
+            "title": "No Reply Followups",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "max_discovered",
+          "max_enriched",
+          "max_conversations",
+          "max_outbound_messages",
+          "max_model_calls",
+          "max_research_calls",
+          "max_runtime_seconds",
+          "max_reply_turns",
+          "no_reply_followups"
+        ],
+        "title": "Limits",
+        "type": "object"
+      },
+      "MessageDirection": {
+        "enum": [
+          "inbound",
+          "outbound"
+        ],
+        "title": "MessageDirection",
+        "type": "string"
+      },
+      "MessageStatus": {
+        "enum": [
+          "planned",
+          "sent",
+          "received",
+          "unknown"
+        ],
+        "title": "MessageStatus",
+        "type": "string"
+      },
+      "MessageView": {
+        "additionalProperties": false,
+        "properties": {
+          "body_text": {
+            "title": "Body Text",
+            "type": "string"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/MessageDirection"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "provider_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Message Id"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MessageStatus"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "direction",
+          "subject",
+          "body_text",
+          "sent_at",
+          "received_at",
+          "provider_message_id",
+          "status"
+        ],
+        "title": "MessageView",
+        "type": "object"
+      },
+      "MissionDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "config_version": {
+            "minimum": 1,
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "conversation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceView"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "handoff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Handoff"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_decision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Decision Id"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "open_exceptions": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionView"
+            },
+            "title": "Open Exceptions",
+            "type": "array"
+          },
+          "profile_version": {
+            "minimum": 1,
+            "title": "Profile Version",
+            "type": "integer"
+          },
+          "prospects": {
+            "items": {
+              "$ref": "#/components/schemas/ProspectCase"
+            },
+            "title": "Prospects",
+            "type": "array"
+          },
+          "request_text": {
+            "title": "Request Text",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CampaignState"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          },
+          "version": {
+            "minimum": 0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "request_text",
+          "mode",
+          "status",
+          "version",
+          "stage",
+          "profile_version",
+          "config_version",
+          "usage",
+          "last_decision_id",
+          "created_at",
+          "updated_at",
+          "prospects",
+          "conversation",
+          "open_exceptions",
+          "evidence",
+          "handoff"
+        ],
+        "title": "MissionDetail",
+        "type": "object"
+      },
+      "OAuthStart": {
+        "additionalProperties": false,
+        "properties": {
+          "connection_id": {
+            "format": "uuid",
+            "title": "Connection Id",
+            "type": "string"
+          },
+          "initiator_user_id": {
+            "format": "uuid",
+            "title": "Initiator User Id",
+            "type": "string"
+          },
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "purpose": {
+            "const": "seller",
+            "title": "Purpose",
+            "type": "string"
+          },
+          "return_path": {
+            "const": "/setup",
+            "title": "Return Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_id",
+          "connection_id",
+          "initiator_user_id",
+          "purpose",
+          "return_path"
+        ],
+        "title": "OAuthStart",
+        "type": "object"
+      },
+      "OAuthStartResult": {
+        "additionalProperties": false,
+        "properties": {
+          "authorization_url": {
+            "title": "Authorization Url",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authorization_url",
+          "expires_at"
+        ],
+        "title": "OAuthStartResult",
+        "type": "object"
+      },
+      "OutboundEmail": {
+        "additionalProperties": false,
+        "description": "Immutable plain-text message built by the server. Exactly one recipient; no Cc/Bcc/Reply-To.",
+        "properties": {
+          "action_id": {
+            "format": "uuid",
+            "title": "Action Id",
+            "type": "string"
+          },
+          "action_key": {
+            "minLength": 1,
+            "title": "Action Key",
+            "type": "string"
+          },
+          "body_text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body Text",
+            "type": "string"
+          },
+          "from_email": {
+            "title": "From Email",
+            "type": "string"
+          },
+          "in_reply_to": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Reply To"
+          },
+          "provider_thread_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Thread Id"
+          },
+          "references": {
+            "items": {
+              "maxLength": 200,
+              "type": "string"
+            },
+            "title": "References",
+            "type": "array"
+          },
+          "request_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Request Hash",
+            "type": "string"
+          },
+          "rfc_message_id": {
+            "maxLength": 200,
+            "title": "Rfc Message Id",
+            "type": "string"
+          },
+          "subject": {
+            "maxLength": 200,
+            "title": "Subject",
+            "type": "string"
+          },
+          "to_email": {
+            "title": "To Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_id",
+          "action_key",
+          "request_hash",
+          "rfc_message_id",
+          "from_email",
+          "to_email",
+          "subject",
+          "body_text",
+          "provider_thread_id",
+          "in_reply_to",
+          "references"
+        ],
+        "title": "OutboundEmail",
+        "type": "object"
+      },
+      "PolicyCheck": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pass": {
+            "title": "Pass",
+            "type": "boolean"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "pass",
+          "reason"
+        ],
+        "title": "PolicyCheck",
+        "type": "object"
+      },
+      "PolicyResult": {
+        "additionalProperties": false,
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "pass": {
+            "title": "Pass",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pass",
+          "checks"
+        ],
+        "title": "PolicyResult",
+        "type": "object"
+      },
+      "PolledMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "body_text": {
+            "title": "Body Text",
+            "type": "string"
+          },
+          "from_email": {
+            "title": "From Email",
+            "type": "string"
+          },
+          "in_reply_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Reply To"
+          },
+          "provider_message_id": {
+            "minLength": 1,
+            "title": "Provider Message Id",
+            "type": "string"
+          },
+          "provider_thread_id": {
+            "minLength": 1,
+            "title": "Provider Thread Id",
+            "type": "string"
+          },
+          "received_at": {
+            "format": "date-time",
+            "title": "Received At",
+            "type": "string"
+          },
+          "rfc_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rfc Message Id"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "to_emails": {
+            "items": {
+              "type": "string"
+            },
+            "title": "To Emails",
+            "type": "array"
+          }
+        },
+        "required": [
+          "provider_message_id",
+          "provider_thread_id",
+          "rfc_message_id",
+          "in_reply_to",
+          "from_email",
+          "to_emails",
+          "subject",
+          "body_text",
+          "received_at"
+        ],
+        "title": "PolledMessage",
+        "type": "object"
+      },
+      "ProspectCase": {
+        "additionalProperties": false,
+        "properties": {
+          "canonical_company_ref": {
+            "minLength": 1,
+            "title": "Canonical Company Ref",
+            "type": "string"
+          },
+          "canonical_person_ref": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Person Ref"
+          },
+          "company": {
+            "$ref": "#/components/schemas/ProspectCompany"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/CriterionResult"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/Delivery"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/ProspectFact"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "fit": {
+            "enum": [
+              "qualified",
+              "rejected",
+              "needs_evidence"
+            ],
+            "title": "Fit",
+            "type": "string"
+          },
+          "hypotheses": {
+            "items": {
+              "$ref": "#/components/schemas/ProspectHypothesis"
+            },
+            "title": "Hypotheses",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "person": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProspectPerson"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/ProspectRelationship"
+          }
+        },
+        "required": [
+          "id",
+          "canonical_company_ref",
+          "canonical_person_ref",
+          "company",
+          "person",
+          "relationship",
+          "criteria",
+          "fit",
+          "facts",
+          "hypotheses",
+          "delivery"
+        ],
+        "title": "ProspectCase",
+        "type": "object"
+      },
+      "ProspectCompany": {
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "domain"
+        ],
+        "title": "ProspectCompany",
+        "type": "object"
+      },
+      "ProspectFact": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence_ids"
+        ],
+        "title": "ProspectFact",
+        "type": "object"
+      },
+      "ProspectHypothesis": {
+        "additionalProperties": false,
+        "properties": {
+          "basis_evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Basis Evidence Ids",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "basis_evidence_ids"
+        ],
+        "title": "ProspectHypothesis",
+        "type": "object"
+      },
+      "ProspectPerson": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "name",
+          "title"
+        ],
+        "title": "ProspectPerson",
+        "type": "object"
+      },
+      "ProspectRelationship": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "supported",
+              "unknown",
+              "conflicted"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "evidence_ids"
+        ],
+        "title": "ProspectRelationship",
+        "type": "object"
+      },
+      "ReconcileResult": {
+        "additionalProperties": false,
+        "description": "`unresolved` is inconclusive (indexing lag), never proof that nothing was sent.",
+        "properties": {
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "execution_label": {
+            "$ref": "#/components/schemas/ExecutionLabel"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GmailSendReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "matched",
+              "unresolved"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "receipt",
+          "checked_at",
+          "execution_label"
+        ],
+        "title": "ReconcileResult",
+        "type": "object"
+      },
+      "ResolutionType": {
+        "enum": [
+          "supply_fact",
+          "clarify_time",
+          "confirm_identity",
+          "reauthorize_complete",
+          "stop"
+        ],
+        "title": "ResolutionType",
+        "type": "string"
+      },
+      "ResolveInput": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "expected_conversation_version": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Conversation Version"
+          },
+          "note": {
+            "maxLength": 4000,
+            "title": "Note",
+            "type": "string"
+          },
+          "resolution_type": {
+            "$ref": "#/components/schemas/ResolutionType"
+          },
+          "value": {
+            "additionalProperties": true,
+            "title": "Value",
+            "type": "object"
+          }
+        },
+        "required": [
+          "expected_conversation_version",
+          "resolution_type",
+          "note",
+          "evidence_ids",
+          "value"
+        ],
+        "title": "ResolveInput",
+        "type": "object"
+      },
+      "Retryability": {
+        "enum": [
+          "safe_retry",
+          "reconcile_first",
+          "reauthorize",
+          "never"
+        ],
+        "title": "Retryability",
+        "type": "string"
+      },
+      "Slot": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "freebusy_checked_at": {
+            "format": "date-time",
+            "title": "Freebusy Checked At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "start",
+          "end",
+          "timezone",
+          "freebusy_checked_at"
+        ],
+        "title": "Slot",
+        "type": "object"
+      },
+      "SuccessEnvelope_HealthLive_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HealthLive"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[HealthLive]",
+        "type": "object"
+      },
+      "ThreadPoll": {
+        "additionalProperties": false,
+        "properties": {
+          "execution_label": {
+            "$ref": "#/components/schemas/ExecutionLabel"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/PolledMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "polled_at": {
+            "format": "date-time",
+            "title": "Polled At",
+            "type": "string"
+          },
+          "provider_thread_id": {
+            "minLength": 1,
+            "title": "Provider Thread Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider_thread_id",
+          "messages",
+          "polled_at",
+          "execution_label"
+        ],
+        "title": "ThreadPoll",
+        "type": "object"
+      },
+      "Usage": {
+        "additionalProperties": false,
+        "properties": {
+          "calendar_attempts": {
+            "minimum": 0,
+            "title": "Calendar Attempts",
+            "type": "integer"
+          },
+          "estimated_cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EstimatedCost"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Unknown cost is null, never zero."
+          },
+          "model_calls": {
+            "minimum": 0,
+            "title": "Model Calls",
+            "type": "integer"
+          },
+          "outbound_attempts": {
+            "minimum": 0,
+            "title": "Outbound Attempts",
+            "type": "integer"
+          },
+          "research_calls": {
+            "minimum": 0,
+            "title": "Research Calls",
+            "type": "integer"
+          },
+          "tokens_in": {
+            "minimum": 0,
+            "title": "Tokens In",
+            "type": "integer"
+          },
+          "tokens_out": {
+            "minimum": 0,
+            "title": "Tokens Out",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_calls",
+          "research_calls",
+          "outbound_attempts",
+          "calendar_attempts",
+          "tokens_in",
+          "tokens_out"
+        ],
+        "title": "Usage",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Outcome AI API",
+    "version": "outcome.v1",
+    "x-contract-version": "outcome.v1",
+    "x-planning-baseline": "1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health/live": {
+      "get": {
+        "operationId": "health_live_api_v1_health_live_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_HealthLive_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Live",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  }
+}

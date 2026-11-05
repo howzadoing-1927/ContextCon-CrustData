@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    },
+    "GmailSendReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "execution_label": {
+          "$ref": "#/$defs/ExecutionLabel"
+        },
+        "provider_message_id": {
+          "minLength": 1,
+          "title": "Provider Message Id",
+          "type": "string"
+        },
+        "provider_thread_id": {
+          "minLength": 1,
+          "title": "Provider Thread Id",
+          "type": "string"
+        },
+        "rfc_message_id": {
+          "maxLength": 200,
+          "title": "Rfc Message Id",
+          "type": "string"
+        },
+        "sent_at": {
+          "format": "date-time",
+          "title": "Sent At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider_message_id",
+        "provider_thread_id",
+        "rfc_message_id",
+        "sent_at",
+        "execution_label"
+      ],
+      "title": "GmailSendReceipt",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ReconcileResult",
+  "additionalProperties": false,
+  "description": "`unresolved` is inconclusive (indexing lag), never proof that nothing was sent.",
+  "properties": {
+    "checked_at": {
+      "format": "date-time",
+      "title": "Checked At",
+      "type": "string"
+    },
+    "execution_label": {
+      "$ref": "#/$defs/ExecutionLabel"
+    },
+    "receipt": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GmailSendReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "matched",
+        "unresolved"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "receipt",
+    "checked_at",
+    "execution_label"
+  ],
+  "title": "ReconcileResult",
+  "type": "object"
+}

@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "EvidenceSourceKind": {
+      "enum": [
+        "crustdata",
+        "seller_website",
+        "operator",
+        "google_message",
+        "google_calendar",
+        "policy"
+      ],
+      "title": "EvidenceSourceKind",
+      "type": "string"
+    },
+    "FactStatus": {
+      "enum": [
+        "observed",
+        "operator_approved",
+        "hypothesis",
+        "conflicted"
+      ],
+      "title": "FactStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:EvidenceView",
+  "additionalProperties": false,
+  "properties": {
+    "content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Content Sha256",
+      "type": "string"
+    },
+    "excerpt": {
+      "title": "Excerpt",
+      "type": "string"
+    },
+    "fact_status": {
+      "$ref": "#/$defs/FactStatus"
+    },
+    "field_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Field Path"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "provider_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Provider Ref"
+    },
+    "retrieved_at": {
+      "format": "date-time",
+      "title": "Retrieved At",
+      "type": "string"
+    },
+    "source_as_of": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Source As Of"
+    },
+    "source_kind": {
+      "$ref": "#/$defs/EvidenceSourceKind"
+    },
+    "source_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Source Url"
+    }
+  },
+  "required": [
+    "id",
+    "source_kind",
+    "source_url",
+    "provider_ref",
+    "field_path",
+    "excerpt",
+    "retrieved_at",
+    "source_as_of",
+    "content_sha256",
+    "fact_status"
+  ],
+  "title": "EvidenceView",
+  "type": "object"
+}

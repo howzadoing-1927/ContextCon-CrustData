@@ -1,0 +1,3 @@
+CONTRACT_VERSION = "outcome.v1"
+API_PREFIX = "/api/v1"
+PLANNING_BASELINE = "1.0"

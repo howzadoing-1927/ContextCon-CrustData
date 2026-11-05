@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "ConnectionStatus": {
+      "enum": [
+        "pending",
+        "connected",
+        "reauth_required",
+        "revoked"
+      ],
+      "title": "ConnectionStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ConnectionSummary",
+  "additionalProperties": false,
+  "properties": {
+    "account_email": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Account Email"
+    },
+    "calendar_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Calendar Id"
+    },
+    "connection_id": {
+      "format": "uuid",
+      "title": "Connection Id",
+      "type": "string"
+    },
+    "granted_scopes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Granted Scopes",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/ConnectionStatus"
+    }
+  },
+  "required": [
+    "connection_id",
+    "status",
+    "account_email",
+    "granted_scopes",
+    "calendar_id"
+  ],
+  "title": "ConnectionSummary",
+  "type": "object"
+}

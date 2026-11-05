@@ -1,0 +1,1302 @@
+{
+  "$defs": {
+    "ActionState": {
+      "enum": [
+        "prepared",
+        "executing",
+        "succeeded",
+        "failed",
+        "unknown",
+        "cancelled"
+      ],
+      "title": "ActionState",
+      "type": "string"
+    },
+    "ActualAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "format": "uuid",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "provider_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider Ref"
+        },
+        "state": {
+          "$ref": "#/$defs/ActionState"
+        }
+      },
+      "required": [
+        "action_id",
+        "state",
+        "provider_ref"
+      ],
+      "title": "ActualAction",
+      "type": "object"
+    },
+    "BookingReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "format": "uuid",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "attendee_acceptance": {
+          "const": "not_verified",
+          "title": "Attendee Acceptance",
+          "type": "string"
+        },
+        "calendar_id": {
+          "minLength": 1,
+          "title": "Calendar Id",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "event_id": {
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "html_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Html Link"
+        },
+        "mode": {
+          "const": "simulation",
+          "title": "Mode",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        },
+        "verified_at": {
+          "format": "date-time",
+          "title": "Verified At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "event_id",
+        "calendar_id",
+        "start",
+        "end",
+        "timezone",
+        "html_link",
+        "verified_at",
+        "attendee_acceptance",
+        "mode"
+      ],
+      "title": "BookingReceipt",
+      "type": "object"
+    },
+    "BuyerStatedNeed": {
+      "additionalProperties": false,
+      "properties": {
+        "message_id": {
+          "format": "uuid",
+          "title": "Message Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "message_id"
+      ],
+      "title": "BuyerStatedNeed",
+      "type": "object"
+    },
+    "CampaignState": {
+      "enum": [
+        "draft",
+        "running",
+        "waiting_reply",
+        "completed",
+        "no_match",
+        "needs_human",
+        "paused",
+        "stopped",
+        "failed"
+      ],
+      "title": "CampaignState",
+      "type": "string"
+    },
+    "ConversationState": {
+      "enum": [
+        "researching",
+        "qualified",
+        "drafting",
+        "waiting_reply",
+        "evaluating_reply",
+        "offering_slots",
+        "waiting_slot_acceptance",
+        "booking",
+        "booked",
+        "completed",
+        "declined",
+        "suppressed",
+        "needs_human",
+        "send_unknown",
+        "stopped"
+      ],
+      "title": "ConversationState",
+      "type": "string"
+    },
+    "ConversationView": {
+      "additionalProperties": false,
+      "properties": {
+        "booking": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BookingReceipt"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "buyer_role_label": {
+          "const": "simulated buyer",
+          "title": "Buyer Role Label",
+          "type": "string"
+        },
+        "buyer_test_email": {
+          "title": "Buyer Test Email",
+          "type": "string"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "messages": {
+          "items": {
+            "$ref": "#/$defs/MessageView"
+          },
+          "title": "Messages",
+          "type": "array"
+        },
+        "offered_slots": {
+          "items": {
+            "$ref": "#/$defs/Slot"
+          },
+          "title": "Offered Slots",
+          "type": "array"
+        },
+        "provider_thread_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider Thread Id"
+        },
+        "state": {
+          "$ref": "#/$defs/ConversationState"
+        },
+        "version": {
+          "minimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "state",
+        "version",
+        "buyer_role_label",
+        "buyer_test_email",
+        "provider_thread_id",
+        "messages",
+        "offered_slots",
+        "booking"
+      ],
+      "title": "ConversationView",
+      "type": "object"
+    },
+    "CriterionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "fail",
+            "unknown"
+          ],
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "result",
+        "evidence_ids",
+        "reason"
+      ],
+      "title": "CriterionResult",
+      "type": "object"
+    },
+    "DecisionModelMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "deployment": {
+          "title": "Deployment",
+          "type": "string"
+        },
+        "model_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model Version"
+        },
+        "prompt_version": {
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "usage": {
+          "additionalProperties": true,
+          "title": "Usage",
+          "type": "object"
+        }
+      },
+      "required": [
+        "deployment",
+        "model_version",
+        "prompt_version",
+        "usage"
+      ],
+      "title": "DecisionModelMeta",
+      "type": "object"
+    },
+    "DecisionStatus": {
+      "enum": [
+        "accepted",
+        "rejected",
+        "blocked",
+        "resolved"
+      ],
+      "title": "DecisionStatus",
+      "type": "string"
+    },
+    "DecisionView": {
+      "additionalProperties": false,
+      "properties": {
+        "actual_action": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ActualAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "input_refs": {
+          "additionalProperties": true,
+          "title": "Input Refs",
+          "type": "object"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DecisionModelMeta"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "policy": {
+          "$ref": "#/$defs/PolicyResult"
+        },
+        "proposed_action": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Proposed Action"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Resolution"
+        },
+        "status": {
+          "$ref": "#/$defs/DecisionStatus"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "status",
+        "reason",
+        "evidence_ids",
+        "input_refs",
+        "model",
+        "policy",
+        "proposed_action",
+        "actual_action",
+        "resolution",
+        "created_at"
+      ],
+      "title": "DecisionView",
+      "type": "object"
+    },
+    "Delivery": {
+      "additionalProperties": false,
+      "properties": {
+        "buyer_test_email": {
+          "title": "Buyer Test Email",
+          "type": "string"
+        },
+        "identity_is_simulated": {
+          "const": true,
+          "title": "Identity Is Simulated",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "simulation",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "buyer_test_email",
+        "identity_is_simulated"
+      ],
+      "title": "Delivery",
+      "type": "object"
+    },
+    "EstimatedCost": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "currency": {
+          "maxLength": 3,
+          "minLength": 3,
+          "title": "Currency",
+          "type": "string"
+        },
+        "pricing_source": {
+          "minLength": 1,
+          "title": "Pricing Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "currency",
+        "pricing_source"
+      ],
+      "title": "EstimatedCost",
+      "type": "object"
+    },
+    "EvidenceSourceKind": {
+      "enum": [
+        "crustdata",
+        "seller_website",
+        "operator",
+        "google_message",
+        "google_calendar",
+        "policy"
+      ],
+      "title": "EvidenceSourceKind",
+      "type": "string"
+    },
+    "EvidenceView": {
+      "additionalProperties": false,
+      "properties": {
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "excerpt": {
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "fact_status": {
+          "$ref": "#/$defs/FactStatus"
+        },
+        "field_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Field Path"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "provider_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider Ref"
+        },
+        "retrieved_at": {
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "source_as_of": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source As Of"
+        },
+        "source_kind": {
+          "$ref": "#/$defs/EvidenceSourceKind"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Url"
+        }
+      },
+      "required": [
+        "id",
+        "source_kind",
+        "source_url",
+        "provider_ref",
+        "field_path",
+        "excerpt",
+        "retrieved_at",
+        "source_as_of",
+        "content_sha256",
+        "fact_status"
+      ],
+      "title": "EvidenceView",
+      "type": "object"
+    },
+    "FactStatus": {
+      "enum": [
+        "observed",
+        "operator_approved",
+        "hypothesis",
+        "conflicted"
+      ],
+      "title": "FactStatus",
+      "type": "string"
+    },
+    "Handoff": {
+      "additionalProperties": false,
+      "properties": {
+        "booking": {
+          "$ref": "#/$defs/BookingReceipt"
+        },
+        "buyer_stated_needs": {
+          "items": {
+            "$ref": "#/$defs/BuyerStatedNeed"
+          },
+          "title": "Buyer Stated Needs",
+          "type": "array"
+        },
+        "campaign_id": {
+          "format": "uuid",
+          "title": "Campaign Id",
+          "type": "string"
+        },
+        "conversation_id": {
+          "format": "uuid",
+          "title": "Conversation Id",
+          "type": "string"
+        },
+        "fit_evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Fit Evidence Ids",
+          "type": "array"
+        },
+        "fit_summary": {
+          "title": "Fit Summary",
+          "type": "string"
+        },
+        "hypotheses": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hypotheses",
+          "type": "array"
+        },
+        "mode": {
+          "const": "simulation",
+          "title": "Mode",
+          "type": "string"
+        },
+        "next_steps": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Next Steps",
+          "type": "array"
+        },
+        "notification_status": {
+          "enum": [
+            "not_requested",
+            "pending",
+            "sent",
+            "failed"
+          ],
+          "title": "Notification Status",
+          "type": "string"
+        },
+        "open_questions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Open Questions",
+          "type": "array"
+        },
+        "owner_email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Owner Email"
+        },
+        "prospect_id": {
+          "format": "uuid",
+          "title": "Prospect Id",
+          "type": "string"
+        },
+        "status": {
+          "const": "complete",
+          "title": "Status",
+          "type": "string"
+        },
+        "version": {
+          "const": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "version",
+        "status",
+        "mode",
+        "campaign_id",
+        "prospect_id",
+        "conversation_id",
+        "booking",
+        "fit_summary",
+        "fit_evidence_ids",
+        "buyer_stated_needs",
+        "hypotheses",
+        "open_questions",
+        "next_steps",
+        "owner_email",
+        "notification_status"
+      ],
+      "title": "Handoff",
+      "type": "object"
+    },
+    "MessageDirection": {
+      "enum": [
+        "inbound",
+        "outbound"
+      ],
+      "title": "MessageDirection",
+      "type": "string"
+    },
+    "MessageStatus": {
+      "enum": [
+        "planned",
+        "sent",
+        "received",
+        "unknown"
+      ],
+      "title": "MessageStatus",
+      "type": "string"
+    },
+    "MessageView": {
+      "additionalProperties": false,
+      "properties": {
+        "body_text": {
+          "title": "Body Text",
+          "type": "string"
+        },
+        "direction": {
+          "$ref": "#/$defs/MessageDirection"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "provider_message_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Provider Message Id"
+        },
+        "received_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Received At"
+        },
+        "sent_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sent At"
+        },
+        "status": {
+          "$ref": "#/$defs/MessageStatus"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "direction",
+        "subject",
+        "body_text",
+        "sent_at",
+        "received_at",
+        "provider_message_id",
+        "status"
+      ],
+      "title": "MessageView",
+      "type": "object"
+    },
+    "PolicyCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "pass": {
+          "title": "Pass",
+          "type": "boolean"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "pass",
+        "reason"
+      ],
+      "title": "PolicyCheck",
+      "type": "object"
+    },
+    "PolicyResult": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/PolicyCheck"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "pass": {
+          "title": "Pass",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pass",
+        "checks"
+      ],
+      "title": "PolicyResult",
+      "type": "object"
+    },
+    "ProspectCase": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_company_ref": {
+          "minLength": 1,
+          "title": "Canonical Company Ref",
+          "type": "string"
+        },
+        "canonical_person_ref": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Canonical Person Ref"
+        },
+        "company": {
+          "$ref": "#/$defs/ProspectCompany"
+        },
+        "criteria": {
+          "items": {
+            "$ref": "#/$defs/CriterionResult"
+          },
+          "title": "Criteria",
+          "type": "array"
+        },
+        "delivery": {
+          "$ref": "#/$defs/Delivery"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/ProspectFact"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "fit": {
+          "enum": [
+            "qualified",
+            "rejected",
+            "needs_evidence"
+          ],
+          "title": "Fit",
+          "type": "string"
+        },
+        "hypotheses": {
+          "items": {
+            "$ref": "#/$defs/ProspectHypothesis"
+          },
+          "title": "Hypotheses",
+          "type": "array"
+        },
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "person": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProspectPerson"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "relationship": {
+          "$ref": "#/$defs/ProspectRelationship"
+        }
+      },
+      "required": [
+        "id",
+        "canonical_company_ref",
+        "canonical_person_ref",
+        "company",
+        "person",
+        "relationship",
+        "criteria",
+        "fit",
+        "facts",
+        "hypotheses",
+        "delivery"
+      ],
+      "title": "ProspectCase",
+      "type": "object"
+    },
+    "ProspectCompany": {
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Domain"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "domain"
+      ],
+      "title": "ProspectCompany",
+      "type": "object"
+    },
+    "ProspectFact": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "evidence_ids"
+      ],
+      "title": "ProspectFact",
+      "type": "object"
+    },
+    "ProspectHypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "basis_evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Basis Evidence Ids",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "basis_evidence_ids"
+      ],
+      "title": "ProspectHypothesis",
+      "type": "object"
+    },
+    "ProspectPerson": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title"
+        }
+      },
+      "required": [
+        "name",
+        "title"
+      ],
+      "title": "ProspectPerson",
+      "type": "object"
+    },
+    "ProspectRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "supported",
+            "unknown",
+            "conflicted"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "evidence_ids"
+      ],
+      "title": "ProspectRelationship",
+      "type": "object"
+    },
+    "Slot": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "freebusy_checked_at": {
+          "format": "date-time",
+          "title": "Freebusy Checked At",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "start",
+        "end",
+        "timezone",
+        "freebusy_checked_at"
+      ],
+      "title": "Slot",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "properties": {
+        "calendar_attempts": {
+          "minimum": 0,
+          "title": "Calendar Attempts",
+          "type": "integer"
+        },
+        "estimated_cost": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EstimatedCost"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Unknown cost is null, never zero."
+        },
+        "model_calls": {
+          "minimum": 0,
+          "title": "Model Calls",
+          "type": "integer"
+        },
+        "outbound_attempts": {
+          "minimum": 0,
+          "title": "Outbound Attempts",
+          "type": "integer"
+        },
+        "research_calls": {
+          "minimum": 0,
+          "title": "Research Calls",
+          "type": "integer"
+        },
+        "tokens_in": {
+          "minimum": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "minimum": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "model_calls",
+        "research_calls",
+        "outbound_attempts",
+        "calendar_attempts",
+        "tokens_in",
+        "tokens_out"
+      ],
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:MissionDetail",
+  "additionalProperties": false,
+  "properties": {
+    "config_version": {
+      "minimum": 1,
+      "title": "Config Version",
+      "type": "integer"
+    },
+    "conversation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ConversationView"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceView"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "handoff": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Handoff"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "last_decision_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Last Decision Id"
+    },
+    "mode": {
+      "const": "simulation",
+      "title": "Mode",
+      "type": "string"
+    },
+    "open_exceptions": {
+      "items": {
+        "$ref": "#/$defs/DecisionView"
+      },
+      "title": "Open Exceptions",
+      "type": "array"
+    },
+    "profile_version": {
+      "minimum": 1,
+      "title": "Profile Version",
+      "type": "integer"
+    },
+    "prospects": {
+      "items": {
+        "$ref": "#/$defs/ProspectCase"
+      },
+      "title": "Prospects",
+      "type": "array"
+    },
+    "request_text": {
+      "title": "Request Text",
+      "type": "string"
+    },
+    "stage": {
+      "title": "Stage",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/CampaignState"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    },
+    "version": {
+      "minimum": 0,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "request_text",
+    "mode",
+    "status",
+    "version",
+    "stage",
+    "profile_version",
+    "config_version",
+    "usage",
+    "last_decision_id",
+    "created_at",
+    "updated_at",
+    "prospects",
+    "conversation",
+    "open_exceptions",
+    "evidence",
+    "handoff"
+  ],
+  "title": "MissionDetail",
+  "type": "object"
+}

@@ -1,0 +1,215 @@
+{
+  "$defs": {
+    "BookingReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "format": "uuid",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "attendee_acceptance": {
+          "const": "not_verified",
+          "title": "Attendee Acceptance",
+          "type": "string"
+        },
+        "calendar_id": {
+          "minLength": 1,
+          "title": "Calendar Id",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "event_id": {
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "html_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Html Link"
+        },
+        "mode": {
+          "const": "simulation",
+          "title": "Mode",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        },
+        "verified_at": {
+          "format": "date-time",
+          "title": "Verified At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id",
+        "event_id",
+        "calendar_id",
+        "start",
+        "end",
+        "timezone",
+        "html_link",
+        "verified_at",
+        "attendee_acceptance",
+        "mode"
+      ],
+      "title": "BookingReceipt",
+      "type": "object"
+    },
+    "BuyerStatedNeed": {
+      "additionalProperties": false,
+      "properties": {
+        "message_id": {
+          "format": "uuid",
+          "title": "Message Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "message_id"
+      ],
+      "title": "BuyerStatedNeed",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:Handoff",
+  "additionalProperties": false,
+  "properties": {
+    "booking": {
+      "$ref": "#/$defs/BookingReceipt"
+    },
+    "buyer_stated_needs": {
+      "items": {
+        "$ref": "#/$defs/BuyerStatedNeed"
+      },
+      "title": "Buyer Stated Needs",
+      "type": "array"
+    },
+    "campaign_id": {
+      "format": "uuid",
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "conversation_id": {
+      "format": "uuid",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "fit_evidence_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Fit Evidence Ids",
+      "type": "array"
+    },
+    "fit_summary": {
+      "title": "Fit Summary",
+      "type": "string"
+    },
+    "hypotheses": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Hypotheses",
+      "type": "array"
+    },
+    "mode": {
+      "const": "simulation",
+      "title": "Mode",
+      "type": "string"
+    },
+    "next_steps": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Next Steps",
+      "type": "array"
+    },
+    "notification_status": {
+      "enum": [
+        "not_requested",
+        "pending",
+        "sent",
+        "failed"
+      ],
+      "title": "Notification Status",
+      "type": "string"
+    },
+    "open_questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Open Questions",
+      "type": "array"
+    },
+    "owner_email": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Owner Email"
+    },
+    "prospect_id": {
+      "format": "uuid",
+      "title": "Prospect Id",
+      "type": "string"
+    },
+    "status": {
+      "const": "complete",
+      "title": "Status",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "status",
+    "mode",
+    "campaign_id",
+    "prospect_id",
+    "conversation_id",
+    "booking",
+    "fit_summary",
+    "fit_evidence_ids",
+    "buyer_stated_needs",
+    "hypotheses",
+    "open_questions",
+    "next_steps",
+    "owner_email",
+    "notification_status"
+  ],
+  "title": "Handoff",
+  "type": "object"
+}

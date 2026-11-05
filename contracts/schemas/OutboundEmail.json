@@ -1,0 +1,92 @@
+{
+  "$id": "urn:outcome:outcome.v1:OutboundEmail",
+  "additionalProperties": false,
+  "description": "Immutable plain-text message built by the server. Exactly one recipient; no Cc/Bcc/Reply-To.",
+  "properties": {
+    "action_id": {
+      "format": "uuid",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "action_key": {
+      "minLength": 1,
+      "title": "Action Key",
+      "type": "string"
+    },
+    "body_text": {
+      "maxLength": 4000,
+      "minLength": 1,
+      "title": "Body Text",
+      "type": "string"
+    },
+    "from_email": {
+      "title": "From Email",
+      "type": "string"
+    },
+    "in_reply_to": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "In Reply To"
+    },
+    "provider_thread_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Provider Thread Id"
+    },
+    "references": {
+      "items": {
+        "maxLength": 200,
+        "type": "string"
+      },
+      "title": "References",
+      "type": "array"
+    },
+    "request_hash": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Request Hash",
+      "type": "string"
+    },
+    "rfc_message_id": {
+      "maxLength": 200,
+      "title": "Rfc Message Id",
+      "type": "string"
+    },
+    "subject": {
+      "maxLength": 200,
+      "title": "Subject",
+      "type": "string"
+    },
+    "to_email": {
+      "title": "To Email",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_id",
+    "action_key",
+    "request_hash",
+    "rfc_message_id",
+    "from_email",
+    "to_email",
+    "subject",
+    "body_text",
+    "provider_thread_id",
+    "in_reply_to",
+    "references"
+  ],
+  "title": "OutboundEmail",
+  "type": "object"
+}

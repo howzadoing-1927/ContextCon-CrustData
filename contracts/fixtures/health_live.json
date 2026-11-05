@@ -1,0 +1,10 @@
+{
+  "_fixture": "FIXTURE",
+  "schema_version": "outcome.v1",
+  "data": {
+    "status": "alive",
+    "service": "api",
+    "contract_version": "outcome.v1"
+  },
+  "correlation_id": "0b6f2c1e-5d7a-4c11-9f0e-3a2b1c4d5e60"
+}

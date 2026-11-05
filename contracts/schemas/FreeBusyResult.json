@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "BusyRange": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "BusyRange",
+      "type": "object"
+    },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:FreeBusyResult",
+  "additionalProperties": false,
+  "description": "An `error` result means unavailable. An `ok` result with no busy ranges is the only free signal.",
+  "properties": {
+    "busy": {
+      "items": {
+        "$ref": "#/$defs/BusyRange"
+      },
+      "title": "Busy",
+      "type": "array"
+    },
+    "calendar_id": {
+      "minLength": 1,
+      "title": "Calendar Id",
+      "type": "string"
+    },
+    "checked_at": {
+      "format": "date-time",
+      "title": "Checked At",
+      "type": "string"
+    },
+    "error_reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Error Reasons",
+      "type": "array"
+    },
+    "execution_label": {
+      "$ref": "#/$defs/ExecutionLabel"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "error"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "time_max": {
+      "format": "date-time",
+      "title": "Time Max",
+      "type": "string"
+    },
+    "time_min": {
+      "format": "date-time",
+      "title": "Time Min",
+      "type": "string"
+    }
+  },
+  "required": [
+    "calendar_id",
+    "time_min",
+    "time_max",
+    "status",
+    "busy",
+    "error_reasons",
+    "checked_at",
+    "execution_label"
+  ],
+  "title": "FreeBusyResult",
+  "type": "object"
+}

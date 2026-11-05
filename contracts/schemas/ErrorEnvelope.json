@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "ErrorBody": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "details": {
+          "additionalProperties": true,
+          "title": "Details",
+          "type": "object"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "retryable": {
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "title": "ErrorBody",
+      "type": "object"
+    },
+    "ErrorCode": {
+      "enum": [
+        "VALIDATION_FAILED",
+        "UNAUTHENTICATED",
+        "FORBIDDEN",
+        "NOT_FOUND",
+        "CONFLICT",
+        "DOMAIN_INVALID",
+        "RECIPIENT_NOT_ALLOWED",
+        "RATE_LIMITED",
+        "DEPENDENCY_UNAVAILABLE",
+        "INTERNAL"
+      ],
+      "title": "ErrorCode",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ErrorEnvelope",
+  "additionalProperties": false,
+  "properties": {
+    "correlation_id": {
+      "format": "uuid",
+      "title": "Correlation Id",
+      "type": "string"
+    },
+    "error": {
+      "$ref": "#/$defs/ErrorBody"
+    },
+    "schema_version": {
+      "const": "outcome.v1",
+      "default": "outcome.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "error",
+    "correlation_id"
+  ],
+  "title": "ErrorEnvelope",
+  "type": "object"
+}

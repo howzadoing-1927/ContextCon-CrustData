@@ -1,0 +1,31 @@
+{
+  "$defs": {
+    "CampaignControl": {
+      "enum": [
+        "pause",
+        "resume",
+        "stop"
+      ],
+      "title": "CampaignControl",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ControlInput",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/CampaignControl"
+    },
+    "expected_version": {
+      "minimum": 0,
+      "title": "Expected Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "action",
+    "expected_version"
+  ],
+  "title": "ControlInput",
+  "type": "object"
+}

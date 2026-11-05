@@ -1,0 +1,74 @@
+{
+  "$id": "urn:outcome:outcome.v1:Limits",
+  "additionalProperties": false,
+  "description": "P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.",
+  "properties": {
+    "max_conversations": {
+      "maximum": 1,
+      "minimum": 1,
+      "title": "Max Conversations",
+      "type": "integer"
+    },
+    "max_discovered": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Max Discovered",
+      "type": "integer"
+    },
+    "max_enriched": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Max Enriched",
+      "type": "integer"
+    },
+    "max_model_calls": {
+      "maximum": 20,
+      "minimum": 1,
+      "title": "Max Model Calls",
+      "type": "integer"
+    },
+    "max_outbound_messages": {
+      "maximum": 6,
+      "minimum": 1,
+      "title": "Max Outbound Messages",
+      "type": "integer"
+    },
+    "max_reply_turns": {
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Max Reply Turns",
+      "type": "integer"
+    },
+    "max_research_calls": {
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Max Research Calls",
+      "type": "integer"
+    },
+    "max_runtime_seconds": {
+      "maximum": 600,
+      "minimum": 1,
+      "title": "Max Runtime Seconds",
+      "type": "integer"
+    },
+    "no_reply_followups": {
+      "maximum": 0,
+      "minimum": 0,
+      "title": "No Reply Followups",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "max_discovered",
+    "max_enriched",
+    "max_conversations",
+    "max_outbound_messages",
+    "max_model_calls",
+    "max_research_calls",
+    "max_runtime_seconds",
+    "max_reply_turns",
+    "no_reply_followups"
+  ],
+  "title": "Limits",
+  "type": "object"
+}

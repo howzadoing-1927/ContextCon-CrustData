@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "EstimatedCost": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "currency": {
+          "maxLength": 3,
+          "minLength": 3,
+          "title": "Currency",
+          "type": "string"
+        },
+        "pricing_source": {
+          "minLength": 1,
+          "title": "Pricing Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "currency",
+        "pricing_source"
+      ],
+      "title": "EstimatedCost",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:Usage",
+  "additionalProperties": false,
+  "properties": {
+    "calendar_attempts": {
+      "minimum": 0,
+      "title": "Calendar Attempts",
+      "type": "integer"
+    },
+    "estimated_cost": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EstimatedCost"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Unknown cost is null, never zero."
+    },
+    "model_calls": {
+      "minimum": 0,
+      "title": "Model Calls",
+      "type": "integer"
+    },
+    "outbound_attempts": {
+      "minimum": 0,
+      "title": "Outbound Attempts",
+      "type": "integer"
+    },
+    "research_calls": {
+      "minimum": 0,
+      "title": "Research Calls",
+      "type": "integer"
+    },
+    "tokens_in": {
+      "minimum": 0,
+      "title": "Tokens In",
+      "type": "integer"
+    },
+    "tokens_out": {
+      "minimum": 0,
+      "title": "Tokens Out",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "model_calls",
+    "research_calls",
+    "outbound_attempts",
+    "calendar_attempts",
+    "tokens_in",
+    "tokens_out"
+  ],
+  "title": "Usage",
+  "type": "object"
+}

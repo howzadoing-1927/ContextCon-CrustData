@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "CalendarEventReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "attendees": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Attendees",
+          "type": "array"
+        },
+        "booking_fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Booking Fingerprint"
+        },
+        "calendar_id": {
+          "minLength": 1,
+          "title": "Calendar Id",
+          "type": "string"
+        },
+        "end": {
+          "format": "date-time",
+          "title": "End",
+          "type": "string"
+        },
+        "event_id": {
+          "pattern": "^[a-v0-9]{5,1024}$",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "execution_label": {
+          "$ref": "#/$defs/ExecutionLabel"
+        },
+        "html_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Html Link"
+        },
+        "read_at": {
+          "format": "date-time",
+          "title": "Read At",
+          "type": "string"
+        },
+        "start": {
+          "format": "date-time",
+          "title": "Start",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "calendar_id",
+        "start",
+        "end",
+        "timezone",
+        "attendees",
+        "booking_fingerprint",
+        "html_link",
+        "status",
+        "read_at",
+        "execution_label"
+      ],
+      "title": "CalendarEventReceipt",
+      "type": "object"
+    },
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:CalendarEventLookup",
+  "additionalProperties": false,
+  "properties": {
+    "event": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CalendarEventReceipt"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "execution_label": {
+      "$ref": "#/$defs/ExecutionLabel"
+    },
+    "found": {
+      "title": "Found",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "found",
+    "event",
+    "execution_label"
+  ],
+  "title": "CalendarEventLookup",
+  "type": "object"
+}

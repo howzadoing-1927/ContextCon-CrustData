@@ -1,0 +1,121 @@
+{
+  "$defs": {
+    "ExecutionLabel": {
+      "description": "Provenance shown in UI, logs and video. Only LIVE counts toward P0 acceptance.",
+      "enum": [
+        "LIVE",
+        "CACHED",
+        "FIXTURE",
+        "SIMULATED_BUYER"
+      ],
+      "title": "ExecutionLabel",
+      "type": "string"
+    },
+    "PolledMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "body_text": {
+          "title": "Body Text",
+          "type": "string"
+        },
+        "from_email": {
+          "title": "From Email",
+          "type": "string"
+        },
+        "in_reply_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "In Reply To"
+        },
+        "provider_message_id": {
+          "minLength": 1,
+          "title": "Provider Message Id",
+          "type": "string"
+        },
+        "provider_thread_id": {
+          "minLength": 1,
+          "title": "Provider Thread Id",
+          "type": "string"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "rfc_message_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rfc Message Id"
+        },
+        "subject": {
+          "title": "Subject",
+          "type": "string"
+        },
+        "to_emails": {
+          "items": {
+            "type": "string"
+          },
+          "title": "To Emails",
+          "type": "array"
+        }
+      },
+      "required": [
+        "provider_message_id",
+        "provider_thread_id",
+        "rfc_message_id",
+        "in_reply_to",
+        "from_email",
+        "to_emails",
+        "subject",
+        "body_text",
+        "received_at"
+      ],
+      "title": "PolledMessage",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ThreadPoll",
+  "additionalProperties": false,
+  "properties": {
+    "execution_label": {
+      "$ref": "#/$defs/ExecutionLabel"
+    },
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/PolledMessage"
+      },
+      "title": "Messages",
+      "type": "array"
+    },
+    "polled_at": {
+      "format": "date-time",
+      "title": "Polled At",
+      "type": "string"
+    },
+    "provider_thread_id": {
+      "minLength": 1,
+      "title": "Provider Thread Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "provider_thread_id",
+    "messages",
+    "polled_at",
+    "execution_label"
+  ],
+  "title": "ThreadPoll",
+  "type": "object"
+}

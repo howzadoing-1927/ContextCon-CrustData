@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "MessageDirection": {
+      "enum": [
+        "inbound",
+        "outbound"
+      ],
+      "title": "MessageDirection",
+      "type": "string"
+    },
+    "MessageStatus": {
+      "enum": [
+        "planned",
+        "sent",
+        "received",
+        "unknown"
+      ],
+      "title": "MessageStatus",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:MessageView",
+  "additionalProperties": false,
+  "properties": {
+    "body_text": {
+      "title": "Body Text",
+      "type": "string"
+    },
+    "direction": {
+      "$ref": "#/$defs/MessageDirection"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "provider_message_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Provider Message Id"
+    },
+    "received_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Received At"
+    },
+    "sent_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Sent At"
+    },
+    "status": {
+      "$ref": "#/$defs/MessageStatus"
+    },
+    "subject": {
+      "title": "Subject",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "direction",
+    "subject",
+    "body_text",
+    "sent_at",
+    "received_at",
+    "provider_message_id",
+    "status"
+  ],
+  "title": "MessageView",
+  "type": "object"
+}

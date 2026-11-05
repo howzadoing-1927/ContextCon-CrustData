@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "FailurePhase": {
+      "enum": [
+        "preflight",
+        "auth",
+        "request_build",
+        "dispatch",
+        "response",
+        "read_back"
+      ],
+      "title": "FailurePhase",
+      "type": "string"
+    },
+    "GoogleOperation": {
+      "enum": [
+        "google.start_oauth",
+        "google.complete_oauth",
+        "gmail.send",
+        "gmail.poll_thread",
+        "gmail.reconcile_send",
+        "calendar.freebusy",
+        "calendar.insert",
+        "calendar.get"
+      ],
+      "title": "GoogleOperation",
+      "type": "string"
+    },
+    "Retryability": {
+      "enum": [
+        "safe_retry",
+        "reconcile_first",
+        "reauthorize",
+        "never"
+      ],
+      "title": "Retryability",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:GoogleFailure",
+  "additionalProperties": false,
+  "properties": {
+    "explicit_rejection": {
+      "default": false,
+      "description": "True only when a documented adapter classifier proves the provider rejected the request before accepting it.",
+      "title": "Explicit Rejection",
+      "type": "boolean"
+    },
+    "may_have_applied": {
+      "title": "May Have Applied",
+      "type": "boolean"
+    },
+    "operation": {
+      "$ref": "#/$defs/GoogleOperation"
+    },
+    "phase": {
+      "$ref": "#/$defs/FailurePhase"
+    },
+    "provider_status": {
+      "anyOf": [
+        {
+          "maximum": 599,
+          "minimum": 100,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Provider Status"
+    },
+    "redacted_detail": {
+      "maxLength": 500,
+      "title": "Redacted Detail",
+      "type": "string"
+    },
+    "retryability": {
+      "$ref": "#/$defs/Retryability"
+    }
+  },
+  "required": [
+    "operation",
+    "phase",
+    "retryability",
+    "may_have_applied",
+    "provider_status",
+    "redacted_detail"
+  ],
+  "title": "GoogleFailure",
+  "type": "object"
+}

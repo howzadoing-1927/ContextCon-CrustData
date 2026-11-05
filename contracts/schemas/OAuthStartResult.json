@@ -1,0 +1,21 @@
+{
+  "$id": "urn:outcome:outcome.v1:OAuthStartResult",
+  "additionalProperties": false,
+  "properties": {
+    "authorization_url": {
+      "title": "Authorization Url",
+      "type": "string"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "authorization_url",
+    "expires_at"
+  ],
+  "title": "OAuthStartResult",
+  "type": "object"
+}

@@ -1,0 +1,61 @@
+{
+  "$defs": {
+    "ResolutionType": {
+      "enum": [
+        "supply_fact",
+        "clarify_time",
+        "confirm_identity",
+        "reauthorize_complete",
+        "stop"
+      ],
+      "title": "ResolutionType",
+      "type": "string"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ResolveInput",
+  "additionalProperties": false,
+  "properties": {
+    "evidence_ids": {
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "expected_conversation_version": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Expected Conversation Version"
+    },
+    "note": {
+      "maxLength": 4000,
+      "title": "Note",
+      "type": "string"
+    },
+    "resolution_type": {
+      "$ref": "#/$defs/ResolutionType"
+    },
+    "value": {
+      "additionalProperties": true,
+      "title": "Value",
+      "type": "object"
+    }
+  },
+  "required": [
+    "expected_conversation_version",
+    "resolution_type",
+    "note",
+    "evidence_ids",
+    "value"
+  ],
+  "title": "ResolveInput",
+  "type": "object"
+}

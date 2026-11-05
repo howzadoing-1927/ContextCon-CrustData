@@ -1,0 +1,75 @@
+{
+  "$id": "urn:outcome:outcome.v1:BookingReceipt",
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "format": "uuid",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "attendee_acceptance": {
+      "const": "not_verified",
+      "title": "Attendee Acceptance",
+      "type": "string"
+    },
+    "calendar_id": {
+      "minLength": 1,
+      "title": "Calendar Id",
+      "type": "string"
+    },
+    "end": {
+      "format": "date-time",
+      "title": "End",
+      "type": "string"
+    },
+    "event_id": {
+      "minLength": 1,
+      "title": "Event Id",
+      "type": "string"
+    },
+    "html_link": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Html Link"
+    },
+    "mode": {
+      "const": "simulation",
+      "title": "Mode",
+      "type": "string"
+    },
+    "start": {
+      "format": "date-time",
+      "title": "Start",
+      "type": "string"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    },
+    "verified_at": {
+      "format": "date-time",
+      "title": "Verified At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "action_id",
+    "event_id",
+    "calendar_id",
+    "start",
+    "end",
+    "timezone",
+    "html_link",
+    "verified_at",
+    "attendee_acceptance",
+    "mode"
+  ],
+  "title": "BookingReceipt",
+  "type": "object"
+}

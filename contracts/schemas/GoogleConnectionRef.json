@@ -1,0 +1,28 @@
+{
+  "$id": "urn:outcome:outcome.v1:GoogleConnectionRef",
+  "additionalProperties": false,
+  "description": "Server-selected connection. Adapters load and refresh tokens themselves; tokens never cross this boundary.",
+  "properties": {
+    "account_email": {
+      "title": "Account Email",
+      "type": "string"
+    },
+    "connection_id": {
+      "format": "uuid",
+      "title": "Connection Id",
+      "type": "string"
+    },
+    "organization_id": {
+      "format": "uuid",
+      "title": "Organization Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "connection_id",
+    "account_email"
+  ],
+  "title": "GoogleConnectionRef",
+  "type": "object"
+}

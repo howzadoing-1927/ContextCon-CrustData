@@ -1,0 +1,28 @@
+{
+  "$id": "urn:outcome:outcome.v1:HealthLive",
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {
+      "const": "outcome.v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "service": {
+      "const": "api",
+      "title": "Service",
+      "type": "string"
+    },
+    "status": {
+      "const": "alive",
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "service",
+    "contract_version"
+  ],
+  "title": "HealthLive",
+  "type": "object"
+}

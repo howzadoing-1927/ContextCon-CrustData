@@ -1,0 +1,284 @@
+{
+  "$defs": {
+    "CriterionResult": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "fail",
+            "unknown"
+          ],
+          "title": "Result",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "result",
+        "evidence_ids",
+        "reason"
+      ],
+      "title": "CriterionResult",
+      "type": "object"
+    },
+    "Delivery": {
+      "additionalProperties": false,
+      "properties": {
+        "buyer_test_email": {
+          "title": "Buyer Test Email",
+          "type": "string"
+        },
+        "identity_is_simulated": {
+          "const": true,
+          "title": "Identity Is Simulated",
+          "type": "boolean"
+        },
+        "mode": {
+          "const": "simulation",
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "buyer_test_email",
+        "identity_is_simulated"
+      ],
+      "title": "Delivery",
+      "type": "object"
+    },
+    "ProspectCompany": {
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Domain"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "domain"
+      ],
+      "title": "ProspectCompany",
+      "type": "object"
+    },
+    "ProspectFact": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "evidence_ids"
+      ],
+      "title": "ProspectFact",
+      "type": "object"
+    },
+    "ProspectHypothesis": {
+      "additionalProperties": false,
+      "properties": {
+        "basis_evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Basis Evidence Ids",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "basis_evidence_ids"
+      ],
+      "title": "ProspectHypothesis",
+      "type": "object"
+    },
+    "ProspectPerson": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title"
+        }
+      },
+      "required": [
+        "name",
+        "title"
+      ],
+      "title": "ProspectPerson",
+      "type": "object"
+    },
+    "ProspectRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "supported",
+            "unknown",
+            "conflicted"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "evidence_ids"
+      ],
+      "title": "ProspectRelationship",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:ProspectCase",
+  "additionalProperties": false,
+  "properties": {
+    "canonical_company_ref": {
+      "minLength": 1,
+      "title": "Canonical Company Ref",
+      "type": "string"
+    },
+    "canonical_person_ref": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Canonical Person Ref"
+    },
+    "company": {
+      "$ref": "#/$defs/ProspectCompany"
+    },
+    "criteria": {
+      "items": {
+        "$ref": "#/$defs/CriterionResult"
+      },
+      "title": "Criteria",
+      "type": "array"
+    },
+    "delivery": {
+      "$ref": "#/$defs/Delivery"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/ProspectFact"
+      },
+      "title": "Facts",
+      "type": "array"
+    },
+    "fit": {
+      "enum": [
+        "qualified",
+        "rejected",
+        "needs_evidence"
+      ],
+      "title": "Fit",
+      "type": "string"
+    },
+    "hypotheses": {
+      "items": {
+        "$ref": "#/$defs/ProspectHypothesis"
+      },
+      "title": "Hypotheses",
+      "type": "array"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "person": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProspectPerson"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "relationship": {
+      "$ref": "#/$defs/ProspectRelationship"
+    }
+  },
+  "required": [
+    "id",
+    "canonical_company_ref",
+    "canonical_person_ref",
+    "company",
+    "person",
+    "relationship",
+    "criteria",
+    "fit",
+    "facts",
+    "hypotheses",
+    "delivery"
+  ],
+  "title": "ProspectCase",
+  "type": "object"
+}
