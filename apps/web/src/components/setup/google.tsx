@@ -120,7 +120,7 @@ export function GoogleSection({
                 <tr key={scope}>
                   <td className="py-1.5 pr-3">
                     <p>{SCOPE_LABEL[scope]}</p>
-                    <p className="font-mono text-[0.6875rem] text-faint">{scope.replace("https://www.googleapis.com/auth/", "")}</p>
+                    <p className="font-mono text-2xs text-faint">{scope.replace("https://www.googleapis.com/auth/", "")}</p>
                   </td>
                   <td className="py-1.5 text-right">
                     {ok ? (

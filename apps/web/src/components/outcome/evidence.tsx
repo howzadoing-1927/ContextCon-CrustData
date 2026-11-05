@@ -39,7 +39,7 @@ export function FactLabel({ status, className }: { status: FactStatus; className
   return (
     <span
       className={cn(
-        "inline-flex h-5 shrink-0 items-center rounded-sm border px-1.5 text-[0.6875rem] font-medium leading-none",
+        "inline-flex h-5 shrink-0 items-center rounded-sm border px-1.5 text-2xs font-medium leading-none",
         meta.className,
         className,
       )}
@@ -103,7 +103,7 @@ export function EvidenceChip({ id, className }: { id: string; className?: string
   const evidence = useEvidence(id);
   if (!evidence) {
     return (
-      <span title={id} className={cn("inline-flex h-5 items-center rounded-sm border border-dashed border-hairline px-1.5 font-mono text-[0.6875rem] text-faint", className)}>
+      <span title={id} className={cn("inline-flex h-5 items-center rounded-sm border border-dashed border-hairline px-1.5 font-mono text-2xs text-faint", className)}>
         not loaded
       </span>
     );
@@ -114,7 +114,7 @@ export function EvidenceChip({ id, className }: { id: string; className?: string
       <PopoverTrigger
         aria-label={`Evidence from ${source.label}: ${evidence.excerpt}`}
         className={cn(
-          "inline-flex h-5 items-center gap-1 rounded-sm border border-hairline bg-raised px-1.5 text-[0.6875rem] text-muted-foreground transition-colors duration-150 hover:border-input hover:text-foreground data-popup-open:border-signal/60 data-popup-open:text-foreground",
+          "inline-flex h-5 items-center gap-1 rounded-sm border border-hairline bg-raised px-1.5 text-2xs text-muted-foreground transition-colors duration-150 hover:border-input hover:text-foreground data-popup-open:border-signal/60 data-popup-open:text-foreground",
           className,
         )}
       >

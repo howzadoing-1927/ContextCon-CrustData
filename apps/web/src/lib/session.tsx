@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { OutcomeClient, type Session } from "@/lib/api/client";
 import { createHttpTransport } from "@/lib/api/transport";
 import { env, supabaseConfigured } from "@/lib/env";
-import { createFixtureTransport } from "@/lib/fixtures/transport";
+import { createFixtureTransport, FIXTURE_ORG_ID } from "@/lib/fixtures/transport";
 
 const ORG_KEY = "outcome.org";
 const FIXTURE_SESSION_KEY = "outcome.fixture.session";
@@ -45,8 +45,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const organizationId = window.localStorage.getItem(ORG_KEY);
+    let organizationId = window.localStorage.getItem(ORG_KEY);
     if (env.apiMode === "fixture") {
+      // Lets headless tools (design scans, screenshots) open console pages without clicking through sign-in.
+      if (new URLSearchParams(window.location.search).has("fixture_session")) {
+        window.sessionStorage.setItem(FIXTURE_SESSION_KEY, "fixture-session");
+        organizationId ??= FIXTURE_ORG_ID;
+        window.localStorage.setItem(ORG_KEY, organizationId);
+      }
       const token = window.sessionStorage.getItem(FIXTURE_SESSION_KEY);
       setState({ ready: true, email: token ? "fixture.operator@demo-seller.example" : null, accessToken: token, organizationId });
       return;

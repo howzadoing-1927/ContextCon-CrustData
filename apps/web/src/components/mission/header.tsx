@@ -162,7 +162,7 @@ export function MissionHeader({
               {relativeAge(fetchedAt, now)}
             </span>
           </div>
-          <h1 className={cn("mt-1.5 max-w-[80ch] text-base font-medium text-pretty", !expanded && "line-clamp-2")}>{detail.request_text}</h1>
+          <h1 className={cn("mt-1.5 max-w-[68ch] text-lg leading-snug font-medium tracking-tight text-pretty", !expanded && "line-clamp-2")}>{detail.request_text}</h1>
           {long && (
             <button type="button" onClick={() => setExpanded((v) => !v)} className="text-2xs text-muted-foreground underline">
               {expanded ? "Show less" : "Show full request"}

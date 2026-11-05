@@ -17,7 +17,7 @@ const META: Record<ExecutionLabel, { label: string; className: string; Icon: typ
   },
   FIXTURE: {
     label: "Fixture",
-    className: "text-fixture border-fixture/70 bg-hatch",
+    className: "text-fixture border-dashed border-fixture/80",
     Icon: FlaskConical,
     title: "Local fixture data. Never counts as live execution",
   },
@@ -50,7 +50,7 @@ export function ModeBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-6 items-center gap-1.5 rounded-sm border border-hairline bg-raised px-2 text-2xs font-medium text-foreground",
+        "inline-flex h-6 items-center gap-1.5 rounded-sm whitespace-nowrap border border-hairline bg-raised px-2 text-2xs font-medium text-foreground",
         className,
       )}
     >

@@ -44,7 +44,7 @@ function Pairs({ title, data }: { title: string; data: Record<string, unknown> |
   return (
     <div>
       <p className="text-2xs font-medium text-muted-foreground">{title}</p>
-      <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-[0.6875rem]">
+      <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 font-mono text-2xs">
         {entries.map(([k, v]) => (
           <div key={k} className="contents">
             <dt className="text-faint">{k}</dt>
@@ -82,7 +82,7 @@ function DecisionRow({ decision, timeZone, fresh }: { decision: DecisionView; ti
         />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="font-mono text-[0.6875rem] text-faint">{formatTime(decision.created_at, timeZone).slice(0, 8)}</span>
+            <span className="font-mono text-2xs text-faint">{formatTime(decision.created_at, timeZone).slice(0, 8)}</span>
             <span className="truncate text-xs font-medium">{humanize(decision.kind)}</span>
             <span className="ml-auto flex shrink-0 items-center gap-1.5">
               {provenance && <ProvenanceStamp kind={provenance} className="h-4 px-1 [&_svg]:size-2.5" />}
@@ -118,7 +118,7 @@ function DecisionRow({ decision, timeZone, fresh }: { decision: DecisionView; ti
                       <X aria-label="Failed" className="mt-0.5 size-3 shrink-0 text-bad" />
                     )}
                     <span>
-                      <span className="font-mono text-[0.6875rem] text-foreground">{c.name}</span>{" "}
+                      <span className="font-mono text-2xs text-foreground">{c.name}</span>{" "}
                       <span className="text-muted-foreground">{c.reason}</span>
                     </span>
                   </li>
@@ -144,7 +144,7 @@ function DecisionRow({ decision, timeZone, fresh }: { decision: DecisionView; ti
           <Pairs title="Inputs" data={decision.input_refs} />
           <Pairs title="Resolution" data={decision.resolution} />
           {decision.model && (
-            <p className="font-mono text-[0.6875rem] text-faint">
+            <p className="font-mono text-2xs text-faint">
               {decision.model.deployment} · {decision.model.prompt_version}
               {decision.model.model_version && ` · ${decision.model.model_version}`} · {formatCount(tokensIn)} in / {formatCount(tokensOut)} out
             </p>

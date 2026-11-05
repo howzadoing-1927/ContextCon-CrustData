@@ -37,7 +37,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       </a>
       <header className="sticky top-0 z-40 border-b border-hairline bg-shell">
         <div className="flex h-12 items-center gap-6 px-5">
-          <Link href="/missions" className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+          <Link href="/missions" className="flex shrink-0 items-center gap-2 text-sm font-semibold tracking-tight whitespace-nowrap">
             <span aria-hidden className="grid size-5 place-items-center rounded-sm bg-signal text-[0.625rem] font-bold text-signal-foreground">
               O
             </span>
@@ -52,7 +52,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative flex items-center px-2.5 text-xs transition-colors duration-150",
+                    "relative flex items-center px-2.5 text-xs whitespace-nowrap transition-colors duration-150",
                     active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -62,9 +62,9 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex min-w-0 items-center gap-3">
             {mode === "FIXTURE" && <ProvenanceStamp kind="FIXTURE" />}
-            <ModeBadge />
+            <ModeBadge className="max-xl:hidden" />
             <WorkerHealth />
             <span aria-hidden className="h-5 w-px bg-hairline" />
             <button
@@ -73,12 +73,13 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
                 selectOrganization(null);
                 router.push("/orgs");
               }}
-              className="flex flex-col items-end text-right leading-tight"
+              className="flex min-w-0 flex-col items-end text-right leading-tight"
               title="Switch organization"
             >
-              <span className="text-xs font-medium">{workspace.data?.name ?? "Organization"}</span>
-              <span className="text-2xs text-faint">
-                {workspace.data?.viewer_role ?? "…"} · {email}
+              <span className="max-w-56 truncate text-xs font-medium">{workspace.data?.name ?? "Organization"}</span>
+              <span className="max-w-64 truncate text-2xs text-faint">
+                {workspace.data?.viewer_role ?? "…"}
+                <span className="max-lg:hidden"> · {email}</span>
               </span>
             </button>
             <Button

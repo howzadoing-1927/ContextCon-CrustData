@@ -131,7 +131,7 @@ export function ProspectCaseView({ prospect }: { prospect: ProspectCase }) {
 
       <div className="mt-3 flex items-start gap-2.5 rounded-md border border-simbuyer/30 px-3 py-2">
         <VenetianMask aria-hidden className="mt-0.5 size-4 shrink-0 text-simbuyer" />
-        <p className="text-xs text-muted-foreground">
+        <p className="max-w-[64ch] text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Delivery goes to a test inbox playing the buyer.</span> Every email for{" "}
           {prospect.person?.name ?? "this prospect"} is sent to <span className="font-mono text-2xs text-foreground">{prospect.delivery.buyer_test_email}</span>, a
           consenting teammate. The real person is never contacted.

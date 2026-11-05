@@ -79,7 +79,7 @@ export function HandoffCard({ handoff }: { handoff: Handoff }) {
       <div className="grid grid-cols-2 gap-x-8 gap-y-5 px-5 py-4">
         <div className="col-span-2">
           <Block title="Why this prospect">
-            <p className="max-w-[75ch] text-sm">{handoff.fit_summary}</p>
+            <p className="max-w-[62ch] text-sm">{handoff.fit_summary}</p>
             <EvidenceList ids={handoff.fit_evidence_ids} className="mt-1.5" />
           </Block>
         </div>

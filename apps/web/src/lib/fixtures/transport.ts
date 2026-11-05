@@ -117,6 +117,13 @@ function health(scenario: GlobalScenario): HealthReady {
 }
 
 function workspaceFor(orgId: string, scenario: GlobalScenario): OrganizationView {
+  const view = baseWorkspace(orgId, scenario);
+  if (orgId === FIXTURE_ORG_ID) return view;
+  const rebranded = JSON.stringify(view).replaceAll("Demo Seller Co.", "Second Tenant Ltd.").replaceAll("demo-seller.example", "second-tenant.example");
+  return JSON.parse(rebranded) as OrganizationView;
+}
+
+function baseWorkspace(orgId: string, scenario: GlobalScenario): OrganizationView {
   const incomplete = scenario === "setup_incomplete";
   const owner = orgId === FIXTURE_ORG_ID;
   return {

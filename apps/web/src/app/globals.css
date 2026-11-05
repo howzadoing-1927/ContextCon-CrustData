@@ -107,7 +107,7 @@
 
   --live: oklch(0.79 0.13 158);
   --cached: oklch(0.78 0.095 238);
-  --fixture: oklch(0.77 0.13 305);
+  --fixture: oklch(0.86 0.035 85);
   --simbuyer: oklch(0.83 0.095 196);
 
   --radius: 0.375rem;
@@ -144,6 +144,11 @@
     scrollbar-width: thin;
     scrollbar-color: oklch(0.36 0.018 248) transparent;
   }
+  p,
+  li,
+  dd {
+    text-wrap: pretty;
+  }
   .tabular {
     font-variant-numeric: tabular-nums;
   }
@@ -152,16 +157,6 @@
   samp,
   .font-mono {
     font-variant-numeric: tabular-nums slashed-zero;
-  }
-}
-
-@layer utilities {
-  .bg-hatch {
-    background-image: repeating-linear-gradient(
-      -45deg,
-      color-mix(in oklch, currentColor 22%, transparent) 0 2px,
-      transparent 2px 6px
-    );
   }
 }
 

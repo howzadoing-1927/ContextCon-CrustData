@@ -336,7 +336,7 @@ export function ExceptionDrawer({
                     .filter((c) => !c.pass)
                     .map((c) => (
                       <li key={c.name} className="text-xs">
-                        <span className="font-mono text-[0.6875rem] text-bad">{c.name}</span>{" "}
+                        <span className="font-mono text-2xs text-bad">{c.name}</span>{" "}
                         <span className="text-muted-foreground">{c.reason}</span>
                       </li>
                     ))}

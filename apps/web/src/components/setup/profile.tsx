@@ -14,7 +14,6 @@ import type { ApprovedFact, FAQ, OrganizationView, ProfileUpdate } from "@/lib/c
 import { useSession } from "@/lib/session";
 import { timeZones } from "@/lib/timezones";
 import { useMutation } from "@/lib/use-mutation";
-import { cn } from "@/lib/utils";
 
 interface Draft {
   name: string;
@@ -190,7 +189,7 @@ export function ProfileSection({
             <ul className="mt-1 divide-y divide-hairline">
               {proposed.map((fact) => (
                 <li key={fact.id} className="flex items-start gap-2 py-2">
-                  <span className="mt-px inline-flex h-5 shrink-0 items-center rounded-sm border border-dashed border-faint px-1.5 text-[0.6875rem] font-medium text-muted-foreground">
+                  <span className="mt-px inline-flex h-5 shrink-0 items-center rounded-sm border border-dashed border-faint px-1.5 text-2xs font-medium text-muted-foreground">
                     Proposed
                   </span>
                   <div className="min-w-0 flex-1">
@@ -361,7 +360,7 @@ export function ProfileSection({
       )}
 
       {canEdit && (
-        <div className={cn("mt-5 flex items-center justify-end gap-3", !dirty && !saved && "opacity-60")}>
+        <div className="mt-5 flex items-center justify-end gap-3">
           <span role="status" className="text-2xs text-muted-foreground">
             {saved && !dirty ? `Approved as version ${workspace.profile_version}.` : dirty ? "Unsaved changes" : "No changes"}
           </span>

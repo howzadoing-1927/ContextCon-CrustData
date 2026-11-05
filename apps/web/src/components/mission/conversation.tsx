@@ -42,7 +42,7 @@ function Message({ message, sellerEmail, buyerEmail, timeZone }: { message: Mess
           </span>
         </header>
         <p className="mt-2 text-sm font-medium">{message.subject}</p>
-        <p className="mt-1 text-sm leading-relaxed whitespace-pre-line text-foreground/90">{message.body_text}</p>
+        <p className="mt-1 max-w-[60ch] text-sm leading-relaxed whitespace-pre-line text-foreground/90">{message.body_text}</p>
         <footer className="mt-2 flex items-center gap-1.5 text-2xs text-faint">
           Gmail id <MonoId value={message.provider_message_id} length={16} />
         </footer>

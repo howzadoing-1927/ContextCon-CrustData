@@ -149,7 +149,7 @@ export default function NewMissionPage() {
             <p className={cn(fieldError || serverFieldError ? "text-bad" : "text-muted-foreground")}>
               {fieldError ??
                 serverFieldError ??
-                "Who to find, what qualifies them, and what meeting to book. The agent asks for help instead of guessing."}
+                "Who to find, what qualifies them, and what meeting to book. The agent asks for help instead of&nbsp;guessing."}
             </p>
             <span className={cn("shrink-0 tabular", tooLong ? "text-bad" : "text-faint")}>
               {text.length.toLocaleString("en-US")} / {MAX.toLocaleString("en-US")}
@@ -205,7 +205,7 @@ export default function NewMissionPage() {
             >
               {describeError(error).body}
               {isApiError(error) && error.correlationId && (
-                <span className="mt-1 block font-mono text-[0.6875rem] text-faint">Correlation {error.correlationId}</span>
+                <span className="mt-1 block font-mono text-2xs text-faint">Correlation {error.correlationId}</span>
               )}
             </Notice>
           )}
