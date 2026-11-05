@@ -1,0 +1,32 @@
+{
+  "_fixture": "FIXTURE",
+  "schema_version": "outcome.v1",
+  "data": {
+    "id": "7a2e4d3b-9c5f-4a6b-8d8e-2f3a4b5c6d7e",
+    "request_text": "Book a demo with a mid-market logistics company's head of sales.",
+    "mode": "simulation",
+    "status": "draft",
+    "version": 0,
+    "stage": "normalize_mission",
+    "profile_version": 1,
+    "config_version": 1,
+    "usage": {
+      "model_calls": 0,
+      "research_calls": 0,
+      "outbound_attempts": 0,
+      "calendar_attempts": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "estimated_cost": null
+    },
+    "last_decision_id": null,
+    "created_at": "2026-11-05T18:10:00Z",
+    "updated_at": "2026-11-05T18:10:00Z",
+    "prospects": [],
+    "conversation": null,
+    "open_exceptions": [],
+    "evidence": [],
+    "handoff": null
+  },
+  "correlation_id": "4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b7c"
+}

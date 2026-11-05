@@ -1,0 +1,10 @@
+{
+  "_fixture": "FIXTURE",
+  "operation": "calendar.freebusy",
+  "phase": "auth",
+  "retryability": "reauthorize",
+  "may_have_applied": false,
+  "explicit_rejection": false,
+  "provider_status": 401,
+  "redacted_detail": "refresh token rejected (invalid_grant)"
+}
