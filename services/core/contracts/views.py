@@ -242,6 +242,44 @@ class Handoff(ContractModel):
     notification_status: Literal["not_requested", "pending", "sent", "failed"]
 
 
+class ApprovedProfileView(ContractModel):
+    approved_facts: list[dict[str, Any]]
+    faq: list[dict[str, Any]]
+    forbidden_promises: list[str]
+
+
+class SafePolicyView(ContractModel):
+    simulation: bool
+    consented_recipients: list[dict[str, Any]]
+    selected_calendar_id: str | None
+    working_hours: dict[str, Any] | None
+    duration_minutes: int | None
+    limits: dict[str, int] | None
+
+
+class ConnectionSummaryView(ContractModel):
+    purpose: Literal["seller", "buyer_test"]
+    status: Literal["pending", "connected", "reauth_required", "revoked"]
+    account_email: str | None
+    granted_scopes: list[str]
+    calendar_id: str | None
+
+
+class OrganizationView(ContractModel):
+    id: UUID
+    name: str
+    website_url: str | None
+    timezone: str
+    role: Literal["owner", "member"]
+    profile_version: int
+    approved_at: AwareDatetime | None
+    profile: ApprovedProfileView | None
+    config_version: int
+    policy: SafePolicyView
+    connections: list[ConnectionSummaryView]
+    worker: HealthReady
+
+
 class MissionDetail(CampaignView):
     prospects: list[ProspectCase]
     conversation: ConversationView | None

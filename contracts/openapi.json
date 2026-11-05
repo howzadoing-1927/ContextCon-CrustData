@@ -44,6 +44,107 @@
         "title": "ActualAction",
         "type": "object"
       },
+      "ApprovedFact": {
+        "additionalProperties": false,
+        "properties": {
+          "approved": {
+            "const": true,
+            "title": "Approved",
+            "type": "boolean"
+          },
+          "authority": {
+            "const": "operator_approved",
+            "title": "Authority",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^[A-Za-z0-9_-]{1,40}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "evidence_ids",
+          "authority",
+          "approved"
+        ],
+        "title": "ApprovedFact",
+        "type": "object"
+      },
+      "ApprovedProfileView": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_facts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Approved Facts",
+            "type": "array"
+          },
+          "faq": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Faq",
+            "type": "array"
+          },
+          "forbidden_promises": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Forbidden Promises",
+            "type": "array"
+          }
+        },
+        "required": [
+          "approved_facts",
+          "faq",
+          "forbidden_promises"
+        ],
+        "title": "ApprovedProfileView",
+        "type": "object"
+      },
+      "Assumption": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "hypothesis",
+            "title": "Status",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "status"
+        ],
+        "title": "Assumption",
+        "type": "object"
+      },
       "BookingReceipt": {
         "additionalProperties": false,
         "properties": {
@@ -584,6 +685,74 @@
         "title": "CampaignView",
         "type": "object"
       },
+      "CompanyRule": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Field",
+            "type": "string"
+          },
+          "must_have": {
+            "title": "Must Have",
+            "type": "boolean"
+          },
+          "operator": {
+            "enum": [
+              "equals",
+              "contains",
+              "range"
+            ],
+            "title": "Operator",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "field",
+          "operator",
+          "value",
+          "must_have"
+        ],
+        "title": "CompanyRule",
+        "type": "object"
+      },
       "ConnectionStatus": {
         "enum": [
           "pending",
@@ -643,6 +812,103 @@
           "calendar_id"
         ],
         "title": "ConnectionSummary",
+        "type": "object"
+      },
+      "ConnectionSummaryView": {
+        "additionalProperties": false,
+        "properties": {
+          "account_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Email"
+          },
+          "calendar_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calendar Id"
+          },
+          "granted_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Granted Scopes",
+            "type": "array"
+          },
+          "purpose": {
+            "enum": [
+              "seller",
+              "buyer_test"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "connected",
+              "reauth_required",
+              "revoked"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "purpose",
+          "status",
+          "account_email",
+          "granted_scopes",
+          "calendar_id"
+        ],
+        "title": "ConnectionSummaryView",
+        "type": "object"
+      },
+      "ConsentedRecipient": {
+        "additionalProperties": false,
+        "properties": {
+          "consent_record": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Consent Record",
+            "type": "string"
+          },
+          "consented_at": {
+            "format": "date-time",
+            "title": "Consented At",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "buyer_test",
+              "owner_test"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "role",
+          "consent_record",
+          "consented_at"
+        ],
+        "title": "ConsentedRecipient",
         "type": "object"
       },
       "ControlInput": {
@@ -1180,6 +1446,37 @@
         ],
         "title": "ExecutionLabel",
         "type": "string"
+      },
+      "FAQ": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Answer",
+            "type": "string"
+          },
+          "fact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fact Ids",
+            "type": "array"
+          },
+          "question": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "answer",
+          "fact_ids"
+        ],
+        "title": "FAQ",
+        "type": "object"
       },
       "FactStatus": {
         "enum": [
@@ -1895,6 +2192,114 @@
         "title": "MissionDetail",
         "type": "object"
       },
+      "NormalizedPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "$ref": "#/components/schemas/Assumption"
+            },
+            "maxItems": 20,
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "buyer_roles": {
+            "items": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Buyer Roles",
+            "type": "array"
+          },
+          "company_rules": {
+            "items": {
+              "$ref": "#/components/schemas/CompanyRule"
+            },
+            "maxItems": 20,
+            "title": "Company Rules",
+            "type": "array"
+          },
+          "exclusions": {
+            "items": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Exclusions",
+            "type": "array"
+          },
+          "geography": {
+            "items": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Geography",
+            "type": "array"
+          },
+          "industries": {
+            "items": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Industries",
+            "type": "array"
+          },
+          "missing_required_fields": {
+            "items": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Missing Required Fields",
+            "type": "array"
+          },
+          "objective": {
+            "const": "book_demo",
+            "title": "Objective",
+            "type": "string"
+          },
+          "research_queries": {
+            "items": {
+              "$ref": "#/components/schemas/ResearchQuery"
+            },
+            "maxItems": 10,
+            "title": "Research Queries",
+            "type": "array"
+          },
+          "stop_conditions": {
+            "items": {
+              "maxLength": 300,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Stop Conditions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "objective",
+          "geography",
+          "industries",
+          "company_rules",
+          "buyer_roles",
+          "exclusions",
+          "missing_required_fields",
+          "assumptions",
+          "research_queries",
+          "stop_conditions"
+        ],
+        "title": "NormalizedPlan",
+        "type": "object"
+      },
       "OAuthStart": {
         "additionalProperties": false,
         "properties": {
@@ -1952,6 +2357,102 @@
           "expires_at"
         ],
         "title": "OAuthStartResult",
+        "type": "object"
+      },
+      "OrganizationView": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "config_version": {
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "connections": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionSummaryView"
+            },
+            "title": "Connections",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/SafePolicyView"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApprovedProfileView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_version": {
+            "title": "Profile Version",
+            "type": "integer"
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "member"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "website_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Url"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/HealthReady"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "website_url",
+          "timezone",
+          "role",
+          "profile_version",
+          "approved_at",
+          "profile",
+          "config_version",
+          "policy",
+          "connections",
+          "worker"
+        ],
+        "title": "OrganizationView",
         "type": "object"
       },
       "OutboundEmail": {
@@ -2045,6 +2546,35 @@
         "title": "OutboundEmail",
         "type": "object"
       },
+      "PastedTextSource": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "pasted_text",
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "text"
+        ],
+        "title": "PastedTextSource",
+        "type": "object"
+      },
       "PolicyCheck": {
         "additionalProperties": false,
         "properties": {
@@ -2089,6 +2619,58 @@
           "checks"
         ],
         "title": "PolicyResult",
+        "type": "object"
+      },
+      "PolicyUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "consented_recipients": {
+            "items": {
+              "$ref": "#/components/schemas/ConsentedRecipient"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Consented Recipients",
+            "type": "array"
+          },
+          "duration_minutes": {
+            "const": 15,
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "expected_config_version": {
+            "minimum": 0.0,
+            "title": "Expected Config Version",
+            "type": "integer"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
+          "selected_calendar_id": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Selected Calendar Id",
+            "type": "string"
+          },
+          "simulation": {
+            "const": true,
+            "title": "Simulation",
+            "type": "boolean"
+          },
+          "working_hours": {
+            "$ref": "#/components/schemas/WorkingHours"
+          }
+        },
+        "required": [
+          "expected_config_version",
+          "simulation",
+          "consented_recipients",
+          "selected_calendar_id",
+          "working_hours",
+          "duration_minutes",
+          "limits"
+        ],
+        "title": "PolicyUpdate",
         "type": "object"
       },
       "PolledMessage": {
@@ -2163,6 +2745,76 @@
           "received_at"
         ],
         "title": "PolledMessage",
+        "type": "object"
+      },
+      "ProfileUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_key": {
+            "pattern": "^[\\x21-\\x7e]{1,128}$",
+            "title": "Approval Key",
+            "type": "string"
+          },
+          "approved_facts": {
+            "items": {
+              "$ref": "#/components/schemas/ApprovedFact"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Approved Facts",
+            "type": "array"
+          },
+          "expected_profile_version": {
+            "minimum": 0.0,
+            "title": "Expected Profile Version",
+            "type": "integer"
+          },
+          "faq": {
+            "items": {
+              "$ref": "#/components/schemas/FAQ"
+            },
+            "maxItems": 50,
+            "title": "Faq",
+            "type": "array"
+          },
+          "forbidden_promises": {
+            "items": {
+              "maxLength": 1000,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Forbidden Promises",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "website_url": {
+            "maxLength": 2048,
+            "pattern": "^https://",
+            "title": "Website Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_profile_version",
+          "approval_key",
+          "name",
+          "website_url",
+          "timezone",
+          "approved_facts",
+          "faq",
+          "forbidden_promises"
+        ],
+        "title": "ProfileUpdate",
         "type": "object"
       },
       "ProspectCase": {
@@ -2422,6 +3074,29 @@
         "title": "ReconcileResult",
         "type": "object"
       },
+      "ResearchQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "intent": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Intent",
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 10,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "intent",
+          "limit"
+        ],
+        "title": "ResearchQuery",
+        "type": "object"
+      },
       "ResolutionType": {
         "enum": [
           "supply_fact",
@@ -2490,6 +3165,81 @@
         "title": "Retryability",
         "type": "string"
       },
+      "SafePolicyView": {
+        "additionalProperties": false,
+        "properties": {
+          "consented_recipients": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Consented Recipients",
+            "type": "array"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "limits": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limits"
+          },
+          "selected_calendar_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Calendar Id"
+          },
+          "simulation": {
+            "title": "Simulation",
+            "type": "boolean"
+          },
+          "working_hours": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Working Hours"
+          }
+        },
+        "required": [
+          "simulation",
+          "consented_recipients",
+          "selected_calendar_id",
+          "working_hours",
+          "duration_minutes",
+          "limits"
+        ],
+        "title": "SafePolicyView",
+        "type": "object"
+      },
       "Slot": {
         "additionalProperties": false,
         "properties": {
@@ -2550,6 +3300,31 @@
           "correlation_id"
         ],
         "title": "SuccessEnvelope[CampaignLaunchView]",
+        "type": "object"
+      },
+      "SuccessEnvelope_EvidenceView_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EvidenceView"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[EvidenceView]",
         "type": "object"
       },
       "SuccessEnvelope_HealthLive_": {
@@ -2625,6 +3400,31 @@
           "correlation_id"
         ],
         "title": "SuccessEnvelope[MissionDetail]",
+        "type": "object"
+      },
+      "SuccessEnvelope_OrganizationView_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OrganizationView"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[OrganizationView]",
         "type": "object"
       },
       "ThreadPoll": {
@@ -2754,6 +3554,62 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WebsiteSource": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "website",
+            "title": "Kind",
+            "type": "string"
+          },
+          "url": {
+            "maxLength": 2048,
+            "minLength": 8,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "url"
+        ],
+        "title": "WebsiteSource",
+        "type": "object"
+      },
+      "WorkingHours": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "weekdays": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 7,
+            "minItems": 1,
+            "title": "Weekdays",
+            "type": "array"
+          }
+        },
+        "required": [
+          "timezone",
+          "weekdays",
+          "start",
+          "end"
+        ],
+        "title": "WorkingHours",
         "type": "object"
       }
     }
@@ -2889,6 +3745,166 @@
         "summary": "Health Ready",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/workspace": {
+      "get": {
+        "operationId": "get_workspace_api_v1_workspace_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_OrganizationView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Workspace",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
+    "/api/v1/workspace/policy": {
+      "put": {
+        "operationId": "put_policy_api_v1_workspace_policy_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_OrganizationView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Policy",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
+    "/api/v1/workspace/profile": {
+      "put": {
+        "operationId": "put_profile_api_v1_workspace_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_OrganizationView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Profile",
+        "tags": [
+          "workspace"
+        ]
+      }
+    },
+    "/api/v1/workspace/sources": {
+      "post": {
+        "description": "Synchronous bounded ingestion (fetch <=10 s / 1 MB). Returns the new untrusted evidence; never approves facts.\nA replay of the same key and body returns 200 with the original evidence.",
+        "operationId": "post_source_api_v1_workspace_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "discriminator": {
+                  "mapping": {
+                    "pasted_text": "#/components/schemas/PastedTextSource",
+                    "website": "#/components/schemas/WebsiteSource"
+                  },
+                  "propertyName": "kind"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/WebsiteSource"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PastedTextSource"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_EvidenceView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Source",
+        "tags": [
+          "workspace"
         ]
       }
     }

@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "Assumption": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "hypothesis",
+          "title": "Status",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "status"
+      ],
+      "title": "Assumption",
+      "type": "object"
+    },
+    "CompanyRule": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Field",
+          "type": "string"
+        },
+        "must_have": {
+          "title": "Must Have",
+          "type": "boolean"
+        },
+        "operator": {
+          "enum": [
+            "equals",
+            "contains",
+            "range"
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "array"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "field",
+        "operator",
+        "value",
+        "must_have"
+      ],
+      "title": "CompanyRule",
+      "type": "object"
+    },
+    "ResearchQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "intent": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Intent",
+          "type": "string"
+        },
+        "limit": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "intent",
+        "limit"
+      ],
+      "title": "ResearchQuery",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:NormalizedPlan",
+  "additionalProperties": false,
+  "properties": {
+    "assumptions": {
+      "items": {
+        "$ref": "#/$defs/Assumption"
+      },
+      "maxItems": 20,
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "buyer_roles": {
+      "items": {
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Buyer Roles",
+      "type": "array"
+    },
+    "company_rules": {
+      "items": {
+        "$ref": "#/$defs/CompanyRule"
+      },
+      "maxItems": 20,
+      "title": "Company Rules",
+      "type": "array"
+    },
+    "exclusions": {
+      "items": {
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Exclusions",
+      "type": "array"
+    },
+    "geography": {
+      "items": {
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Geography",
+      "type": "array"
+    },
+    "industries": {
+      "items": {
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Industries",
+      "type": "array"
+    },
+    "missing_required_fields": {
+      "items": {
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Missing Required Fields",
+      "type": "array"
+    },
+    "objective": {
+      "const": "book_demo",
+      "title": "Objective",
+      "type": "string"
+    },
+    "research_queries": {
+      "items": {
+        "$ref": "#/$defs/ResearchQuery"
+      },
+      "maxItems": 10,
+      "title": "Research Queries",
+      "type": "array"
+    },
+    "stop_conditions": {
+      "items": {
+        "maxLength": 300,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "title": "Stop Conditions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "objective",
+    "geography",
+    "industries",
+    "company_rules",
+    "buyer_roles",
+    "exclusions",
+    "missing_required_fields",
+    "assumptions",
+    "research_queries",
+    "stop_conditions"
+  ],
+  "title": "NormalizedPlan",
+  "type": "object"
+}

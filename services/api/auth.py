@@ -95,3 +95,10 @@ def require_member(request: Request) -> Principal:
     if row is None:
         raise ApiError(403, ErrorCode.FORBIDDEN, "Not a member of the selected organization.")
     return Principal(user_id=user_id, organization_id=organization_id, role=MembershipRole(row["role"]))
+
+
+def require_owner(request: Request) -> Principal:
+    principal = require_member(request)
+    if principal.role is not MembershipRole.OWNER:
+        raise ApiError(403, ErrorCode.FORBIDDEN, "Only a workspace owner can change seller setup.")
+    return principal

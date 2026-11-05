@@ -13,7 +13,7 @@ from services.core.contracts.enums import ErrorCode
 from services.core.contracts.version import CONTRACT_VERSION
 from services.core.db import DatabaseNotConfigured, reset_pool
 
-from . import campaigns, health
+from . import campaigns, health, workspace
 from .errors import ApiError, error_response
 
 log = logging.getLogger("outcome.api")
@@ -80,6 +80,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(campaigns.router)
+    app.include_router(workspace.router)
     return app
 
 

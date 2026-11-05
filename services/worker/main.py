@@ -9,6 +9,7 @@ import signal
 import socket
 import time
 from collections.abc import Callable
+from functools import partial
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -16,19 +17,30 @@ from psycopg.types.json import Jsonb
 from services.core import db
 from services.core.config import Settings, get_settings
 
+from services.models.client import AzureModelClient
+
 from . import actions, queue
+from .handlers import handle_normalize_mission
 
 log = logging.getLogger("outcome.worker")
 
 Handler = Callable[[psycopg.Connection, queue.Lease], None]
 
-# Task kind -> handler. Handlers own their fenced state transition and queue.complete/fail.
-# B2 registers none, so normalize_mission tasks stay ready until B3 instead of being consumed by a no-op.
-HANDLERS: dict[str, Handler] = {}
-
-
 class AnotherWorkerActive(RuntimeError):
     pass
+
+
+def build_handlers(settings: Settings) -> dict[str, Handler]:
+    """Task kind -> handler. A kind is only claimed when its dependencies are configured, so unconfigured
+    providers leave tasks ready instead of failing them."""
+    handlers: dict[str, Handler] = {}
+    if settings.azure_configured:
+        client = AzureModelClient(settings)
+        log.info("model client: %s", client.api_path)
+        handlers["normalize_mission"] = partial(handle_normalize_mission, client=client)
+    else:
+        log.warning("Azure OpenAI not configured; normalize_mission tasks will stay ready")
+    return handlers
 
 
 def write_heartbeat(conn: psycopg.Connection, settings: Settings, worker_id: str) -> None:
@@ -89,6 +101,9 @@ def main() -> None:
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
 
+    handlers = build_handlers(settings)
+    log.info("worker %s claiming task kinds: %s", worker_id, sorted(handlers) or "none")
+
     last_heartbeat = 0.0
     try:
         with db.connection(timeout=10) as conn:
@@ -96,7 +111,7 @@ def main() -> None:
                 if time.monotonic() - last_heartbeat >= settings.worker_heartbeat_seconds:
                     write_heartbeat(conn, settings, worker_id)
                     last_heartbeat = time.monotonic()
-                if not run_once(conn, settings, worker_id, HANDLERS):
+                if not run_once(conn, settings, worker_id, handlers):
                     time.sleep(1.0)
     finally:
         db.reset_pool()

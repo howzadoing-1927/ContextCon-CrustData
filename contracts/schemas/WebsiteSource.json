@@ -1,0 +1,23 @@
+{
+  "$id": "urn:outcome:outcome.v1:WebsiteSource",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "website",
+      "title": "Kind",
+      "type": "string"
+    },
+    "url": {
+      "maxLength": 2048,
+      "minLength": 8,
+      "title": "Url",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "url"
+  ],
+  "title": "WebsiteSource",
+  "type": "object"
+}

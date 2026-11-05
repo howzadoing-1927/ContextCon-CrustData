@@ -10,6 +10,7 @@ dependencies = [
     "psycopg[binary]",
     "psycopg-pool",
     "PyJWT[crypto]",
+    "openai",
 ]
 
 [project.optional-dependencies]

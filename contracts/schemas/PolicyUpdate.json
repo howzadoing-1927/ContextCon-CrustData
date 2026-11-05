@@ -1,0 +1,198 @@
+{
+  "$defs": {
+    "ConsentedRecipient": {
+      "additionalProperties": false,
+      "properties": {
+        "consent_record": {
+          "maxLength": 500,
+          "minLength": 3,
+          "title": "Consent Record",
+          "type": "string"
+        },
+        "consented_at": {
+          "format": "date-time",
+          "title": "Consented At",
+          "type": "string"
+        },
+        "email": {
+          "title": "Email",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "buyer_test",
+            "owner_test"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "role",
+        "consent_record",
+        "consented_at"
+      ],
+      "title": "ConsentedRecipient",
+      "type": "object"
+    },
+    "Limits": {
+      "additionalProperties": false,
+      "description": "P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.",
+      "properties": {
+        "max_conversations": {
+          "maximum": 1,
+          "minimum": 1,
+          "title": "Max Conversations",
+          "type": "integer"
+        },
+        "max_discovered": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Discovered",
+          "type": "integer"
+        },
+        "max_enriched": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Max Enriched",
+          "type": "integer"
+        },
+        "max_model_calls": {
+          "maximum": 20,
+          "minimum": 1,
+          "title": "Max Model Calls",
+          "type": "integer"
+        },
+        "max_outbound_messages": {
+          "maximum": 6,
+          "minimum": 1,
+          "title": "Max Outbound Messages",
+          "type": "integer"
+        },
+        "max_reply_turns": {
+          "maximum": 4,
+          "minimum": 1,
+          "title": "Max Reply Turns",
+          "type": "integer"
+        },
+        "max_research_calls": {
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Research Calls",
+          "type": "integer"
+        },
+        "max_runtime_seconds": {
+          "maximum": 600,
+          "minimum": 1,
+          "title": "Max Runtime Seconds",
+          "type": "integer"
+        },
+        "no_reply_followups": {
+          "maximum": 0,
+          "minimum": 0,
+          "title": "No Reply Followups",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_discovered",
+        "max_enriched",
+        "max_conversations",
+        "max_outbound_messages",
+        "max_model_calls",
+        "max_research_calls",
+        "max_runtime_seconds",
+        "max_reply_turns",
+        "no_reply_followups"
+      ],
+      "title": "Limits",
+      "type": "object"
+    },
+    "WorkingHours": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "title": "End",
+          "type": "string"
+        },
+        "start": {
+          "title": "Start",
+          "type": "string"
+        },
+        "timezone": {
+          "title": "Timezone",
+          "type": "string"
+        },
+        "weekdays": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Weekdays",
+          "type": "array"
+        }
+      },
+      "required": [
+        "timezone",
+        "weekdays",
+        "start",
+        "end"
+      ],
+      "title": "WorkingHours",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:PolicyUpdate",
+  "additionalProperties": false,
+  "properties": {
+    "consented_recipients": {
+      "items": {
+        "$ref": "#/$defs/ConsentedRecipient"
+      },
+      "maxItems": 2,
+      "minItems": 1,
+      "title": "Consented Recipients",
+      "type": "array"
+    },
+    "duration_minutes": {
+      "const": 15,
+      "title": "Duration Minutes",
+      "type": "integer"
+    },
+    "expected_config_version": {
+      "minimum": 0,
+      "title": "Expected Config Version",
+      "type": "integer"
+    },
+    "limits": {
+      "$ref": "#/$defs/Limits"
+    },
+    "selected_calendar_id": {
+      "maxLength": 300,
+      "minLength": 1,
+      "title": "Selected Calendar Id",
+      "type": "string"
+    },
+    "simulation": {
+      "const": true,
+      "title": "Simulation",
+      "type": "boolean"
+    },
+    "working_hours": {
+      "$ref": "#/$defs/WorkingHours"
+    }
+  },
+  "required": [
+    "expected_config_version",
+    "simulation",
+    "consented_recipients",
+    "selected_calendar_id",
+    "working_hours",
+    "duration_minutes",
+    "limits"
+  ],
+  "title": "PolicyUpdate",
+  "type": "object"
+}

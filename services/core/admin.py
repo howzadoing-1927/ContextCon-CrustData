@@ -1,11 +1,13 @@
 """Trusted server/admin paths for tenant setup and cleanup. Never exposed through the API.
 
     python -m services.core.admin seed-org --name "Demo seller" --owner-email owner@example.com \
-        --buyer-test-email buyer@example.com --consent-record "operator-attested 2026-11-05"
+        --buyer-test-email buyer@example.com --consent-record "operator-attested 2026-11-05" \
+        --fact "An operator-approved statement about the seller"
     python -m services.core.admin purge-org --organization-id <uuid>
 """
 
 import argparse
+import hashlib
 import json
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -51,9 +53,11 @@ def seed_organization(
     buyer_test_email: str,
     consent_record: str,
     timezone: str = "Asia/Kolkata",
-    approve_placeholder_profile: bool = False,
+    approved_facts: list[str] | None = None,
 ) -> UUID:
-    """Create an organization, its owner membership and a simulation policy with one consented buyer."""
+    """Create an organization, its owner membership and a simulation policy with one consented buyer.
+    `approved_facts` are operator-attested statements: each becomes operator evidence plus an approved fact
+    (profile_version 1). Without them the profile stays unapproved and launch is refused."""
     org_id = uuid4()
     now = datetime.now(UTC)
     policy = {
@@ -66,26 +70,45 @@ def seed_organization(
                 "consented_at": now.isoformat(),
             }
         ],
+        "selected_calendar_id": "primary",
+        "working_hours": {"timezone": timezone, "weekdays": [1, 2, 3, 4, 5], "start": "09:00", "end": "17:00"},
+        "duration_minutes": 15,
         "limits": DEFAULT_LIMITS,
     }
-    profile = {"approved_facts": [], "placeholder": True} if approve_placeholder_profile else {}
     conn.execute(
-        """
-        insert into organizations
-          (id, name, timezone, approved_profile_json, profile_version, approved_at, approved_by,
-           policy_json, config_version)
-        values (%s, %s, %s, %s, %s, %s, %s, %s, 1)
-        """,
-        (
-            org_id, name, timezone, Jsonb(profile),
-            1 if approve_placeholder_profile else 0,
-            now if approve_placeholder_profile else None,
-            owner_user_id if approve_placeholder_profile else None,
-            Jsonb(policy),
-        ),
+        "insert into organizations (id, name, timezone, policy_json, config_version) values (%s, %s, %s, %s, 1)",
+        (org_id, name, timezone, Jsonb(policy)),
     )
     add_membership(conn, organization_id=org_id, user_id=owner_user_id, role="owner")
+    if approved_facts:
+        approve_operator_facts(conn, organization_id=org_id, user_id=owner_user_id, facts=approved_facts)
     return org_id
+
+
+def approve_operator_facts(conn: psycopg.Connection, *, organization_id: UUID, user_id: UUID, facts: list[str]) -> None:
+    """Trusted admin path equivalent to POST /workspace/sources (pasted_text) + PUT /workspace/profile."""
+    approved = []
+    for index, text in enumerate(facts, start=1):
+        evidence_id = conn.execute(
+            """
+            insert into evidence (organization_id, entity_kind, entity_id, source_kind, excerpt, retrieved_at,
+                                  content_sha256, fact_status, metadata_json)
+            values (%s, 'seller_source', %s, 'operator', %s, now(), %s, 'observed', %s)
+            returning id
+            """,
+            (organization_id, organization_id, text, hashlib.sha256(text.encode()).hexdigest(),
+             Jsonb({"title": f"operator-attested fact {index}", "added_by": str(user_id), "via": "admin"})),
+        ).fetchone()["id"]
+        approved.append({"id": f"F{index}", "text": text, "evidence_ids": [str(evidence_id)],
+                         "authority": "operator_approved", "approved": True})
+    conn.execute(
+        """
+        update organizations
+        set approved_profile_json = %s, profile_version = profile_version + 1, approved_at = now(), approved_by = %s
+        where id = %s
+        """,
+        (Jsonb({"approved_facts": approved, "faq": [], "forbidden_promises": []}), user_id, organization_id),
+    )
 
 
 def add_membership(conn: psycopg.Connection, *, organization_id: UUID, user_id: UUID, role: str) -> None:
@@ -136,9 +159,10 @@ def main(argv: list[str] | None = None) -> None:
     seed.add_argument("--consent-record", required=True)
     seed.add_argument("--timezone", default="Asia/Kolkata")
     seed.add_argument(
-        "--approve-placeholder-profile",
-        action="store_true",
-        help="Mark an empty placeholder profile approved so launch can be exercised before B3 profile approval.",
+        "--fact",
+        action="append",
+        default=[],
+        help="Operator-attested seller fact to approve (repeatable). Only state facts the seller has approved.",
     )
 
     purge = sub.add_parser("purge-org")
@@ -161,7 +185,7 @@ def _run(args: argparse.Namespace) -> None:
                 buyer_test_email=args.buyer_test_email,
                 consent_record=args.consent_record,
                 timezone=args.timezone,
-                approve_placeholder_profile=args.approve_placeholder_profile,
+                approved_facts=args.fact,
             )
             print(json.dumps({"organization_id": str(org_id)}))
         else:

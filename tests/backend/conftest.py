@@ -12,7 +12,7 @@ import os
 import secrets
 import time
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
 import httpx2
@@ -33,11 +33,18 @@ load_dotenv()
 BUYER_EMAIL = "consenting-buyer@example.invalid"
 
 
+class Redacted(str):
+    """A secret-bearing string whose repr never appears in pytest tracebacks."""
+
+    def __repr__(self) -> str:
+        return "'<redacted>'"
+
+
 @dataclass(frozen=True)
 class TestUser:
     id: UUID
     email: str
-    token: str
+    token: str = field(repr=False)
 
 
 @dataclass(frozen=True)
@@ -56,7 +63,7 @@ def database_url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
         pytest.skip("DATABASE_URL not set: database tests need the Supabase .env")
-    return url
+    return Redacted(url)
 
 
 @pytest.fixture(scope="session")
@@ -152,13 +159,20 @@ def make_tenant(auth_mode: str, database_url: str) -> Iterator:
                 owner_user_id=owner.id,
                 buyer_test_email=BUYER_EMAIL,
                 consent_record="pytest operator-attested consent",
-                approve_placeholder_profile=approved,
+                approved_facts=["Pytest Seller offers a scheduling assistant for B2B sales teams."] if approved else None,
             )
             if seller_connected:
                 admin.seed_seller_connection_without_oauth(c, organization_id=org_id, account_email="seller@example.invalid")
         orgs.append(org_id)
         return Tenant(org_id, owner, BUYER_EMAIL)
 
+    def add_member(tenant: Tenant) -> TestUser:
+        member = users.create()
+        with _connect(database_url) as c:
+            admin.add_membership(c, organization_id=tenant.organization_id, user_id=member.id, role="member")
+        return member
+
+    factory.add_member = add_member
     yield factory
 
     with _connect(database_url) as c:

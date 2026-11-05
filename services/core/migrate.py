@@ -1,6 +1,6 @@
 """Render and apply db/migrations/*.sql for the configured schema and evidence bucket.
 
-    python -m services.core.migrate            # apply every migration in order (each refuses to re-apply)
+    python -m services.core.migrate            # apply pending migrations in order; applied ones are skipped
     python -m services.core.migrate --print    # print rendered SQL only (for the Supabase SQL editor)
 """
 
@@ -44,7 +44,14 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit("DATABASE_URL is not set")
     with psycopg.connect(settings.database_url, **connect_kwargs()) as conn:
         for name, text in rendered:
-            conn.execute(text)
+            try:
+                conn.execute(text)
+            except psycopg.errors.RaiseException as exc:
+                if "already applied" not in str(exc):
+                    raise
+                conn.execute("rollback")
+                print(f"skipped {name} (already applied)")
+                continue
             print(f"applied {name} to schema {settings.db_schema} (bucket {settings.storage_bucket})")
 
 

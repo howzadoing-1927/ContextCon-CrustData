@@ -34,7 +34,22 @@ Launch rejections before anything is enqueued:
 
 The last check means a real launch needs D2's OAuth to have produced a `connected` seller connection. Until then, `python -m services.core.admin` can seed a dev-only connection row; it has no tokens, so no Google call can succeed through it.
 
-Not yet available: `GET /campaigns` (list), `/campaigns/{id}/ledger|control|poll`, `/workspace*`, `/decisions/*`, `/google/*`. `MissionDetail` collections stay empty until B4–B7 write them.
+### B3 seller setup (all require `Authorization` + `X-Organization-ID`)
+
+| Route | Behavior |
+|---|---|
+| `GET /api/v1/workspace` | Member. `SuccessEnvelope<OrganizationView>`: profile and config versions, approved profile, safe policy, connection summaries (no tokens), worker health |
+| `POST /api/v1/workspace/sources` | Owner + `Idempotency-Key`. Body `WebsiteSource \| PastedTextSource`. **Contract change: synchronous, not a 202 task.** Returns 201 `SuccessEnvelope<EvidenceView>`; same key and body replays with 200; different body 409. Blocked URL: 422 with `details.fallback = "pasted_text"`. Unreachable site: 503 |
+| `PUT /api/v1/workspace/profile` | Owner. `ProfileUpdate`. Compare-and-swap on `expected_profile_version`; same `approval_key` and body replays; stale version or reused key 409. Every fact must cite same-workspace evidence (otherwise 422). Returns `OrganizationView` with `profile_version + 1` |
+| `PUT /api/v1/workspace/policy` | Owner + `Idempotency-Key`. `PolicyUpdate` (`simulation: true`; exactly one `buyer_test` and at most one `owner_test`, each with `consent_record` and `consented_at`; `duration_minutes: 15`). Compare-and-swap on `expected_config_version`. Returns `OrganizationView` with `config_version + 1` |
+
+The website fetch fetches one page only (http(s) on ports 80/443, at most 2 redirects, 10 s, 1 MB). Every hop is checked for private or metadata addresses, and the connection is pinned to the vetted IP. The resulting text is untrusted evidence and never becomes an approved fact by itself.
+
+Launch now also refuses (422) a profile without operator-approved, evidence-backed facts, and a buyer whose consent lacks `consent_record` or `consented_at` (422 `RECIPIENT_NOT_ALLOWED`). Send the current `profile_version`/`config_version` from `GET /workspace`. The campaign stores an immutable launch snapshot of the approved facts and the safe policy.
+
+After launch, the worker's `normalize_mission` step moves the campaign to `stage: "research"` (plan accepted), or to `status: "needs_human"` with `stage: "clarification"` (missing required fields) or `stage: "normalize_mission"` (model failure). Read it through `GET /campaigns/{id}`; blocked decisions appear in `open_exceptions`.
+
+Not yet available: `GET /campaigns` (list), `/campaigns/{id}/ledger|control|poll`, `/decisions/*`, `/google/*`. `MissionDetail` prospects, conversation, evidence and handoff stay empty until B4–B7 write them.
 
 ## Fixtures (`contracts/fixtures/`)
 

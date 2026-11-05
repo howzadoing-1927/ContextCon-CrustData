@@ -1,7 +1,5 @@
-import time
 from concurrent.futures import ThreadPoolExecutor
 
-import psycopg
 import pytest
 
 from conftest import launch
@@ -18,6 +16,11 @@ def _claim(database_url, org, owner, lease_seconds=30):
 
 def _task(conn, lease):
     return conn.execute("select * from tasks where id = %s", (lease.task_id,)).fetchone()
+
+
+def _expire(conn, lease):
+    """Simulate the lease running out (the worker stopped heartbeating) without racing network latency."""
+    conn.execute("update tasks set lease_until = now() - interval '1 second' where id = %s", (lease.task_id,))
 
 
 def test_concurrent_claims_never_share_a_task(make_tenant, database_url):
@@ -37,11 +40,11 @@ def test_worker_crash_reclaim_and_stale_completion_rejected(make_tenant, databas
     tenant = make_tenant()
     launch(database_url, tenant)
 
-    lease_a = _claim(database_url, tenant.organization_id, "worker-a", lease_seconds=1)
+    lease_a = _claim(database_url, tenant.organization_id, "worker-a")
     assert lease_a is not None and lease_a.generation == 1 and lease_a.attempt == 1
     assert _claim(database_url, tenant.organization_id, "worker-b") is None  # lease still held
 
-    time.sleep(1.5)  # worker-a "crashes": no heartbeat, no completion
+    _expire(conn, lease_a)  # worker-a "crashes": no heartbeat, no completion
     lease_b = _claim(database_url, tenant.organization_id, "worker-b")
     assert lease_b.task_id == lease_a.task_id
     assert (lease_b.generation, lease_b.attempt) == (2, 2)
@@ -61,9 +64,9 @@ def test_worker_crash_reclaim_and_stale_completion_rejected(make_tenant, databas
 def test_restarted_worker_with_same_id_cannot_commit_its_old_generation(make_tenant, database_url, conn):
     tenant = make_tenant()
     launch(database_url, tenant)
-    before_crash = _claim(database_url, tenant.organization_id, "worker-1", lease_seconds=1)
+    before_crash = _claim(database_url, tenant.organization_id, "worker-1")
 
-    time.sleep(1.5)
+    _expire(conn, before_crash)
     after_restart = _claim(database_url, tenant.organization_id, "worker-1")
 
     assert after_restart.task_id == before_crash.task_id and after_restart.generation == before_crash.generation + 1
@@ -76,9 +79,9 @@ def test_restarted_worker_with_same_id_cannot_commit_its_old_generation(make_ten
 def test_expired_lease_cannot_commit_even_before_reclaim(make_tenant, database_url, conn):
     tenant = make_tenant()
     launch(database_url, tenant)
-    lease = _claim(database_url, tenant.organization_id, "slow-worker", lease_seconds=1)
+    lease = _claim(database_url, tenant.organization_id, "slow-worker")
 
-    time.sleep(1.3)
+    _expire(conn, lease)
 
     with pytest.raises(queue.LeaseLost), queue.fenced(conn, lease):
         queue.complete(conn, lease)
@@ -88,12 +91,15 @@ def test_expired_lease_cannot_commit_even_before_reclaim(make_tenant, database_u
 def test_heartbeat_extends_lease(make_tenant, database_url, conn):
     tenant = make_tenant()
     launch(database_url, tenant)
-    lease = _claim(database_url, tenant.organization_id, "w", lease_seconds=2)
+    lease = _claim(database_url, tenant.organization_id, "w")
+    conn.execute("update tasks set lease_until = now() + interval '2 seconds' where id = %s", (lease.task_id,))
 
-    time.sleep(1)
-    queue.heartbeat(conn, lease, 30)
-    time.sleep(1.5)
+    queue.heartbeat(conn, lease, 60)
 
+    remaining = conn.execute(
+        "select extract(epoch from lease_until - now()) as s from tasks where id = %s", (lease.task_id,)
+    ).fetchone()["s"]
+    assert remaining > 50
     with queue.fenced(conn, lease):
         queue.complete(conn, lease)
     assert _task(conn, lease)["status"] == "succeeded"
@@ -108,9 +114,9 @@ def test_failure_retries_then_exhausted_task_is_failed(make_tenant, database_url
     with queue.fenced(conn, first):
         assert queue.fail(conn, first, {"error_class": "Timeout"}, retry_after_seconds=0) == "ready"
 
-    second = _claim(database_url, tenant.organization_id, "w2", lease_seconds=1)
+    second = _claim(database_url, tenant.organization_id, "w2")
     assert second.attempt == 2
-    time.sleep(1.3)  # second worker dies; no attempts remain
+    _expire(conn, second)  # second worker dies; no attempts remain
 
     assert launched.task_id in queue.sweep_exhausted(conn)
     assert _task(conn, second)["status"] == "failed"

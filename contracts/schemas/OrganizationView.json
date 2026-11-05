@@ -1,0 +1,321 @@
+{
+  "$defs": {
+    "ApprovedProfileView": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_facts": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Approved Facts",
+          "type": "array"
+        },
+        "faq": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Faq",
+          "type": "array"
+        },
+        "forbidden_promises": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Promises",
+          "type": "array"
+        }
+      },
+      "required": [
+        "approved_facts",
+        "faq",
+        "forbidden_promises"
+      ],
+      "title": "ApprovedProfileView",
+      "type": "object"
+    },
+    "ConnectionSummaryView": {
+      "additionalProperties": false,
+      "properties": {
+        "account_email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Account Email"
+        },
+        "calendar_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Calendar Id"
+        },
+        "granted_scopes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Granted Scopes",
+          "type": "array"
+        },
+        "purpose": {
+          "enum": [
+            "seller",
+            "buyer_test"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "connected",
+            "reauth_required",
+            "revoked"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "purpose",
+        "status",
+        "account_email",
+        "granted_scopes",
+        "calendar_id"
+      ],
+      "title": "ConnectionSummaryView",
+      "type": "object"
+    },
+    "HealthReady": {
+      "additionalProperties": false,
+      "description": "Sanitized readiness summary. Returned as data on 200, and as error.details on 503.",
+      "properties": {
+        "database": {
+          "enum": [
+            "ok",
+            "error"
+          ],
+          "title": "Database",
+          "type": "string"
+        },
+        "last_seen_age_seconds": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Seen Age Seconds"
+        },
+        "status": {
+          "enum": [
+            "ready",
+            "not_ready"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "worker": {
+          "enum": [
+            "fresh",
+            "stale",
+            "missing",
+            "unknown"
+          ],
+          "title": "Worker",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "database",
+        "worker",
+        "last_seen_age_seconds"
+      ],
+      "title": "HealthReady",
+      "type": "object"
+    },
+    "SafePolicyView": {
+      "additionalProperties": false,
+      "properties": {
+        "consented_recipients": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Consented Recipients",
+          "type": "array"
+        },
+        "duration_minutes": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Duration Minutes"
+        },
+        "limits": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Limits"
+        },
+        "selected_calendar_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Selected Calendar Id"
+        },
+        "simulation": {
+          "title": "Simulation",
+          "type": "boolean"
+        },
+        "working_hours": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Working Hours"
+        }
+      },
+      "required": [
+        "simulation",
+        "consented_recipients",
+        "selected_calendar_id",
+        "working_hours",
+        "duration_minutes",
+        "limits"
+      ],
+      "title": "SafePolicyView",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:OrganizationView",
+  "additionalProperties": false,
+  "properties": {
+    "approved_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Approved At"
+    },
+    "config_version": {
+      "title": "Config Version",
+      "type": "integer"
+    },
+    "connections": {
+      "items": {
+        "$ref": "#/$defs/ConnectionSummaryView"
+      },
+      "title": "Connections",
+      "type": "array"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "policy": {
+      "$ref": "#/$defs/SafePolicyView"
+    },
+    "profile": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApprovedProfileView"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "profile_version": {
+      "title": "Profile Version",
+      "type": "integer"
+    },
+    "role": {
+      "enum": [
+        "owner",
+        "member"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "timezone": {
+      "title": "Timezone",
+      "type": "string"
+    },
+    "website_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Website Url"
+    },
+    "worker": {
+      "$ref": "#/$defs/HealthReady"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "website_url",
+    "timezone",
+    "role",
+    "profile_version",
+    "approved_at",
+    "profile",
+    "config_version",
+    "policy",
+    "connections",
+    "worker"
+  ],
+  "title": "OrganizationView",
+  "type": "object"
+}

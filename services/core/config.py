@@ -68,6 +68,20 @@ class Settings:
     action_executing_timeout_seconds: int
     simulation_only: bool
     live_effects_enabled: bool
+    provider_timeout_seconds: int
+    azure_openai_endpoint: str | None
+    azure_openai_api_key: str | None
+    azure_openai_api_version: str | None
+    azure_openai_decision_deployment: str | None
+    azure_openai_fast_deployment: str | None
+
+    @property
+    def azure_configured(self) -> bool:
+        return bool(
+            self.azure_openai_endpoint
+            and self.azure_openai_api_key
+            and (self.azure_openai_fast_deployment or self.azure_openai_decision_deployment)
+        )
 
     @property
     def private_schema(self) -> str:
@@ -106,4 +120,10 @@ def get_settings() -> Settings:
         action_executing_timeout_seconds=_int("ACTION_EXECUTING_TIMEOUT_SECONDS", 120),
         simulation_only=_bool("SIMULATION_ONLY", True),
         live_effects_enabled=_bool("LIVE_EFFECTS_ENABLED", False),
+        provider_timeout_seconds=_int("PROVIDER_TIMEOUT_SECONDS", 20),
+        azure_openai_endpoint=_optional("AZURE_OPENAI_ENDPOINT"),
+        azure_openai_api_key=_optional("AZURE_OPENAI_API_KEY"),
+        azure_openai_api_version=_optional("AZURE_OPENAI_API_VERSION"),
+        azure_openai_decision_deployment=_optional("AZURE_OPENAI_DECISION_DEPLOYMENT"),
+        azure_openai_fast_deployment=_optional("AZURE_OPENAI_FAST_DEPLOYMENT"),
     )

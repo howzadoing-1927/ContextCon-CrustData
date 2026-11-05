@@ -1,6 +1,3 @@
-import time
-
-import psycopg
 import pytest
 
 from conftest import launch
@@ -85,10 +82,10 @@ def test_stale_lease_cannot_begin_execution(make_tenant, database_url, conn):
     tenant = make_tenant()
     launched = launch(database_url, tenant)
     with db.connect(database_url) as c:
-        lease = queue.claim(c, owner="w", kinds=["normalize_mission"], lease_seconds=1, organization_id=tenant.organization_id)
+        lease = queue.claim(c, owner="w", kinds=["normalize_mission"], lease_seconds=30, organization_id=tenant.organization_id)
     action = _prepare(conn, tenant, launched)
 
-    time.sleep(1.3)
+    conn.execute("update tasks set lease_until = now() - interval '1 second' where id = %s", (lease.task_id,))
 
     with pytest.raises(queue.LeaseLost):
         actions.begin_execute(conn, lease, action["id"])

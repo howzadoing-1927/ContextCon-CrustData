@@ -86,9 +86,27 @@ def _replay(conn: psycopg.Connection, organization_id: UUID, row: dict, body_has
     return CampaignLaunchView(**_campaign_view(row).model_dump(), task_id=task["id"])
 
 
-def _check_launch_policy(conn: psycopg.Connection, organization_id: UUID, body: CampaignCreate) -> list[dict]:
+def _has_approved_facts(profile: dict) -> bool:
+    facts = profile.get("approved_facts") or []
+    return (
+        not profile.get("placeholder")
+        and bool(facts)
+        and all(f.get("approved") is True and f.get("authority") == "operator_approved" and f.get("evidence_ids") for f in facts)
+    )
+
+
+def _complete_consent(recipient: dict) -> bool:
+    return bool(recipient.get("consent_record")) and bool(recipient.get("consented_at"))
+
+
+def _check_launch_policy(
+    conn: psycopg.Connection, organization_id: UUID, body: CampaignCreate
+) -> tuple[list[dict], dict]:
+    """Validate against the current workspace and return (policy checks, immutable launch snapshot).
+    The organization row is share-locked so profile/policy cannot change under the launch transaction."""
     org = conn.execute(
-        "select profile_version, config_version, approved_at, policy_json from organizations where id = %s",
+        "select name, website_url, timezone, profile_version, config_version, approved_at, approved_profile_json, "
+        "policy_json from organizations where id = %s for share",
         (organization_id,),
     ).fetchone()
     if body.profile_version != org["profile_version"] or body.config_version != org["config_version"]:
@@ -98,18 +116,20 @@ def _check_launch_policy(conn: psycopg.Connection, organization_id: UUID, body: 
             "Profile or policy version is stale; reload the workspace.",
             details={"current_profile_version": org["profile_version"], "current_config_version": org["config_version"]},
         )
-    if org["approved_at"] is None:
-        raise DomainError(422, ErrorCode.DOMAIN_INVALID, "Seller profile is not approved.", details={"field": "profile"})
+    if org["approved_at"] is None or not _has_approved_facts(org["approved_profile_json"]):
+        raise DomainError(
+            422,
+            ErrorCode.DOMAIN_INVALID,
+            "Seller facts are not approved; approve at least one evidence-backed fact first.",
+            details={"field": "profile"},
+        )
 
     policy = org["policy_json"]
     if policy.get("simulation") is not True:
         raise DomainError(422, ErrorCode.DOMAIN_INVALID, "Workspace policy must be simulation-only.")
 
-    consented = {
-        normalize_email(r["email"])
-        for r in policy.get("consented_recipients", [])
-        if r.get("role") == "buyer_test" and r.get("consent_record")
-    }
+    buyers = [r for r in policy.get("consented_recipients", []) if r.get("role") == "buyer_test"]
+    consented = {normalize_email(r["email"]) for r in buyers if _complete_consent(r)}
     if body.buyer_test_email not in consented:
         raise DomainError(
             422,
@@ -141,14 +161,35 @@ def _check_launch_policy(conn: psycopg.Connection, organization_id: UUID, body: 
             details={"connection_status": connection["status"] if connection else None, "missing_scopes": missing_scopes},
         )
 
-    return [
+    checks = [
         {"name": "versions_current", "pass": True, "reason": "profile and config versions match the workspace"},
-        {"name": "profile_approved", "pass": True, "reason": "seller profile has an approval timestamp"},
+        {"name": "facts_approved", "pass": True, "reason": "approved profile has evidence-backed operator-approved facts"},
         {"name": "simulation_only", "pass": True, "reason": "workspace policy simulation=true"},
         {"name": "recipient_allowlist", "pass": True, "reason": "buyer_test_email exactly matches a consented buyer_test"},
+        {"name": "consent_complete", "pass": True, "reason": "buyer consent has a record reference and timestamp"},
         {"name": "limits_within_policy", "pass": True, "reason": "requested limits do not exceed workspace limits"},
         {"name": "seller_google_ready", "pass": True, "reason": "seller connection connected with required scopes"},
     ]
+    profile = org["approved_profile_json"]
+    snapshot = {
+        "profile_version": org["profile_version"],
+        "config_version": org["config_version"],
+        "seller": {"name": org["name"], "website_url": org["website_url"], "timezone": org["timezone"]},
+        "approved_profile": {
+            "approved_facts": profile.get("approved_facts", []),
+            "faq": profile.get("faq", []),
+            "forbidden_promises": profile.get("forbidden_promises", []),
+        },
+        "policy": {
+            "simulation": True,
+            "buyer_test": next(r for r in buyers if normalize_email(r["email"]) == body.buyer_test_email),
+            "selected_calendar_id": policy.get("selected_calendar_id"),
+            "working_hours": policy.get("working_hours"),
+            "duration_minutes": policy.get("duration_minutes"),
+            "limits": body.limits.model_dump(),
+        },
+    }
+    return checks, snapshot
 
 
 def launch_campaign(
@@ -160,21 +201,22 @@ def launch_campaign(
     if existing is not None:
         return _replay(conn, organization_id, existing, body_hash)
 
-    checks = _check_launch_policy(conn, organization_id, body)
+    checks, snapshot = _check_launch_policy(conn, organization_id, body)
 
     campaign_id = uuid4()
     inserted = conn.execute(
         """
         insert into campaigns
           (id, organization_id, request_key, request_hash, request_text, mode, buyer_test_email, status, stage,
-           version, profile_version, config_version, limits_json, budget_json, started_at)
-        values (%s, %s, %s, %s, %s, 'simulation', %s, 'running', 'normalize_mission', 1, %s, %s, %s, %s, now())
+           version, profile_version, config_version, limits_json, budget_json, launch_snapshot_json, started_at)
+        values (%s, %s, %s, %s, %s, 'simulation', %s, 'running', 'normalize_mission', 1, %s, %s, %s, %s, %s, now())
         on conflict (organization_id, request_key) do nothing
         returning id
         """,
         (
             campaign_id, organization_id, idempotency_key, body_hash, body.request_text, body.buyer_test_email,
             body.profile_version, body.config_version, Jsonb(body.limits.model_dump()), Jsonb({"usage": ZERO_USAGE}),
+            Jsonb(snapshot),
         ),
     ).fetchone()
     if inserted is None:

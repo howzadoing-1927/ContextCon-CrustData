@@ -6,7 +6,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic.json_schema import models_json_schema
 
-from . import google_adapter, requests, views
+from . import google_adapter, model_io, requests, views
 from .envelopes import ErrorEnvelope
 from .version import CONTRACT_VERSION, PLANNING_BASELINE
 
@@ -29,8 +29,14 @@ ROOT_MODELS: list[type[BaseModel]] = [
     views.Slot,
     views.BookingReceipt,
     views.Handoff,
+    views.OrganizationView,
     requests.Limits,
     requests.CampaignCreate,
+    requests.WebsiteSource,
+    requests.PastedTextSource,
+    requests.ProfileUpdate,
+    requests.PolicyUpdate,
+    model_io.NormalizedPlan,
     requests.ControlInput,
     requests.ResolveInput,
     google_adapter.GoogleFailure,

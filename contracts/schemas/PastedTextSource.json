@@ -1,0 +1,30 @@
+{
+  "$id": "urn:outcome:outcome.v1:PastedTextSource",
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "pasted_text",
+      "title": "Kind",
+      "type": "string"
+    },
+    "text": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kind",
+    "title",
+    "text"
+  ],
+  "title": "PastedTextSource",
+  "type": "object"
+}
