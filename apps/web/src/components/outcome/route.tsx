@@ -176,3 +176,29 @@ export function MiniRoute({ position, className }: { position: RoutePosition; cl
     </span>
   );
 }
+
+/** Narrow-width route: dots plus the current station and any terminal branch, spelled out. */
+export function CompactRoute({ position, className }: { position: RoutePosition; className?: string }) {
+  const { index, terminal, waiting, paused } = position;
+  const station = STATIONS[Math.max(index, 0)];
+  const status = index < 0 ? "Not started" : station.label;
+  return (
+    <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-1.5", className)}>
+      <MiniRoute position={position} />
+      <p className="text-xs">
+        <span className="sr-only">Mission route: </span>
+        <span className="font-medium text-foreground">{status}</span>
+        {!terminal && (waiting || paused) && <span className="text-signal"> · {paused ? "paused" : "waiting on the buyer"}</span>}
+      </p>
+      {terminal && (
+        <span className="flex items-center gap-2">
+          <span aria-hidden className="h-px w-4 bg-current text-faint" />
+          <span className={cn("inline-flex h-6 items-center gap-1.5 rounded-sm border px-2 text-2xs font-semibold", terminalTone[terminal.tone])}>
+            <span aria-hidden className="size-1.5 rounded-full bg-current" />
+            {terminal.label}
+          </span>
+        </span>
+      )}
+    </div>
+  );
+}

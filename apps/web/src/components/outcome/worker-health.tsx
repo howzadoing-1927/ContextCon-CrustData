@@ -37,7 +37,7 @@ export function WorkerHealth() {
       className={cn("inline-flex items-center gap-1.5 text-2xs whitespace-nowrap tabular", healthy ? "text-muted-foreground" : "font-medium text-signal")}
     >
       <span aria-hidden className={cn("size-1.5 rounded-full", healthy ? "bg-ok" : data ? "bg-signal" : "bg-faint")} />
-      {label}
+      <span className={cn(healthy && "max-sm:sr-only")}>{label}</span>
     </span>
   );
 }

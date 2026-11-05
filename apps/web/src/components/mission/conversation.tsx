@@ -55,7 +55,7 @@ export function SlotsOffered({ slots, booking, timeZone }: { slots: Slot[]; book
   if (!slots.length) return null;
   return (
     <div className="mt-2 rounded-lg border border-hairline px-3.5 py-3">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex items-baseline justify-between gap-3 max-sm:flex-col max-sm:gap-0.5">
         <h3 className="text-xs font-medium">Times offered</h3>
         <p className="text-2xs text-muted-foreground">An offer, not a reservation. Free/busy is checked again before booking.</p>
       </div>
@@ -63,8 +63,8 @@ export function SlotsOffered({ slots, booking, timeZone }: { slots: Slot[]; book
         {slots.map((slot) => {
           const chosen = booking?.start === slot.start && booking.end === slot.end;
           return (
-            <li key={slot.id} className="flex items-center gap-3 py-1.5 text-sm">
-              <span className={cn("tabular", chosen ? "font-medium text-foreground" : "text-muted-foreground")}>
+            <li key={slot.id} className="flex items-center gap-3 py-1.5 text-sm max-sm:flex-wrap max-sm:gap-y-1">
+              <span className={cn("tabular max-sm:basis-full", chosen ? "font-medium text-foreground" : "text-muted-foreground")}>
                 {formatSlot(slot.start, slot.end, slot.timezone)}
               </span>
               <span className="font-mono text-2xs text-faint">{formatSlot(slot.start, slot.end, "UTC")}</span>

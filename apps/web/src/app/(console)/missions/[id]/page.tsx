@@ -14,7 +14,7 @@ import { lastDecisionReason, nextExpected, StagePanel } from "@/components/missi
 import { ErrorState } from "@/components/outcome/error-state";
 import { EvidenceProvider } from "@/components/outcome/evidence";
 import { Notice } from "@/components/outcome/panel";
-import { MiniRoute, MissionRoute, routePosition } from "@/components/outcome/route";
+import { CompactRoute, MissionRoute, routePosition } from "@/components/outcome/route";
 import { useNow } from "@/components/outcome/worker-health";
 import { useWorkspace } from "@/components/outcome/workspace-context";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -103,6 +103,11 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
     if (detail) setPollMs(SETTLED.has(detail.status) ? 15000 : 2000);
   }, [detail]);
 
+  const hasExceptions = Boolean(detail?.open_exceptions.length);
+  useEffect(() => {
+    if (hasExceptions && window.location.hash === "#resolve") setDrawerOpen(true);
+  }, [hasExceptions]);
+
   useEffect(() => {
     if (detail?.status) document.title = `${detail.status === "needs_human" ? "Needs you · " : ""}Mission · Outcome AI`;
   }, [detail?.status]);
@@ -158,7 +163,7 @@ export default function MissionPage({ params }: { params: Promise<{ id: string }
             </div>
           </aside>
           <div className="hidden border-b border-hairline px-5 py-3 max-lg:block">
-            <MiniRoute position={position} />
+            <CompactRoute position={position} />
             <p className="mt-1.5 text-2xs text-muted-foreground">Next: {nextExpected(detail)}</p>
           </div>
 

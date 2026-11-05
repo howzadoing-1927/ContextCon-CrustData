@@ -46,7 +46,7 @@ export function ProvenanceStamp({ kind, className }: { kind: ExecutionLabel; cla
   );
 }
 
-export function ModeBadge({ className }: { className?: string }) {
+export function ModeBadge({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
     <span
       className={cn(
@@ -55,12 +55,14 @@ export function ModeBadge({ className }: { className?: string }) {
       )}
     >
       <Radio aria-hidden className="size-3 text-live" />
-      Live tools
-      <span aria-hidden className="text-faint">
-        ·
-      </span>
+      {compact ? <span className="sr-only">Live tools,</span> : "Live tools"}
+      {!compact && (
+        <span aria-hidden className="text-faint">
+          ·
+        </span>
+      )}
       <VenetianMask aria-hidden className="size-3 text-simbuyer" />
-      simulated buyer
+      {compact ? "Simulated buyer" : "simulated buyer"}
     </span>
   );
 }

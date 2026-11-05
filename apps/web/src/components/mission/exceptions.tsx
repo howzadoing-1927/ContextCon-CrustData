@@ -61,13 +61,13 @@ export function ExceptionStrip({ exceptions, onOpen }: { exceptions: DecisionVie
   if (!exceptions.length) return null;
   const first = exceptions[0];
   return (
-    <div role="alert" className="flex items-center gap-3 border-b border-signal/40 bg-signal/10 px-5 py-2.5">
-      <AlertTriangle aria-hidden className="size-4 shrink-0 text-signal" />
-      <p className="min-w-0 flex-1 truncate text-sm">
+    <div role="alert" className="flex items-center gap-3 border-b border-signal/40 bg-signal/10 px-5 py-2.5 max-sm:flex-wrap max-sm:items-start max-sm:px-3">
+      <AlertTriangle aria-hidden className="size-4 shrink-0 text-signal max-sm:mt-0.5" />
+      <p className="min-w-0 flex-1 text-sm max-sm:min-w-[calc(100%-2rem)] sm:truncate">
         <span className="font-semibold text-signal">Needs you{exceptions.length > 1 ? ` (${exceptions.length})` : ""}: </span>
         <span className="font-medium">{humanize(first.kind)}.</span> <span className="text-muted-foreground">{firstSentence(first.reason)}</span>
       </p>
-      <Button size="sm" onClick={onOpen} className="bg-signal text-signal-foreground hover:bg-signal/85">
+      <Button size="sm" onClick={onOpen} className="bg-signal text-signal-foreground hover:bg-signal/85 max-sm:ml-7">
         Review and resolve
       </Button>
     </div>
@@ -165,7 +165,7 @@ function ResolutionForm({
                 value={t}
                 checked={type === t}
                 onChange={() => setType(t)}
-                className="mt-1 accent-[var(--signal)]"
+                className="mt-1 accent-[var(--primary)]"
               />
               <span>
                 <span className={cn("block text-sm font-medium", t === "stop" && "text-bad")}>{RESOLUTION[t].label}</span>
@@ -189,7 +189,7 @@ function ResolutionForm({
                     type="checkbox"
                     checked={slotIds.includes(slot.id)}
                     onChange={(e) => setSlotIds((ids) => (e.target.checked ? [...ids, slot.id] : ids.filter((id) => id !== slot.id)))}
-                    className="accent-[var(--signal)]"
+                    className="accent-[var(--primary)]"
                   />
                   <span className="tabular">{formatSlot(slot.start, slot.end, slot.timezone)}</span>
                 </label>
@@ -210,7 +210,7 @@ function ResolutionForm({
                   name={`fact-${decision.id}`}
                   checked={factId === f.id}
                   onChange={() => setFactId(f.id)}
-                  className="mt-1 accent-[var(--signal)]"
+                  className="mt-1 accent-[var(--primary)]"
                 />
                 {f.text}
               </label>
@@ -226,7 +226,7 @@ function ResolutionForm({
 
       {type === "confirm_identity" && (
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" checked={identityChecked} onChange={(e) => setIdentityChecked(e.target.checked)} className="mt-1 accent-[var(--signal)]" />
+          <input type="checkbox" checked={identityChecked} onChange={(e) => setIdentityChecked(e.target.checked)} className="mt-1 accent-[var(--primary)]" />
           I checked this person&apos;s current title and employer myself.
         </label>
       )}
@@ -295,7 +295,7 @@ export function ExceptionDrawer({
 
   return (
     <Sheet open={open && Boolean(decision)} onOpenChange={onOpenChange}>
-      <SheetContent side="right" showCloseButton={false} className="w-[34rem] gap-0 border-hairline sm:max-w-[34rem]">
+      <SheetContent side="right" showCloseButton={false} className="gap-0 border-hairline data-[side=right]:w-full data-[side=right]:sm:max-w-[34rem]">
         {decision && (
           <>
             <SheetHeader className="border-b border-hairline px-5 py-4">

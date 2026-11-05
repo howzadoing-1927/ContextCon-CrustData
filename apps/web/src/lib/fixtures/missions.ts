@@ -275,7 +275,7 @@ function prospect(fit: ProspectCase["fit"], withPerson: boolean): ProspectCase {
         evidence_ids: withPerson ? [EV.personTitle.id, EV.relationship.id] : [],
         reason: withPerson
           ? "Current title is VP Sales at this company. The title supports role relevance but does not prove purchasing authority."
-          : "Person lookup still running.",
+          : "Person lookup failed after 3 attempts.",
       },
     ],
     fit,

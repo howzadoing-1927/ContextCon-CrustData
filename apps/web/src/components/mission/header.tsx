@@ -2,7 +2,7 @@
 
 import { Pause, Play, Square } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ProvenanceStamp } from "@/components/outcome/provenance";
+import { ModeBadge, ProvenanceStamp } from "@/components/outcome/provenance";
 import { CampaignStatus } from "@/components/outcome/status";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -154,15 +154,16 @@ export function MissionHeader({
           <div className="flex flex-wrap items-center gap-2">
             <CampaignStatus status={detail.status} />
             {mode === "FIXTURE" && <ProvenanceStamp kind="FIXTURE" />}
-            <span className="font-mono text-2xs text-faint">
-              v{detail.version} · {humanize(detail.stage)}
+            <span className="text-2xs text-faint">
+              <span className="font-mono">v{detail.version}</span> · {humanize(detail.stage)}
             </span>
+            <ModeBadge compact className="sm:hidden" />
             <span className={cn("text-2xs tabular", stale ? "font-medium text-signal" : "text-faint")}>
               {stale ? "Updates failing · last good " : "Updated "}
               {relativeAge(fetchedAt, now)}
             </span>
           </div>
-          <h1 className={cn("mt-1.5 max-w-[68ch] text-lg leading-snug font-medium tracking-tight text-pretty", !expanded && "line-clamp-2")}>{detail.request_text}</h1>
+          <h1 className={cn("mt-1.5 max-w-[68ch] text-lg leading-snug font-medium tracking-tight text-pretty", long && !expanded && "line-clamp-2")}>{detail.request_text}</h1>
           {long && (
             <button type="button" onClick={() => setExpanded((v) => !v)} className="text-2xs text-muted-foreground underline">
               {expanded ? "Show less" : "Show full request"}
