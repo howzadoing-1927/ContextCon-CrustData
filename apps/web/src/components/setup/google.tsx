@@ -4,6 +4,7 @@ import { Check, Minus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MonoId } from "@/components/outcome/mono";
 import { Notice, Section } from "@/components/outcome/panel";
+import { ProvenanceStamp } from "@/components/outcome/provenance";
 import { StatusChip, type Tone } from "@/components/outcome/status";
 import { Button } from "@/components/ui/button";
 import { describeError } from "@/lib/api/errors";
@@ -17,6 +18,19 @@ const SCOPE_LABEL: Record<(typeof REQUIRED_GOOGLE_SCOPES)[number], string> = {
   "https://www.googleapis.com/auth/gmail.send": "Send from the seller mailbox",
   "https://www.googleapis.com/auth/calendar.events": "Create and read back the meeting",
   "https://www.googleapis.com/auth/calendar.freebusy": "Check free/busy before offering slots",
+};
+
+/** Recorded by hand from a real consent run against the Google project. Not read from the app's connection. */
+const MANUAL_OAUTH_CHECK = {
+  project: "outcome-hackathon · 964319572879",
+  redirectUri: "http://localhost:8000/api/v1/google/callback",
+  seller: "prakhar6218@gmail.com",
+  results: [
+    { ok: true, text: "Consent succeeded and granted all four required scopes" },
+    { ok: true, text: "Refresh token issued; no token was saved" },
+    { ok: true, text: "Gmail profile read succeeded" },
+    { ok: false, text: "calendarList returned 403: it needs a broader scope, which is intentionally not requested" },
+  ],
 };
 
 const STATUS: Record<ConnectionStatus | "none", { label: string; tone: Tone }> = {
@@ -142,6 +156,33 @@ export function GoogleSection({
         </table>
       </div>
 
+      <div className="mt-4 rounded-lg border border-hairline px-3.5 py-3">
+        <p className="text-sm font-medium">Manual OAuth check</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          A real consent run outside the app. The Google adapter isn&apos;t built yet, so the connection above doesn&apos;t come from it.
+        </p>
+        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
+          <dt className="text-muted-foreground">Project</dt>
+          <dd className="font-mono text-2xs">{MANUAL_OAUTH_CHECK.project}</dd>
+          <dt className="text-muted-foreground">Redirect URI</dt>
+          <dd className="font-mono text-2xs break-all">{MANUAL_OAUTH_CHECK.redirectUri}</dd>
+          <dt className="text-muted-foreground">Seller</dt>
+          <dd className="font-mono text-2xs">{MANUAL_OAUTH_CHECK.seller}</dd>
+        </dl>
+        <ul className="mt-2.5 flex flex-col gap-1 text-xs">
+          {MANUAL_OAUTH_CHECK.results.map((item) => (
+            <li key={item.text} className="flex items-start gap-1.5">
+              {item.ok ? (
+                <Check aria-hidden className="mt-0.5 size-3.5 shrink-0 text-ok" />
+              ) : (
+                <Minus aria-hidden className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+              )}
+              <span className={item.ok ? undefined : "text-muted-foreground"}>{item.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       {connection?.status === "reauth_required" && (
         <Notice tone="attention" className="mt-4" title="Google stopped accepting this connection">
           Missions that need to send, read or book are blocked until an owner reauthorizes. Already-sent mail is unaffected.
@@ -151,6 +192,12 @@ export function GoogleSection({
       {canEdit && (
         <div className="mt-4 flex items-center justify-end gap-3">
           {connect.error != null && <span className="text-2xs text-bad">{describeError(connect.error).title}</span>}
+          {mode === "FIXTURE" && (
+            <span className="flex items-center gap-2 text-2xs text-muted-foreground">
+              <ProvenanceStamp kind="FIXTURE" />
+              Runs the fixture flow; no Google screen opens
+            </span>
+          )}
           <Button variant={healthy ? "outline" : "default"} onClick={start} disabled={connect.pending}>
             {connect.pending ? "Opening Google…" : action}
           </Button>
