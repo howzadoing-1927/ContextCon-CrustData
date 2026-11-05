@@ -178,8 +178,22 @@
   animation: station-pulse 1.8s var(--ease-out-expo) infinite;
 }
 
+@keyframes row-arrive {
+  from {
+    background-color: oklch(0.81 0.135 76 / 0.12);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.row-arrive {
+  animation: row-arrive 1.6s var(--ease-out-expo);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .station-active {
+  .station-active,
+  .row-arrive {
     animation: none;
   }
   *,

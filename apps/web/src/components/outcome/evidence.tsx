@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CalendarCheck, FileText, Globe, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { Building2, CalendarCheck, Globe, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { createContext, useContext, useMemo } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { EvidenceSourceKind, EvidenceView, FactStatus } from "@/lib/contracts";

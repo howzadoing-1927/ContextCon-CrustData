@@ -39,7 +39,8 @@ function isErrorEnvelope(body: unknown): body is ErrorEnvelope {
 
 function stripFixtureTag<T>(data: T): T {
   if (data && typeof data === "object" && "_fixture" in data) {
-    const { _fixture: _ignored, ...rest } = data as Record<string, unknown>;
+    const rest = { ...(data as Record<string, unknown>) };
+    delete rest._fixture;
     return rest as T;
   }
   return data;

@@ -6,8 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
+import { isApiError } from "@/lib/api/errors";
+import { ErrorState } from "./error-state";
 import { FixtureBar } from "./fixture-bar";
 import { ModeBadge, ProvenanceStamp } from "./provenance";
+import { SystemBanner } from "./system-banner";
 import { WorkerHealth } from "./worker-health";
 import { useWorkspace } from "./workspace-context";
 
@@ -22,6 +25,10 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { email, mode, signOut, selectOrganization } = useSession();
   const { workspace } = useWorkspace();
+  const accessError =
+    !workspace.data && isApiError(workspace.error) && (workspace.error.code === "UNAUTHENTICATED" || workspace.error.code === "FORBIDDEN")
+      ? workspace.error
+      : null;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -88,8 +95,15 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+      <SystemBanner />
       <main id="main" className="flex flex-1 flex-col">
-        {children}
+        {accessError ? (
+          <div className="px-5">
+            <ErrorState error={accessError} />
+          </div>
+        ) : (
+          children
+        )}
       </main>
       {mode === "FIXTURE" && <FixtureBar />}
     </div>
