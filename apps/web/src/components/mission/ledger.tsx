@@ -64,7 +64,7 @@ function DecisionRow({ decision, timeZone, fresh }: { decision: DecisionView; ti
   const status = STATUS[decision.status];
   const tokensIn = Number(decision.model?.usage.tokens_in ?? 0);
   const tokensOut = Number(decision.model?.usage.tokens_out ?? 0);
-  const provenance = mode === "FIXTURE" ? "FIXTURE" : decision.actual_action?.provider_ref ? "LIVE" : null;
+  const provenance = mode === "LIVE" && decision.actual_action?.provider_ref ? "LIVE" : null;
   const panelId = `decision-${decision.id}`;
 
   return (
@@ -86,9 +86,11 @@ function DecisionRow({ decision, timeZone, fresh }: { decision: DecisionView; ti
             <span className="truncate text-xs font-medium">{humanize(decision.kind)}</span>
             <span className="ml-auto flex shrink-0 items-center gap-1.5">
               {provenance && <ProvenanceStamp kind={provenance} className="h-4 px-1 [&_svg]:size-2.5" />}
-              <StatusChip tone={status.tone} className="h-5">
-                {status.label}
-              </StatusChip>
+              {decision.status !== "accepted" && (
+                <StatusChip tone={status.tone} className="h-5">
+                  {status.label}
+                </StatusChip>
+              )}
             </span>
           </span>
           <span className={cn("mt-1 block text-xs text-muted-foreground", !open && "line-clamp-2")}>{decision.reason}</span>
@@ -202,6 +204,7 @@ export function useLedger(campaignId: string, signal: string) {
 
 export function DecisionLedger({ ledger, timeZone }: { ledger: Ledger; timeZone: string }) {
   const { items, cursor, error, loadingMore, loadMore, retry } = ledger;
+  const { mode } = useSession();
   const seen = useRef<Set<string> | null>(null);
   const fresh = new Set<string>();
   if (items) {
@@ -214,8 +217,9 @@ export function DecisionLedger({ ledger, timeZone }: { ledger: Ledger; timeZone:
   return (
     <section aria-labelledby="ledger-heading" className="flex min-h-0 flex-col">
       <header className="sticky top-0 z-10 flex items-baseline justify-between border-b border-hairline bg-shell px-4 py-2.5">
-        <h2 id="ledger-heading" className="text-sm font-semibold">
+        <h2 id="ledger-heading" className="flex items-center gap-2 text-sm font-semibold">
           Decision ledger
+          {mode === "FIXTURE" && <ProvenanceStamp kind="FIXTURE" className="h-4 px-1 [&_svg]:size-2.5" />}
         </h2>
         <span className="text-2xs text-faint tabular">{items ? `${items.length}${cursor ? "+" : ""} decisions · oldest first` : ""}</span>
       </header>

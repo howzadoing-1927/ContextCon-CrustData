@@ -145,7 +145,7 @@ export function MissionHeader({
 }) {
   const { mode } = useSession();
   const [expanded, setExpanded] = useState(false);
-  const long = detail.request_text.length > 160;
+  const long = detail.request_text.length > 220;
 
   return (
     <header className="border-b border-hairline bg-background px-5 py-3">

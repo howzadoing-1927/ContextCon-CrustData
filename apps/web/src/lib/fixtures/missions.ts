@@ -721,7 +721,7 @@ function alternative(scenario: MissionScenario): Snapshot {
         kind: "clarify_time",
         status: "blocked",
         reason:
-          "“Thursday or Friday afternoon” is a preference, not an acceptance of an offered slot. No booking is made. Choose a slot the buyer named, or have the worker ask them to pick one.",
+          "“Thursday or Friday afternoon” is a preference, not an acceptance of an offered slot. No booking is made. Have the worker ask the buyer to pick one of the offered times, or stop.",
         evidence_ids: [EV.replyAmbiguous.id],
         model: model("reply.v3", 1910, 170),
         input_refs: { message_id: fid("msg:m4-amb"), intent: "schedule_preference", needs_clarification: true },
@@ -889,6 +889,10 @@ export interface FixtureMission {
   scenario: MissionScenario;
   request_text: string;
   created_minute: number;
+  /** Operator decisions recorded against this mission; the ledger is append-only. */
+  history?: DecisionView[];
+  /** Versions never go backwards, even when the scenario snapshot is shorter. */
+  minVersion?: number;
 }
 
 export function buildMission(mission: FixtureMission): { detail: MissionDetail; ledger: DecisionView[] } {
@@ -911,11 +915,13 @@ export function buildMission(mission: FixtureMission): { detail: MissionDetail; 
   }
 
   const conversationId = fid(`conv:${mission.id}`);
+  const history = mission.history ?? [];
+  const version = Math.max(snapshot.decisions.length + history.length + 1, mission.minVersion ?? 0);
   const conversation: ConversationView | null = snapshot.conversation
     ? {
         id: conversationId,
         state: snapshot.conversation.state,
-        version: snapshot.decisions.length + 1,
+        version,
         buyer_role_label: "simulated buyer",
         buyer_test_email: BUYER_TEST_EMAIL,
         provider_thread_id: snapshot.conversation.messages.some((m) => m.provider_message_id) ? fhex("thread", 16) : null,
@@ -925,14 +931,16 @@ export function buildMission(mission: FixtureMission): { detail: MissionDetail; 
       }
     : null;
 
-  const ledger = snapshot.decisions.map((d) => ({ ...d, id: fid(`${mission.id}:${d.id}`) }));
+  const ledger = [...snapshot.decisions.map((d) => ({ ...d, id: fid(`${mission.id}:${d.id}`) })), ...history].sort((a, b) =>
+    a.created_at.localeCompare(b.created_at),
+  );
 
   const detail: MissionDetail = {
     id: mission.id,
     request_text: mission.request_text,
     mode: "simulation",
     status: snapshot.status,
-    version: snapshot.decisions.length + 1,
+    version,
     stage: snapshot.stage,
     profile_version: 1,
     config_version: 1,

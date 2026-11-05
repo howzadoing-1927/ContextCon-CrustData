@@ -95,6 +95,7 @@ interface State {
   missions: FixtureMission[];
   progressions: ProgressionMission[];
   overrides: Map<string, MissionScenario>;
+  history: Map<string, { decisions: DecisionView[]; minVersion: number }>;
   workspace: Record<string, OrganizationView>;
   replays: Map<string, TransportResponse>;
 }
@@ -110,9 +111,9 @@ function connection(status: ConnectionSummary["status"]): ConnectionSummary {
 }
 
 function health(scenario: GlobalScenario): HealthReady {
-  return scenario === "worker_stale"
-    ? { status: "not_ready", database: "ok", worker: "stale", last_seen_age_seconds: 94 }
-    : { status: "ready", database: "ok", worker: "fresh", last_seen_age_seconds: 4 };
+  if (scenario === "worker_stale") return { status: "not_ready", database: "ok", worker: "stale", last_seen_age_seconds: 94 };
+  if (scenario === "dependency_503") return { status: "not_ready", database: "error", worker: "fresh", last_seen_age_seconds: 4 };
+  return { status: "ready", database: "ok", worker: "fresh", last_seen_age_seconds: 4 };
 }
 
 function workspaceFor(orgId: string, scenario: GlobalScenario): OrganizationView {
@@ -243,6 +244,7 @@ function initialState(): State {
             },
           ],
     overrides: new Map(),
+    history: new Map(),
     workspace: {
       [FIXTURE_ORG_ID]: workspaceFor(FIXTURE_ORG_ID, scenario),
       [FIXTURE_ORG_ID_2]: workspaceFor(FIXTURE_ORG_ID_2, scenario),
@@ -260,11 +262,21 @@ function progressionScenario(p: ProgressionMission): MissionScenario {
   return HAPPY_PATH[step];
 }
 
+function withHistory(m: FixtureMission): FixtureMission {
+  const h = state.history.get(m.id);
+  return h ? { ...m, history: h.decisions, minVersion: h.minVersion } : m;
+}
+
 function allMissions(): FixtureMission[] {
   return [
-    ...state.progressions.map((p) => ({ ...p, scenario: state.overrides.get(p.id) ?? progressionScenario(p) })),
-    ...state.missions.map((m) => ({ ...m, scenario: state.overrides.get(m.id) ?? m.scenario })),
+    ...state.progressions.map((p) => withHistory({ ...p, scenario: state.overrides.get(p.id) ?? progressionScenario(p) })),
+    ...state.missions.map((m) => withHistory({ ...m, scenario: state.overrides.get(m.id) ?? m.scenario })),
   ];
+}
+
+function record(missionId: string, decision: DecisionView, fromVersion: number) {
+  const h = state.history.get(missionId) ?? { decisions: [], minVersion: 0 };
+  state.history.set(missionId, { decisions: [...h.decisions, decision], minVersion: fromVersion + 2 });
 }
 
 function findMission(id: string) {
@@ -315,7 +327,13 @@ function route(req: TransportRequest): TransportResponse {
     const h = health(scenario);
     return h.status === "ready"
       ? ok(200, h)
-      : fail(503, "DEPENDENCY_UNAVAILABLE", "Worker heartbeat is stale.", h as unknown as Record<string, unknown>, true);
+      : fail(
+          503,
+          "DEPENDENCY_UNAVAILABLE",
+          h.database === "error" ? "Database is not reachable." : "Worker heartbeat is stale.",
+          h as unknown as Record<string, unknown>,
+          true,
+        );
   }
 
   if (scenario === "unauthorized_401") return fail(401, "UNAUTHENTICATED", "Access token expired.");
@@ -477,6 +495,24 @@ function route(req: TransportRequest): TransportResponse {
       const next: MissionScenario = body.action === "pause" ? "paused" : body.action === "stop" ? "stopped" : "waiting_reply";
       if (body.action === "resume" && current.scenario !== "paused") return fail(409, "CONFLICT", "Mission is not paused.");
       state.overrides.set(found.detail.id, next);
+      record(
+        found.detail.id,
+        {
+          id: fid(`control:${key}`),
+          created_at: new Date().toISOString(),
+          kind: "operator_control",
+          status: "accepted",
+          reason: `${body.action === "pause" ? "Paused" : body.action === "stop" ? "Stopped" : "Resumed"} by an owner at version ${body.expected_version}.`,
+          evidence_ids: [],
+          input_refs: { action: body.action, expected_version: body.expected_version },
+          model: null,
+          policy: { pass: true, checks: [] },
+          proposed_action: null,
+          actual_action: null,
+          resolution: null,
+        },
+        found.detail.version,
+      );
       return remember(ok(202, { task_id: fid(`control:${key}`), status: "ready", campaign_status: next, version: found.detail.version + 1 }));
     }
   }
@@ -511,6 +547,7 @@ function route(req: TransportRequest): TransportResponse {
       status: "resolved",
       resolution: { type: body.resolution_type, note: body.note, value: body.value, resolved_at: new Date().toISOString() },
     };
+    record(owner.m.id, resolved, owner.built.detail.version);
     return remember(ok(202, { decision: resolved, task_id: fid(`resolve:${key}`) }));
   }
 

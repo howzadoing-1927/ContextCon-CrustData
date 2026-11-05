@@ -25,8 +25,8 @@ function Summary({ workspace, versions }: { workspace: OrganizationView; version
   const rows: [string, React.ReactNode][] = [
     ["Sends to", buyer ? <span className="font-mono text-2xs">{buyer.email}</span> : <span className="text-signal">No consented inbox</span>],
     ["Sends from", <span key="from" className="font-mono text-2xs">{workspace.connection?.account_email ?? "not connected"}</span>],
-    ["Seller profile", <span key="p" className="tabular">version {versions.profile}</span>],
-    ["Policy", <span key="c" className="tabular">version {versions.config}</span>],
+    ["Seller profile", versions.profile > 0 ? <span key="p" className="tabular">version {versions.profile}</span> : <span key="p" className="text-signal">Not approved</span>],
+    ["Policy", versions.config > 0 ? <span key="c" className="tabular">version {versions.config}</span> : <span key="c" className="text-signal">Not saved</span>],
     ["Meeting", `${workspace.policy.duration_minutes} min, ${hours.start}–${hours.end} ${hours.timezone}`],
     [
       "Limits",
@@ -143,7 +143,7 @@ export default function NewMissionPage() {
             aria-invalid={Boolean(fieldError || serverFieldError) || undefined}
             aria-describedby={`${textId}-hint`}
             placeholder="Find a mid-market logistics company in India and its sales leader, explain the fit, and book a 15-minute demo. Don't assume a problem we can't verify."
-            className="min-h-48 text-sm leading-relaxed"
+            className="min-h-48 text-sm leading-relaxed placeholder:text-faint"
           />
           <div id={`${textId}-hint`} className="flex items-start justify-between gap-4 text-2xs">
             <p className={cn(fieldError || serverFieldError ? "text-bad" : "text-muted-foreground")}>
@@ -166,7 +166,7 @@ export default function NewMissionPage() {
                 </Link>
               }
             >
-              Still to do: {blockers.map((b) => b.label.toLowerCase()).join(", ")}.
+              Still to do: {blockers.map((b) => (b.id === "google" ? b.label : b.label.toLowerCase())).join(", ")}.
             </Notice>
           )}
           {!canLaunch && (

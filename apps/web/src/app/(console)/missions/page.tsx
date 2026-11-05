@@ -19,7 +19,7 @@ function Row({ campaign, now }: { campaign: CampaignView; now: number }) {
       <td className="py-3 pr-4 pl-5 align-top">
         <CampaignStatus status={campaign.status} />
       </td>
-      <td className="max-w-0 py-3 pr-6 align-top">
+      <td className="py-3 pr-6 align-top">
         <Link
           href={`/missions/${campaign.id}`}
           className="line-clamp-2 text-sm text-foreground after:absolute after:inset-0 focus-visible:outline-none"
@@ -55,7 +55,9 @@ export default function MissionsPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {missions.loading
               ? "Loading…"
-              : `${items.length} mission${items.length === 1 ? "" : "s"}${attention ? ` · ${attention} need${attention === 1 ? "s" : ""} you` : ""}`}
+              : missions.error && !missions.data
+                ? "Unavailable"
+                : `${items.length} mission${items.length === 1 ? "" : "s"}${attention ? ` · ${attention} need${attention === 1 ? "s" : ""} you` : ""}`}
           </p>
         </div>
         <Link href="/missions/new" className={buttonVariants()}>
@@ -87,8 +89,14 @@ export default function MissionsPage() {
           </EmptyState>
         ) : (
           <div className="overflow-hidden rounded-lg border border-hairline">
-            <table className="w-full border-collapse text-left">
+            <table className="w-full table-fixed border-collapse text-left">
               <caption className="sr-only">Missions in this organization, newest first</caption>
+              <colgroup>
+                <col className="w-48" />
+                <col />
+                <col className="w-44" />
+                <col className="w-28" />
+              </colgroup>
               <thead className="bg-shell text-2xs text-faint">
                 <tr className="border-b border-hairline">
                   <th scope="col" className="py-2 pr-4 pl-5 font-medium">
