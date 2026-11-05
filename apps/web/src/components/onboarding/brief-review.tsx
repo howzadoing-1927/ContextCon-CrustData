@@ -117,12 +117,15 @@ export function BriefView({
   website,
   analysis,
   profileVersion,
+  canSave,
   onStartOver,
   onSaved,
 }: {
   website: string;
   analysis: WebsiteAnalysis | null;
   profileVersion: number;
+  /** False in live mode until the backend's demo session exists; the brief is read and checked but not stored. */
+  canSave: boolean;
   onStartOver: () => void;
   onSaved: () => void;
 }) {
@@ -133,6 +136,7 @@ export function BriefView({
   const [approved, setApproved] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
+  const [saveBlocked, setSaveBlocked] = useState(false);
   const revealed = useReveal(ORDER.length, analysis !== null);
   const filled = analysis !== null && revealed >= ORDER.length;
   const save = useMutation("brief", (input: BriefSave, key: string) => client.workspace.saveBrief(input, key));
@@ -214,6 +218,10 @@ export function BriefView({
     setAttempted(true);
     if (!draft || !analysis || problems > 0) {
       setFocusRequest((n) => n + 1);
+      return;
+    }
+    if (!canSave) {
+      setSaveBlocked(true);
       return;
     }
     const result = await save.run(toBriefSave(draft, analysis, [...approvedFacts], profileVersion));
@@ -424,6 +432,12 @@ export function BriefView({
                 ...(approved ? [] : ["Approval"]),
               ].join(", ")}
               .
+            </Notice>
+          )}
+          {saveBlocked && (
+            <Notice tone="info" title="Your brief is checked but not saved yet" className="mb-4">
+              Saving needs the backend&apos;s demo session for the seeded workspace, which isn&apos;t live yet. Nothing was stored and no
+              session was made up.
             </Notice>
           )}
           {save.error != null && (

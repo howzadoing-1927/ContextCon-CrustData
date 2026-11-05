@@ -9,13 +9,33 @@ import { ModeBadge, ProvenanceStamp } from "@/components/outcome/provenance";
 import { Notice } from "@/components/outcome/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { describeError } from "@/lib/api/errors";
+import type { ApiResult } from "@/lib/api/client";
+import { ApiError, describeError } from "@/lib/api/errors";
 import type { WebsiteAnalysis } from "@/lib/contracts";
 import { BRIEF_STORAGE_KEY, normalizeWebsite } from "@/lib/fixtures/onboarding";
 import { useMutation } from "@/lib/use-mutation";
 import { useSession } from "@/lib/session";
 
 const DEMO_WEBSITE = "demo-seller.example";
+
+/** Live mode: the website reader is this app's own Firecrawl route, not the Outcome API. */
+async function readWebsiteLive(url: string): Promise<ApiResult<WebsiteAnalysis>> {
+  const res = await fetch("/api/website-analysis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiError({
+      status: res.status,
+      code: res.status === 501 ? "DEPENDENCY_UNAVAILABLE" : (body?.error?.code ?? "DEPENDENCY_UNAVAILABLE"),
+      message: res.status === 501 ? "The website reader isn't configured on this server." : (body?.error?.message ?? "The website couldn't be read."),
+      retryable: res.status >= 500,
+    });
+  }
+  return { data: body as WebsiteAnalysis, correlationId: res.headers.get("x-correlation-id") ?? "", status: res.status };
+}
 
 const STEPS = [
   ["We read your site", "Homepage, services, about and customer pages. Every value keeps the page it came from."],
@@ -32,8 +52,11 @@ export default function LandingPage() {
   const [analysis, setAnalysis] = useState<WebsiteAnalysis | null>(null);
   const [profileVersion, setProfileVersion] = useState(0);
   const checked = useRef(false);
-  const analyze = useMutation("website-analysis", (url: string, key: string) => client.workspace.analyzeWebsite(url, key));
   const live = mode === "LIVE";
+  const analyze = useMutation("website-analysis", (url: string, key: string) =>
+    live ? readWebsiteLive(url) : client.workspace.analyzeWebsite(url, key),
+  );
+  const canSave = !live || Boolean(accessToken && organizationId);
 
   useEffect(() => {
     if (!ready || checked.current) return;
@@ -48,13 +71,15 @@ export default function LandingPage() {
       return;
     }
     setInputError(null);
-    enterFixture();
+    if (!live) enterFixture();
     setTarget(url);
     setAnalysis(null);
-    try {
-      setProfileVersion((await client.workspace.get()).data.profile_version);
-    } catch {
-      setProfileVersion(0);
+    if (canSave) {
+      try {
+        setProfileVersion((await client.workspace.get()).data.profile_version);
+      } catch {
+        setProfileVersion(0);
+      }
     }
     const result = await analyze.run(url);
     if (result) setAnalysis(result);
@@ -81,6 +106,7 @@ export default function LandingPage() {
           website={target}
           analysis={analysis}
           profileVersion={profileVersion}
+          canSave={canSave}
           onStartOver={() => {
             setTarget(null);
             setAnalysis(null);
@@ -117,7 +143,7 @@ export default function LandingPage() {
                 spellCheck={false}
                 placeholder="yourcompany.com"
                 value={website}
-                disabled={live || analyze.pending}
+                disabled={analyze.pending}
                 aria-invalid={inputError ? true : undefined}
                 aria-describedby={inputError ? "website-error" : undefined}
                 onChange={(e) => {
@@ -126,7 +152,7 @@ export default function LandingPage() {
                 }}
                 className="h-10 flex-1 text-base md:text-sm"
               />
-              <Button type="submit" size="lg" className="h-10 px-4" disabled={live || analyze.pending}>
+              <Button type="submit" size="lg" className="h-10 px-4" disabled={analyze.pending}>
                 Read my website
                 <ArrowRight data-icon="inline-end" />
               </Button>
@@ -138,11 +164,11 @@ export default function LandingPage() {
             )}
           </form>
 
+          {!live && (
           <p className="mt-3 text-xs text-muted-foreground">
             No website handy?{" "}
             <button
               type="button"
-              disabled={live}
               onClick={() => {
                 setWebsite(DEMO_WEBSITE);
                 void start(DEMO_WEBSITE);
@@ -152,15 +178,11 @@ export default function LandingPage() {
               Use the demo company
             </button>
           </p>
+          )}
 
           {analyze.error != null && (
             <Notice tone="bad" title={describeError(analyze.error).title} className="mt-5">
               {describeError(analyze.error).body}
-            </Notice>
-          )}
-          {live && (
-            <Notice tone="info" title="The website reader isn't available on the live API yet" className="mt-5">
-              It&apos;s pending contract request 10 in the frontend notes. Use the fixture build to try this flow.
             </Notice>
           )}
 
