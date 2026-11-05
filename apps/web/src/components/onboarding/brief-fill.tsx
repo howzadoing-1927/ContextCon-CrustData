@@ -50,7 +50,7 @@ export function ReadingProgress({
   const done = pages !== null && revealed >= total;
   const current = pages ? Math.min(pages.length - 1, Math.floor((revealed / total) * pages.length)) : -1;
   const status = !pages
-    ? `Opening ${host}…`
+    ? `Reading ${host}… real sites can take up to a minute.`
     : done
       ? `Read ${pages.length} pages from ${host}. Check each field below; anything we couldn't find is marked.`
       : `Reading ${pathOf(pages[current]!)}…`;

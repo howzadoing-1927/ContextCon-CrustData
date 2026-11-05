@@ -164,6 +164,8 @@ export interface ExtractedField<T> {
 /** Pending contract request (D2-F3 #10): POST /workspace/website-analysis. */
 export interface WebsiteAnalysis {
   url: string;
+  /** `firecrawl` when the site was actually read; `fixture` for the sample brief. */
+  source: "firecrawl" | "fixture";
   pages_read: string[];
   company_name: ExtractedField<string>;
   service: ExtractedField<string>;

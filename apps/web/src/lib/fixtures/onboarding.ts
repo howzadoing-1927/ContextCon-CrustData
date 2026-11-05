@@ -56,6 +56,7 @@ export function analyzeWebsiteFixture(url: string): WebsiteAnalysis {
 
   return {
     url: page("/"),
+    source: "fixture",
     pages_read: FIXTURE_PAGES.map(page),
     company_name: { value: name, page: page("/") },
     service: { value: "Field-service scheduling", page: page("/services") },

@@ -594,10 +594,31 @@ function route(req: TransportRequest): TransportResponse {
   return fail(404, "NOT_FOUND", `No fixture route for ${method} ${path}.`);
 }
 
+/** Real website reading via the server route (Firecrawl); `null` when no key is configured. */
+async function readWebsite(req: TransportRequest): Promise<TransportResponse | null> {
+  try {
+    const res = await fetch("/api/website-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    if (res.status === 501) return null;
+    const body = await res.json();
+    if (res.ok) return ok(200, body);
+    return fail(res.status, body.error?.code ?? "DEPENDENCY_UNAVAILABLE", body.error?.message ?? "The website couldn't be read.", {}, true);
+  } catch {
+    return null;
+  }
+}
+
 export function createFixtureTransport(): Transport {
   return {
     kind: "FIXTURE",
     async send(request) {
+      if (request.method === "POST" && request.path === "/workspace/website-analysis") {
+        const real = await readWebsite(request);
+        if (real) return real;
+      }
       await delay();
       if (state.scenario !== getGlobalScenario()) state = initialState();
       return route(request);

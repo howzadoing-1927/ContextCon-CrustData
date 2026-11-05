@@ -178,7 +178,7 @@ export default function LandingPage() {
 
           {!live && (
             <p className="mt-8 text-2xs text-pretty text-muted-foreground">
-              The website reader isn&apos;t connected yet, so this build fills in a sample brief. Every value is labeled FIXTURE.
+              Your site is read with Firecrawl. If no key is configured, a sample brief labeled FIXTURE is filled in instead.
             </p>
           )}
         </main>

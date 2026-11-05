@@ -233,11 +233,17 @@ export function BriefView({
         </Button>
       </div>
 
-      {filled && (
+      {filled && analysis?.source === "firecrawl" && (
+        <Notice tone="info" title={`Read from ${new URL(website).hostname}`} className="mt-5">
+          Every value came from the pages listed above. Check each one; claims stay proposed until you tick them. Founder details and pricing are
+          never guessed.
+        </Notice>
+      )}
+      {filled && analysis?.source === "fixture" && (
         <Notice tone="fixture" title={isDemo ? "Fixture brief for the demo company" : `Sample brief, not read from ${new URL(website).hostname}`} className="mt-5">
           {isDemo
             ? "These values are synthetic so you can try the flow."
-            : "The website reader isn't connected yet, so these claims are fixture samples. Replace them with what's true for your company."}{" "}
+            : "The website reader isn't configured, so these claims are fixture samples. Replace them with what's true for your company."}{" "}
           Founder details and pricing are never filled in for you.
         </Notice>
       )}
