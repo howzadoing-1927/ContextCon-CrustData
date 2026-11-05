@@ -49,7 +49,22 @@ Launch now also refuses (422) a profile without operator-approved, evidence-back
 
 After launch, the worker's `normalize_mission` step moves the campaign to `stage: "research"` (plan accepted), or to `status: "needs_human"` with `stage: "clarification"` (missing required fields) or `stage: "normalize_mission"` (model failure). Read it through `GET /campaigns/{id}`; blocked decisions appear in `open_exceptions`.
 
-Not yet available: `GET /campaigns` (list), `/campaigns/{id}/ledger|control|poll`, `/decisions/*`, `/google/*`. `MissionDetail` prospects, conversation, evidence and handoff stay empty until B4–B7 write them.
+### B4 research (no route changes)
+
+After `research`, `GET /campaigns/{id}` returns:
+- **`prospects[]`** (`ProspectCase`):
+  - `canonical_company_ref` is `crustdata:company:<id>`. `canonical_person_ref` is `crustdata:person:<id>`, or `null` when no current employee with the buyer role was verified.
+  - `relationship.status` is `supported`, `conflicted` or `unknown`.
+  - `fit` stays `needs_evidence` and `criteria` stays `[]` until B5.
+  - `facts` are observed Crustdata fields, each with its evidence ID.
+  - `delivery.buyer_test_email` is the consented test buyer, and `identity_is_simulated` is always `true`.
+  - No researched email or profile URL is ever returned.
+- **`evidence[]`** (`EvidenceView`):
+  - `source_kind: "crustdata"`, `provider_ref`, and `field_path` like `crustdata:/company/enrich#funding.last_round_type`.
+  - `content_sha256` and `fact_status: "observed"`. `source_url` is `null`.
+- **Campaign `stage`:** `qualify` when at least one pair is supported. Otherwise `status: "no_match"`, or `needs_human` for mapping, credit or permission problems. The research decision's `input_refs` carries the filter mapping, provider receipts and credits.
+
+Not yet available: `GET /campaigns` (list), `/campaigns/{id}/ledger|control|poll`, `/decisions/*`, `/google/*`. `MissionDetail` conversation and handoff stay empty until B6–B7.
 
 ## Fixtures (`contracts/fixtures/`)
 

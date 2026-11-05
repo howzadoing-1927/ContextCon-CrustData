@@ -74,6 +74,8 @@ class Settings:
     azure_openai_api_version: str | None
     azure_openai_decision_deployment: str | None
     azure_openai_fast_deployment: str | None
+    crustdata_api_key: str | None
+    crustdata_base_url: str
 
     @property
     def azure_configured(self) -> bool:
@@ -126,4 +128,6 @@ def get_settings() -> Settings:
         azure_openai_api_version=_optional("AZURE_OPENAI_API_VERSION"),
         azure_openai_decision_deployment=_optional("AZURE_OPENAI_DECISION_DEPLOYMENT"),
         azure_openai_fast_deployment=_optional("AZURE_OPENAI_FAST_DEPLOYMENT"),
+        crustdata_api_key=_optional("CRUSTDATA_API_KEY"),
+        crustdata_base_url=_optional("CRUSTDATA_BASE_URL") or "https://api.crustdata.com",
     )

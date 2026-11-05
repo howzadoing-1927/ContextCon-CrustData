@@ -16,8 +16,9 @@ from .contracts.base import normalize_email
 from .contracts.enums import ErrorCode
 from .contracts.requests import CampaignCreate
 from .contracts.version import CONTRACT_VERSION
-from .contracts.views import CampaignLaunchView, CampaignView, DecisionView, MissionDetail, Usage
+from .contracts.views import CampaignLaunchView, CampaignView, DecisionView, MissionDetail, ProspectCase, Usage
 from .errors import DomainError
+from .workspace import evidence_view
 
 ZERO_USAGE = {
     "model_calls": 0,
@@ -306,12 +307,53 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         """,
         (organization_id, campaign_id),
     ).fetchall()
-    # Prospects, conversation, evidence and handoff mapping arrive with B4-B7; nothing writes them in B2.
+    buyer = conn.execute(
+        "select buyer_test_email from campaigns where organization_id = %s and id = %s", (organization_id, campaign_id)
+    ).fetchone()["buyer_test_email"]
+    prospect_rows = conn.execute(
+        "select id, canonical_company_ref, canonical_person_ref, identity_json, status from prospects "
+        "where organization_id = %s and campaign_id = %s order by created_at, id",
+        (organization_id, campaign_id),
+    ).fetchall()
+    evidence_rows = conn.execute(
+        "select * from evidence where organization_id = %s and campaign_id = %s order by created_at, id",
+        (organization_id, campaign_id),
+    ).fetchall()
+    # Conversation and handoff mapping arrive with B6-B7.
     return MissionDetail(
         **_campaign_view(row).model_dump(),
-        prospects=[],
+        prospects=[_prospect_case(p, evidence_rows, buyer) for p in prospect_rows],
         conversation=None,
         open_exceptions=[_decision_view(d) for d in exceptions],
-        evidence=[],
+        evidence=[evidence_view(e) for e in evidence_rows],
         handoff=None,
+    )
+
+
+def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buyer_test_email: str) -> ProspectCase:
+    identity = row["identity_json"] or {}
+    company, person, relationship = identity.get("company") or {}, identity.get("person"), identity.get("relationship") or {}
+    facts = [
+        {"text": f"{e['field_path'].split('#', 1)[-1]}: {e['excerpt']}", "evidence_ids": [e["id"]]}
+        for e in evidence_rows
+        if e["prospect_id"] == row["id"] and e["fact_status"] == "observed"
+    ]
+    status = relationship.get("status")
+    return ProspectCase.model_validate(
+        {
+            "id": row["id"],
+            "canonical_company_ref": row["canonical_company_ref"],
+            "canonical_person_ref": row["canonical_person_ref"],
+            "company": {"name": company.get("name") or row["canonical_company_ref"], "domain": company.get("domain")},
+            "person": {"name": person.get("name") or "", "title": person.get("title")} if person else None,
+            "relationship": {
+                "status": status if status in ("supported", "conflicted") else "unknown",
+                "evidence_ids": relationship.get("evidence_ids", []),
+            },
+            "criteria": [],
+            "fit": {"qualified": "qualified", "rejected": "rejected"}.get(row["status"], "needs_evidence"),
+            "facts": facts,
+            "hypotheses": [],
+            "delivery": {"mode": "simulation", "buyer_test_email": buyer_test_email, "identity_is_simulated": True},
+        }
     )

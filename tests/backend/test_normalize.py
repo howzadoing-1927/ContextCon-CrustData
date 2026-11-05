@@ -125,8 +125,9 @@ def test_azure_client_falls_back_to_json_object_when_strict_schema_rejected(monk
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://fixture.invalid")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "fixture")
     monkeypatch.setenv("AZURE_OPENAI_FAST_DEPLOYMENT", "fast-dep")
-    monkeypatch.delenv("AZURE_OPENAI_DECISION_DEPLOYMENT", raising=False)
-    monkeypatch.delenv("AZURE_OPENAI_API_VERSION", raising=False)
+    # Empty (not deleted): the settings loader would otherwise re-add these from a local .env.
+    monkeypatch.setenv("AZURE_OPENAI_DECISION_DEPLOYMENT", "")
+    monkeypatch.setenv("AZURE_OPENAI_API_VERSION", "")
     get_settings.cache_clear()
     client = AzureModelClient(get_settings())
     get_settings.cache_clear()

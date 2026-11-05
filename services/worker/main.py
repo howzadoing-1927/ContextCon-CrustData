@@ -17,10 +17,13 @@ from psycopg.types.json import Jsonb
 from services.core import db
 from services.core.config import Settings, get_settings
 
+from services.adapters.crustdata.adapter import CrustdataResearch
+from services.adapters.crustdata.client import CrustdataClient
 from services.models.client import AzureModelClient
 
 from . import actions, queue
 from .handlers import handle_normalize_mission
+from .research import handle_research
 
 log = logging.getLogger("outcome.worker")
 
@@ -40,6 +43,20 @@ def build_handlers(settings: Settings) -> dict[str, Handler]:
         handlers["normalize_mission"] = partial(handle_normalize_mission, client=client)
     else:
         log.warning("Azure OpenAI not configured; normalize_mission tasks will stay ready")
+    if settings.crustdata_api_key:
+
+        def research_factory() -> CrustdataResearch:
+            return CrustdataResearch(
+                CrustdataClient(
+                    api_key=settings.crustdata_api_key,
+                    base_url=settings.crustdata_base_url,
+                    timeout=float(settings.provider_timeout_seconds),
+                )
+            )
+
+        handlers["research"] = partial(handle_research, research_factory=research_factory)
+    else:
+        log.warning("CRUSTDATA_API_KEY not configured; research tasks will stay ready")
     return handlers
 
 

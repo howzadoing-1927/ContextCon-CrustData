@@ -30,9 +30,14 @@ def test_concurrent_claims_never_share_a_task(make_tenant, database_url):
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         leases = list(pool.map(lambda i: _claim(database_url, tenant.organization_id, f"w{i}"), range(8)))
+    # Under contention a claim may return None even though rows remain (a concurrently re-leased row fails
+    # the re-check and consumes LIMIT 1). That is safe; the worker just polls again. Drain sequentially.
+    drained = []
+    while (lease := _claim(database_url, tenant.organization_id, "drain")) is not None:
+        drained.append(lease)
 
-    claimed = [lease.task_id for lease in leases if lease is not None]
-    assert len(claimed) == 5
+    claimed = [lease.task_id for lease in leases + drained if lease is not None]
+    assert len(claimed) == len(set(claimed)), "a task was claimed twice"
     assert len(set(claimed)) == 5
 
 
