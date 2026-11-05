@@ -23,7 +23,7 @@ _LOCAL_PART = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+$")
 _DOMAIN = re.compile(r"^(?=.{1,253}$)([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$")
 
 
-def _normalize_email(value: str) -> str:
+def normalize_email(value: str) -> str:
     """One bare mailbox; trims and lowercases the domain only. Dots and plus-tags are preserved."""
     value = value.strip()
     if any(ch in value for ch in "\r\n<>,;\"() \t"):
@@ -36,4 +36,4 @@ def _normalize_email(value: str) -> str:
 
 Zone = Annotated[str, AfterValidator(_valid_zone)]
 Reference = Annotated[str, StringConstraints(min_length=1)]
-Email = Annotated[str, AfterValidator(_normalize_email)]
+Email = Annotated[str, AfterValidator(normalize_email)]

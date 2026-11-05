@@ -363,7 +363,7 @@
             "type": "string"
           },
           "config_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Config Version",
             "type": "integer"
           },
@@ -376,7 +376,7 @@
             "type": "string"
           },
           "profile_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Profile Version",
             "type": "integer"
           },
@@ -396,6 +396,95 @@
           "limits"
         ],
         "title": "CampaignCreate",
+        "type": "object"
+      },
+      "CampaignLaunchView": {
+        "additionalProperties": false,
+        "description": "202 response of POST /campaigns: the campaign plus the queued normalize_mission task.",
+        "properties": {
+          "config_version": {
+            "minimum": 1.0,
+            "title": "Config Version",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_decision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Decision Id"
+          },
+          "mode": {
+            "const": "simulation",
+            "title": "Mode",
+            "type": "string"
+          },
+          "profile_version": {
+            "minimum": 1.0,
+            "title": "Profile Version",
+            "type": "integer"
+          },
+          "request_text": {
+            "title": "Request Text",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CampaignState"
+          },
+          "task_id": {
+            "format": "uuid",
+            "title": "Task Id",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          },
+          "version": {
+            "minimum": 0.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "request_text",
+          "mode",
+          "status",
+          "version",
+          "stage",
+          "profile_version",
+          "config_version",
+          "usage",
+          "last_decision_id",
+          "created_at",
+          "updated_at",
+          "task_id"
+        ],
+        "title": "CampaignLaunchView",
         "type": "object"
       },
       "CampaignState": {
@@ -652,7 +741,7 @@
             "$ref": "#/components/schemas/ConversationState"
           },
           "version": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Version",
             "type": "integer"
           }
@@ -957,16 +1046,8 @@
         "additionalProperties": false,
         "properties": {
           "amount": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ],
-            "title": "Amount"
+            "title": "Amount",
+            "type": "string"
           },
           "currency": {
             "maxLength": 3,
@@ -1315,6 +1396,19 @@
         "title": "GoogleOperation",
         "type": "string"
       },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
       "Handoff": {
         "additionalProperties": false,
         "properties": {
@@ -1460,61 +1554,112 @@
         "title": "HealthLive",
         "type": "object"
       },
+      "HealthReady": {
+        "additionalProperties": false,
+        "description": "Sanitized readiness summary. Returned as data on 200, and as error.details on 503.",
+        "properties": {
+          "database": {
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "title": "Database",
+            "type": "string"
+          },
+          "last_seen_age_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen Age Seconds"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "not_ready"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "worker": {
+            "enum": [
+              "fresh",
+              "stale",
+              "missing",
+              "unknown"
+            ],
+            "title": "Worker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "database",
+          "worker",
+          "last_seen_age_seconds"
+        ],
+        "title": "HealthReady",
+        "type": "object"
+      },
       "Limits": {
         "additionalProperties": false,
         "description": "P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.",
         "properties": {
           "max_conversations": {
-            "maximum": 1,
-            "minimum": 1,
+            "maximum": 1.0,
+            "minimum": 1.0,
             "title": "Max Conversations",
             "type": "integer"
           },
           "max_discovered": {
-            "maximum": 10,
-            "minimum": 1,
+            "maximum": 10.0,
+            "minimum": 1.0,
             "title": "Max Discovered",
             "type": "integer"
           },
           "max_enriched": {
-            "maximum": 3,
-            "minimum": 1,
+            "maximum": 3.0,
+            "minimum": 1.0,
             "title": "Max Enriched",
             "type": "integer"
           },
           "max_model_calls": {
-            "maximum": 20,
-            "minimum": 1,
+            "maximum": 20.0,
+            "minimum": 1.0,
             "title": "Max Model Calls",
             "type": "integer"
           },
           "max_outbound_messages": {
-            "maximum": 6,
-            "minimum": 1,
+            "maximum": 6.0,
+            "minimum": 1.0,
             "title": "Max Outbound Messages",
             "type": "integer"
           },
           "max_reply_turns": {
-            "maximum": 4,
-            "minimum": 1,
+            "maximum": 4.0,
+            "minimum": 1.0,
             "title": "Max Reply Turns",
             "type": "integer"
           },
           "max_research_calls": {
-            "maximum": 10,
-            "minimum": 1,
+            "maximum": 10.0,
+            "minimum": 1.0,
             "title": "Max Research Calls",
             "type": "integer"
           },
           "max_runtime_seconds": {
-            "maximum": 600,
-            "minimum": 1,
+            "maximum": 600.0,
+            "minimum": 1.0,
             "title": "Max Runtime Seconds",
             "type": "integer"
           },
           "no_reply_followups": {
-            "maximum": 0,
-            "minimum": 0,
+            "maximum": 0.0,
+            "minimum": 0.0,
             "title": "No Reply Followups",
             "type": "integer"
           }
@@ -1626,7 +1771,7 @@
         "additionalProperties": false,
         "properties": {
           "config_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Config Version",
             "type": "integer"
           },
@@ -1692,7 +1837,7 @@
             "type": "array"
           },
           "profile_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Profile Version",
             "type": "integer"
           },
@@ -1723,7 +1868,7 @@
             "$ref": "#/components/schemas/Usage"
           },
           "version": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Version",
             "type": "integer"
           }
@@ -2382,6 +2527,31 @@
         "title": "Slot",
         "type": "object"
       },
+      "SuccessEnvelope_CampaignLaunchView_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CampaignLaunchView"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[CampaignLaunchView]",
+        "type": "object"
+      },
       "SuccessEnvelope_HealthLive_": {
         "additionalProperties": false,
         "properties": {
@@ -2405,6 +2575,56 @@
           "correlation_id"
         ],
         "title": "SuccessEnvelope[HealthLive]",
+        "type": "object"
+      },
+      "SuccessEnvelope_HealthReady_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HealthReady"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[HealthReady]",
+        "type": "object"
+      },
+      "SuccessEnvelope_MissionDetail_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MissionDetail"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[MissionDetail]",
         "type": "object"
       },
       "ThreadPoll": {
@@ -2444,7 +2664,7 @@
         "additionalProperties": false,
         "properties": {
           "calendar_attempts": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Calendar Attempts",
             "type": "integer"
           },
@@ -2457,31 +2677,30 @@
                 "type": "null"
               }
             ],
-            "default": null,
             "description": "Unknown cost is null, never zero."
           },
           "model_calls": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Model Calls",
             "type": "integer"
           },
           "outbound_attempts": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Outbound Attempts",
             "type": "integer"
           },
           "research_calls": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Research Calls",
             "type": "integer"
           },
           "tokens_in": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Tokens In",
             "type": "integer"
           },
           "tokens_out": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Tokens Out",
             "type": "integer"
           }
@@ -2496,6 +2715,46 @@
         ],
         "title": "Usage",
         "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
       }
     }
   },
@@ -2507,6 +2766,90 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/campaigns": {
+      "post": {
+        "operationId": "create_campaign_api_v1_campaigns_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_CampaignLaunchView_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Campaign",
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
+    "/api/v1/campaigns/{campaign_id}": {
+      "get": {
+        "operationId": "get_campaign_api_v1_campaigns__campaign_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_MissionDetail_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Campaign",
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "operationId": "health_live_api_v1_health_live_get",
@@ -2523,6 +2866,27 @@
           }
         },
         "summary": "Health Live",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "operationId": "health_ready_api_v1_health_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_HealthReady_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Ready",
         "tags": [
           "health"
         ]

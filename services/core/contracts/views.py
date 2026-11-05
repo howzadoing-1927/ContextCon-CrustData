@@ -23,6 +23,15 @@ class HealthLive(ContractModel):
     contract_version: Literal["outcome.v1"]
 
 
+class HealthReady(ContractModel):
+    """Sanitized readiness summary. Returned as data on 200, and as error.details on 503."""
+
+    status: Literal["ready", "not_ready"]
+    database: Literal["ok", "error"]
+    worker: Literal["fresh", "stale", "missing", "unknown"]
+    last_seen_age_seconds: int | None
+
+
 class EstimatedCost(ContractModel):
     amount: Decimal = Field(ge=0)
     currency: str = Field(min_length=3, max_length=3)
@@ -54,6 +63,12 @@ class CampaignView(ContractModel):
     last_decision_id: UUID | None
     created_at: AwareDatetime
     updated_at: AwareDatetime
+
+
+class CampaignLaunchView(CampaignView):
+    """202 response of POST /campaigns: the campaign plus the queued normalize_mission task."""
+
+    task_id: UUID
 
 
 class EvidenceView(ContractModel):

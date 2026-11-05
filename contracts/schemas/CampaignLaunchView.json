@@ -1,0 +1,199 @@
+{
+  "$defs": {
+    "CampaignState": {
+      "enum": [
+        "draft",
+        "running",
+        "waiting_reply",
+        "completed",
+        "no_match",
+        "needs_human",
+        "paused",
+        "stopped",
+        "failed"
+      ],
+      "title": "CampaignState",
+      "type": "string"
+    },
+    "EstimatedCost": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "currency": {
+          "maxLength": 3,
+          "minLength": 3,
+          "title": "Currency",
+          "type": "string"
+        },
+        "pricing_source": {
+          "minLength": 1,
+          "title": "Pricing Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount",
+        "currency",
+        "pricing_source"
+      ],
+      "title": "EstimatedCost",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "properties": {
+        "calendar_attempts": {
+          "minimum": 0,
+          "title": "Calendar Attempts",
+          "type": "integer"
+        },
+        "estimated_cost": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EstimatedCost"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Unknown cost is null, never zero."
+        },
+        "model_calls": {
+          "minimum": 0,
+          "title": "Model Calls",
+          "type": "integer"
+        },
+        "outbound_attempts": {
+          "minimum": 0,
+          "title": "Outbound Attempts",
+          "type": "integer"
+        },
+        "research_calls": {
+          "minimum": 0,
+          "title": "Research Calls",
+          "type": "integer"
+        },
+        "tokens_in": {
+          "minimum": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "minimum": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "model_calls",
+        "research_calls",
+        "outbound_attempts",
+        "calendar_attempts",
+        "tokens_in",
+        "tokens_out"
+      ],
+      "title": "Usage",
+      "type": "object"
+    }
+  },
+  "$id": "urn:outcome:outcome.v1:CampaignLaunchView",
+  "additionalProperties": false,
+  "description": "202 response of POST /campaigns: the campaign plus the queued normalize_mission task.",
+  "properties": {
+    "config_version": {
+      "minimum": 1,
+      "title": "Config Version",
+      "type": "integer"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "format": "uuid",
+      "title": "Id",
+      "type": "string"
+    },
+    "last_decision_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Last Decision Id"
+    },
+    "mode": {
+      "const": "simulation",
+      "title": "Mode",
+      "type": "string"
+    },
+    "profile_version": {
+      "minimum": 1,
+      "title": "Profile Version",
+      "type": "integer"
+    },
+    "request_text": {
+      "title": "Request Text",
+      "type": "string"
+    },
+    "stage": {
+      "title": "Stage",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/CampaignState"
+    },
+    "task_id": {
+      "format": "uuid",
+      "title": "Task Id",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/Usage"
+    },
+    "version": {
+      "minimum": 0,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "id",
+    "request_text",
+    "mode",
+    "status",
+    "version",
+    "stage",
+    "profile_version",
+    "config_version",
+    "usage",
+    "last_decision_id",
+    "created_at",
+    "updated_at",
+    "task_id"
+  ],
+  "title": "CampaignLaunchView",
+  "type": "object"
+}

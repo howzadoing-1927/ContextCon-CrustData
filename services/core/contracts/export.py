@@ -16,8 +16,10 @@ CONTRACTS_DIR = REPO_ROOT / "contracts"
 ROOT_MODELS: list[type[BaseModel]] = [
     ErrorEnvelope,
     views.HealthLive,
+    views.HealthReady,
     views.Usage,
     views.CampaignView,
+    views.CampaignLaunchView,
     views.MissionDetail,
     views.ProspectCase,
     views.EvidenceView,

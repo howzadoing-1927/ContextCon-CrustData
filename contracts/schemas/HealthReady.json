@@ -1,0 +1,52 @@
+{
+  "$id": "urn:outcome:outcome.v1:HealthReady",
+  "additionalProperties": false,
+  "description": "Sanitized readiness summary. Returned as data on 200, and as error.details on 503.",
+  "properties": {
+    "database": {
+      "enum": [
+        "ok",
+        "error"
+      ],
+      "title": "Database",
+      "type": "string"
+    },
+    "last_seen_age_seconds": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Last Seen Age Seconds"
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "not_ready"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "worker": {
+      "enum": [
+        "fresh",
+        "stale",
+        "missing",
+        "unknown"
+      ],
+      "title": "Worker",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "database",
+    "worker",
+    "last_seen_age_seconds"
+  ],
+  "title": "HealthReady",
+  "type": "object"
+}

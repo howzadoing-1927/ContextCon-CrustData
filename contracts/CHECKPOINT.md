@@ -1,7 +1,8 @@
-# D1 → D2 contract checkpoint (B1)
+# D1 → D2 contract checkpoint (B1 + B2)
 
-- Contract: `outcome.v1`, planning baseline 1.0, prefix `/api/v1`.
-- Base: `main` @ `a660f11`; branch `feat/backend-core`.
+- Contract: `outcome.v1`, planning baseline 1.0, prefix `/api/v1`. B2 additions are additive: `CampaignLaunchView`, `HealthReady`.
+- Base: `main` @ `a660f11`; branch `feat/backend-core` (B1 `fb39b82`, then B2).
+- Database: `db/migrations/0001_b2_foundation.sql`.
 - Source of truth: `services/core/contracts/*.py` (Pydantic, `extra="forbid"`). Generated: `contracts/openapi.json`, `contracts/schemas/<Model>.json`. Regenerate with `python -m services.core.contracts.export`; a test fails if they drift.
 
 ## Run the API locally
@@ -18,9 +19,22 @@ Every response carries `X-Correlation-ID`, equal to the envelope's `correlation_
 
 | Route | Status |
 |---|---|
-| `GET /api/v1/health/live` | Live, public, returns `SuccessEnvelope<HealthLive>` |
+| `GET /api/v1/health/live` | Public. `SuccessEnvelope<HealthLive>` |
+| `GET /api/v1/health/ready` | Public, sanitized. 200 `SuccessEnvelope<HealthReady>` when DB ok and worker heartbeat fresh; otherwise 503 `ErrorEnvelope` with `details` = `HealthReady` |
+| `POST /api/v1/campaigns` | Auth. Headers: `Authorization: Bearer <Supabase access token>`, `X-Organization-ID`, `Idempotency-Key` (1–128 printable ASCII, no spaces). Body `CampaignCreate`. 202 `SuccessEnvelope<CampaignLaunchView>` (CampaignView + `task_id`). Same key+body replays the original; different body 409 |
+| `GET /api/v1/campaigns/{id}` | Auth. 200 `SuccessEnvelope<MissionDetail>`; foreign or missing id 404 |
 
-Not yet available (B2+): `/health/ready`, `/workspace*`, `/campaigns*`, `/decisions/*`, and the `/google/*` routes. Build against the fixtures below until then.
+Launch rejections before anything is enqueued:
+- 401: missing, invalid or expired token.
+- 400: bad org header, missing `Idempotency-Key`, or an invalid body (including unknown fields or limits outside contract bounds).
+- 403: not a member of the selected org.
+- 409: stale `profile_version`/`config_version`, or key reuse with a different body.
+- 422 `RECIPIENT_NOT_ALLOWED`: `buyer_test_email` is not an exact consented `buyer_test`.
+- 422 `DOMAIN_INVALID`: profile not approved, policy not simulation-only, limits above workspace policy, or seller Google connection not `connected` with all four scopes.
+
+The last check means a real launch needs D2's OAuth to have produced a `connected` seller connection. Until then, `python -m services.core.admin` can seed a dev-only connection row; it has no tokens, so no Google call can succeed through it.
+
+Not yet available: `GET /campaigns` (list), `/campaigns/{id}/ledger|control|poll`, `/workspace*`, `/decisions/*`, `/google/*`. `MissionDetail` collections stay empty until B4–B7 write them.
 
 ## Fixtures (`contracts/fixtures/`)
 
@@ -31,6 +45,7 @@ Every file has a top-level `"_fixture": "FIXTURE"` key, which is not part of the
 | `health_live.json` | `SuccessEnvelope<HealthLive>` |
 | `campaign_view.running.json`, `campaign_view.completed.json` | `SuccessEnvelope<CampaignView>` |
 | `mission_detail.empty.json` | `SuccessEnvelope<MissionDetail>` with empty arrays and null conversation/handoff |
+| `campaign_launch.json` | `SuccessEnvelope<CampaignLaunchView>` (202 launch response) |
 | `google_failure.send_unknown.json`, `google_failure.reauth.json` | `GoogleFailure` |
 | `google_result.freebusy_error.json` | `FreeBusyResult` with `status: "error"` |
 

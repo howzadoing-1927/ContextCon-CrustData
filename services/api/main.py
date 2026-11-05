@@ -1,14 +1,22 @@
-from uuid import UUID, uuid4
+import logging
+from contextlib import asynccontextmanager
+from uuid import uuid4
 
-from fastapi import APIRouter, FastAPI, Request
+import psycopg
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from psycopg_pool import PoolTimeout
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from services.core.contracts.envelopes import ErrorBody, ErrorEnvelope, SuccessEnvelope
 from services.core.contracts.enums import ErrorCode
-from services.core.contracts.version import API_PREFIX, CONTRACT_VERSION
-from services.core.contracts.views import HealthLive
+from services.core.contracts.version import CONTRACT_VERSION
+from services.core.db import DatabaseNotConfigured, reset_pool
+
+from . import campaigns, health
+from .errors import ApiError, error_response
+
+log = logging.getLogger("outcome.api")
 
 CORRELATION_HEADER = "X-Correlation-ID"
 
@@ -25,31 +33,14 @@ _STATUS_CODES: dict[int, tuple[ErrorCode, bool]] = {
 }
 
 
-def correlation_id(request: Request) -> UUID:
-    return request.state.correlation_id
-
-
-def error_response(request: Request, status: int, code: ErrorCode, message: str, retryable: bool, details: dict | None = None) -> JSONResponse:
-    envelope = ErrorEnvelope(
-        error=ErrorBody(code=code, message=message, retryable=retryable, details=details or {}),
-        correlation_id=correlation_id(request),
-    )
-    return JSONResponse(status_code=status, content=envelope.model_dump(mode="json"))
-
-
-router = APIRouter(prefix=API_PREFIX)
-
-
-@router.get("/health/live", response_model=SuccessEnvelope[HealthLive], tags=["health"])
-def health_live(request: Request) -> SuccessEnvelope[HealthLive]:
-    return SuccessEnvelope[HealthLive](
-        data=HealthLive(status="alive", service="api", contract_version=CONTRACT_VERSION),
-        correlation_id=correlation_id(request),
-    )
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    yield
+    reset_pool()
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Outcome AI API", version=CONTRACT_VERSION)
+    app = FastAPI(title="Outcome AI API", version=CONTRACT_VERSION, lifespan=lifespan)
 
     @app.middleware("http")
     async def assign_correlation_id(request: Request, call_next):
@@ -57,6 +48,10 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         response.headers[CORRELATION_HEADER] = str(request.state.correlation_id)
         return response
+
+    @app.exception_handler(ApiError)
+    async def on_api_error(request: Request, exc: ApiError) -> JSONResponse:
+        return error_response(request, exc.status, exc.code, exc.message, exc.retryable, exc.details)
 
     @app.exception_handler(RequestValidationError)
     async def on_validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
@@ -71,11 +66,20 @@ def create_app() -> FastAPI:
         message = exc.detail if isinstance(exc.detail, str) else "Request failed."
         return error_response(request, exc.status_code, code, message, retryable)
 
+    @app.exception_handler(PoolTimeout)
+    @app.exception_handler(psycopg.OperationalError)
+    @app.exception_handler(DatabaseNotConfigured)
+    async def on_database_unavailable(request: Request, exc: Exception) -> JSONResponse:
+        log.warning("database unavailable: %s", type(exc).__name__)
+        return error_response(request, 503, ErrorCode.DEPENDENCY_UNAVAILABLE, "Database unavailable.", True)
+
     @app.exception_handler(Exception)
     async def on_unexpected(request: Request, exc: Exception) -> JSONResponse:
+        log.exception("unhandled error")
         return error_response(request, 500, ErrorCode.INTERNAL, "Internal error.", False)
 
-    app.include_router(router)
+    app.include_router(health.router)
+    app.include_router(campaigns.router)
     return app
 
 

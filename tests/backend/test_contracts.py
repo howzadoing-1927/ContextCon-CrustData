@@ -8,7 +8,7 @@ from services.core.contracts import enums
 from services.core.contracts.envelopes import SuccessEnvelope
 from services.core.contracts.google_adapter import FreeBusyResult, GoogleFailure
 from services.core.contracts.requests import CampaignCreate, Limits
-from services.core.contracts.views import CampaignView, HealthLive, MissionDetail, PolicyCheck
+from services.core.contracts.views import CampaignLaunchView, CampaignView, HealthLive, MissionDetail, PolicyCheck
 
 FIXTURES = Path(__file__).resolve().parents[2] / "contracts" / "fixtures"
 
@@ -17,6 +17,7 @@ FIXTURE_MODELS = {
     "campaign_view.running.json": SuccessEnvelope[CampaignView],
     "campaign_view.completed.json": SuccessEnvelope[CampaignView],
     "mission_detail.empty.json": SuccessEnvelope[MissionDetail],
+    "campaign_launch.json": SuccessEnvelope[CampaignLaunchView],
     "google_failure.send_unknown.json": GoogleFailure,
     "google_failure.reauth.json": GoogleFailure,
     "google_result.freebusy_error.json": FreeBusyResult,

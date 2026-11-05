@@ -7,6 +7,9 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "pydantic>=2",
+    "psycopg[binary]",
+    "psycopg-pool",
+    "PyJWT[crypto]",
 ]
 
 [project.optional-dependencies]
