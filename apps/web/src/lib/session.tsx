@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { OutcomeClient, type Session } from "@/lib/api/client";
 import { createHttpTransport } from "@/lib/api/transport";
 import { env, supabaseConfigured } from "@/lib/env";
+import { BRIEF_STORAGE_KEY } from "@/lib/fixtures/onboarding";
 import { createFixtureTransport, FIXTURE_ORG_ID } from "@/lib/fixtures/transport";
 
 const ORG_KEY = "outcome.org";
@@ -24,6 +25,8 @@ interface SessionContextValue extends SessionState {
   supabase: SupabaseClient | null;
   signInWithPassword: (email: string, password: string) => Promise<string | null>;
   startFixtureSession: () => void;
+  /** Starts the fixture session and selects the demo organization without any sign-in screen. */
+  enterFixture: () => void;
   signOut: () => Promise<void>;
   selectOrganization: (id: string | null) => void;
 }
@@ -90,9 +93,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, email: "fixture.operator@demo-seller.example", accessToken: token }));
   }, []);
 
+  const enterFixture = useCallback(() => {
+    const token = "fixture-session";
+    const organizationId = window.localStorage.getItem(ORG_KEY) ?? FIXTURE_ORG_ID;
+    window.sessionStorage.setItem(FIXTURE_SESSION_KEY, token);
+    window.localStorage.setItem(ORG_KEY, organizationId);
+    sessionRef.current = { accessToken: token, organizationId };
+    setState({ ready: true, email: "fixture.operator@demo-seller.example", accessToken: token, organizationId });
+  }, []);
+
   const signOut = useCallback(async () => {
     window.sessionStorage.removeItem(FIXTURE_SESSION_KEY);
     window.localStorage.removeItem(ORG_KEY);
+    window.localStorage.removeItem(BRIEF_STORAGE_KEY);
     if (supabase) await supabase.auth.signOut();
     setState({ ready: true, email: null, accessToken: null, organizationId: null });
   }, [supabase]);
@@ -110,6 +123,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     supabase,
     signInWithPassword,
     startFixtureSession,
+    enterFixture,
     signOut,
     selectOrganization,
   };

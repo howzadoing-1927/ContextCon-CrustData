@@ -23,7 +23,7 @@ const NAV = [
 export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { email, mode, signOut, selectOrganization } = useSession();
+  const { email, mode, signOut } = useSession();
   const { workspace } = useWorkspace();
   const accessError =
     !workspace.data && isApiError(workspace.error) && (workspace.error.code === "UNAUTHENTICATED" || workspace.error.code === "FORBIDDEN")
@@ -68,28 +68,21 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             <ModeBadge compact className="xl:hidden max-sm:hidden" />
             <WorkerHealth />
             <span aria-hidden className="h-5 w-px bg-hairline max-sm:hidden" />
-            <button
-              type="button"
-              onClick={() => {
-                selectOrganization(null);
-                router.push("/orgs");
-              }}
-              className="flex min-w-0 flex-col items-end text-right leading-tight"
-              title="Switch organization"
-            >
+            <div className="flex min-w-0 flex-col items-end text-right leading-tight">
               <span className="max-w-56 truncate text-xs font-medium max-sm:max-w-32">{workspace.data?.name ?? "Organization"}</span>
               <span className="max-w-64 truncate text-2xs text-faint">
                 {workspace.data?.viewer_role ?? "…"}
                 <span className="max-lg:hidden"> · {email}</span>
               </span>
-            </button>
+            </div>
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Sign out"
+              aria-label="Leave and start over"
+              title="Leave and start over"
               onClick={async () => {
                 await signOut();
-                router.replace("/signin");
+                router.replace("/");
               }}
             >
               <LogOut />

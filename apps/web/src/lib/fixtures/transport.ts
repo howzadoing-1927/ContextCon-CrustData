@@ -1,4 +1,5 @@
 import type {
+  BriefSave,
   CampaignCreate,
   ConnectionSummary,
   ControlInput,
@@ -15,6 +16,7 @@ import type {
 import { DEFAULT_LIMITS, REQUIRED_GOOGLE_SCOPES, SCHEMA_VERSION } from "@/lib/contracts";
 import type { Transport, TransportRequest, TransportResponse } from "@/lib/api/transport";
 import { at, fid } from "./ids";
+import { analyzeWebsiteFixture, applyBrief, loadSavedBrief, normalizeWebsite, storeBrief } from "./onboarding";
 import {
   BUYER_TEST_EMAIL,
   buildMission,
@@ -224,6 +226,12 @@ function baseWorkspace(orgId: string, scenario: GlobalScenario): OrganizationVie
   };
 }
 
+function withSavedBrief(base: OrganizationView): OrganizationView {
+  const saved = loadSavedBrief();
+  if (!saved || saved.id !== base.id) return base;
+  return { ...saved, policy: { ...base.policy, working_hours: saved.policy.working_hours, duration_minutes: saved.policy.duration_minutes }, connection: base.connection, worker: base.worker, viewer_role: base.viewer_role };
+}
+
 function initialState(): State {
   const scenario = getGlobalScenario();
   const all = Object.keys(SCENARIO_REQUESTS) as MissionScenario[];
@@ -253,7 +261,7 @@ function initialState(): State {
     overrides: new Map(),
     history: new Map(),
     workspace: {
-      [FIXTURE_ORG_ID]: workspaceFor(FIXTURE_ORG_ID, scenario),
+      [FIXTURE_ORG_ID]: withSavedBrief(workspaceFor(FIXTURE_ORG_ID, scenario)),
       [FIXTURE_ORG_ID_2]: workspaceFor(FIXTURE_ORG_ID_2, scenario),
     },
     replays: new Map(),
@@ -424,6 +432,31 @@ function route(req: TransportRequest): TransportResponse {
       ];
     }, 3500);
     return remember(ok(202, { task_id: fid(`task:${key}`), status: "ready" }));
+  }
+
+  if (path === "/workspace/website-analysis" && method === "POST") {
+    if (!isOwner) return fail(403, "FORBIDDEN", "Only owners can read the seller website.");
+    const url = normalizeWebsite((req.body as { url?: string }).url ?? "");
+    if (!url) return fail(422, "VALIDATION_FAILED", "Enter your company website, like yourcompany.com.", { field: "url" });
+    if (/localhost|127\.0\.0\.1|169\.254\./.test(url)) {
+      return fail(422, "DOMAIN_INVALID", "Private, local and metadata addresses can't be fetched.", { field: "url" });
+    }
+    return remember(ok(200, analyzeWebsiteFixture(url)));
+  }
+
+  if (path === "/workspace/brief" && method === "PUT") {
+    if (!isOwner) return fail(403, "FORBIDDEN", "Only owners can save the founder brief.");
+    const body = req.body as BriefSave;
+    if (body.expected_profile_version !== workspace.profile_version) {
+      return fail(409, "CONFLICT", `Profile is at version ${workspace.profile_version}, not ${body.expected_profile_version}.`);
+    }
+    if (!body.seller_brief.founder_name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.seller_brief.founder_email)) {
+      return fail(422, "VALIDATION_FAILED", "Founder name and a valid contact email are required.", { field: "founder_email" });
+    }
+    const next = applyBrief(workspace, body, fid(`source:brief:${key}`));
+    state.workspace[workspace.id] = next;
+    storeBrief(next);
+    return remember(ok(200, next));
   }
 
   if (path === "/workspace/policy" && method === "PUT") {

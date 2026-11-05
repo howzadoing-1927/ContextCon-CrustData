@@ -132,6 +132,70 @@ export interface OrganizationView {
   connection: ConnectionSummary | null;
   worker: HealthReady;
   viewer_role: MembershipRole;
+  /** Pending contract request (D2-F3 #10): written by the founder brief. */
+  seller_brief?: SellerBrief | null;
+  /** Pending contract request (D2-F3 #10): prefills new missions. */
+  ideal_customer?: IdealCustomer | null;
+}
+
+export interface IdealCustomer {
+  customer_type: string;
+  regions: string[];
+  buyer_roles: string[];
+  timeline: string | null;
+  criteria: string[];
+  exclusions: string[];
+}
+
+export interface SellerBrief {
+  founder_name: string;
+  founder_email: string;
+  service: string;
+  pricing: string | null;
+  capacity: string | null;
+}
+
+/** A value read from the seller's site; `null` means the page didn't state it. */
+export interface ExtractedField<T> {
+  value: T | null;
+  page: string | null;
+}
+
+/** Pending contract request (D2-F3 #10): POST /workspace/website-analysis. */
+export interface WebsiteAnalysis {
+  url: string;
+  pages_read: string[];
+  company_name: ExtractedField<string>;
+  service: ExtractedField<string>;
+  description: ExtractedField<string>;
+  pricing: ExtractedField<string>;
+  capacity: ExtractedField<string>;
+  customer_type: ExtractedField<string>;
+  regions: ExtractedField<string[]>;
+  buyer_roles: ExtractedField<string[]>;
+  timeline: ExtractedField<string>;
+  criteria: ExtractedField<string[]>;
+  exclusions: ExtractedField<string[]>;
+  timezone: ExtractedField<string>;
+  proposed_facts: ProposedFact[];
+  evidence: EvidenceView[];
+}
+
+/** Pending contract request (D2-F3 #10): PUT /workspace/brief. */
+export interface BriefSave {
+  expected_profile_version: number;
+  name: string;
+  website_url: string;
+  timezone: string;
+  seller_brief: SellerBrief;
+  ideal_customer: IdealCustomer;
+  description: string;
+  approved_fact_ids: string[];
+  proposed_facts: ProposedFact[];
+  evidence: EvidenceView[];
+  escalation_topics: string[];
+  working_hours: WorkingHours;
+  duration_minutes: number;
 }
 
 export type SourceInput =

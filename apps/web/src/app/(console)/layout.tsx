@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConsoleShell } from "@/components/outcome/shell";
@@ -10,13 +10,11 @@ import { useSession } from "@/lib/session";
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
   const { ready, accessToken, organizationId } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!ready) return;
-    if (!accessToken) router.replace(`/signin?next=${encodeURIComponent(pathname)}`);
-    else if (!organizationId) router.replace(`/orgs?next=${encodeURIComponent(pathname)}`);
-  }, [ready, accessToken, organizationId, pathname, router]);
+    if (!accessToken || !organizationId) router.replace("/");
+  }, [ready, accessToken, organizationId, router]);
 
   if (!ready || !accessToken || !organizationId) {
     return (

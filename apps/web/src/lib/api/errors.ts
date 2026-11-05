@@ -41,11 +41,11 @@ export function describeError(error: unknown): { title: string; body: string } {
   }
   switch (error.code) {
     case "UNAUTHENTICATED":
-      return { title: "Your session has ended", body: "Sign in again to continue." };
+      return { title: "Your session has ended", body: "Start again from the home page to continue." };
     case "FORBIDDEN":
       return {
         title: "You don't have access to this",
-        body: "Your membership in this organization doesn't allow this action. Ask an owner, or switch organization.",
+        body: "Your membership in this organization doesn't allow this action. Ask an owner, or start again from the home page.",
       };
     case "NOT_FOUND":
       return {

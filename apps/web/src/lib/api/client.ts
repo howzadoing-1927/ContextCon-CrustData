@@ -1,4 +1,5 @@
 import type {
+  BriefSave,
   CampaignCreate,
   CampaignLaunchView,
   CampaignList,
@@ -17,6 +18,7 @@ import type {
   ResolveInput,
   SourceInput,
   TaskAccepted,
+  WebsiteAnalysis,
 } from "@/lib/contracts";
 import { SCHEMA_VERSION } from "@/lib/contracts";
 import { ApiError } from "./errors";
@@ -147,6 +149,10 @@ export class OutcomeClient {
       this.call<TaskAccepted>("POST", "/workspace/sources", { body: input, idempotencyKey }),
     updatePolicy: (input: PolicyUpdate, idempotencyKey: string) =>
       this.call<OrganizationView>("PUT", "/workspace/policy", { body: input, idempotencyKey }),
+    analyzeWebsite: (url: string, idempotencyKey: string) =>
+      this.call<WebsiteAnalysis>("POST", "/workspace/website-analysis", { body: { url }, idempotencyKey }),
+    saveBrief: (input: BriefSave, idempotencyKey: string) =>
+      this.call<OrganizationView>("PUT", "/workspace/brief", { body: input, idempotencyKey }),
   };
 
   google = {

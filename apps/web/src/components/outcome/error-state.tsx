@@ -9,7 +9,7 @@ import { useSession } from "@/lib/session";
 import { MonoId } from "./mono";
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-  const { signOut, selectOrganization } = useSession();
+  const { signOut } = useSession();
   const router = useRouter();
   const { title, body } = describeError(error);
   const code = isApiError(error) ? error.code : null;
@@ -35,19 +35,19 @@ export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () =>
           <Button
             onClick={async () => {
               await signOut();
-              router.replace("/signin");
+              router.replace("/");
             }}
           >
-            Sign in again
+            Start again
           </Button>
         ) : code === "FORBIDDEN" ? (
           <Button
-            onClick={() => {
-              selectOrganization(null);
-              router.replace("/orgs");
+            onClick={async () => {
+              await signOut();
+              router.replace("/");
             }}
           >
-            Switch organization
+            Start again
           </Button>
         ) : code === "NOT_FOUND" ? (
           <Link href="/missions" className={buttonVariants({ variant: "default" })}>

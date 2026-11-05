@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
@@ -46,6 +47,21 @@ function Summary({ workspace, versions }: { workspace: OrganizationView; version
       ))}
     </dl>
   );
+}
+
+function requestFromBrief(workspace: OrganizationView): string {
+  const icp = workspace.ideal_customer!;
+  const where = icp.regions.length ? ` in ${icp.regions.join(" or ")}` : "";
+  const who = icp.buyer_roles.length ? icp.buyer_roles.join(" or ") : "the right decision maker";
+  return [
+    `Find ${icp.customer_type.charAt(0).toLowerCase()}${icp.customer_type.slice(1)}${where}, reach their ${who}, explain the fit, and book a ${workspace.policy.duration_minutes}-minute call.`,
+    icp.criteria.length ? `Good fit: ${icp.criteria.join("; ")}.` : null,
+    icp.exclusions.length ? `Skip: ${icp.exclusions.join("; ")}.` : null,
+    icp.timeline ? `Timeline: ${icp.timeline}.` : null,
+    "Don't assume a problem we can't verify.",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export default function NewMissionPage() {
@@ -124,9 +140,17 @@ export default function NewMissionPage() {
           }}
           className="flex flex-col gap-3"
         >
-          <label htmlFor={textId} className="text-sm font-medium">
-            What should the agent accomplish?
-          </label>
+          <div className="flex items-end justify-between gap-3">
+            <label htmlFor={textId} className="text-sm font-medium">
+              What should the agent accomplish?
+            </label>
+            {data.ideal_customer && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => setText(requestFromBrief(data))} className="shrink-0">
+                <FileText data-icon="inline-start" />
+                {trimmed ? "Replace with your brief" : "Start from your brief"}
+              </Button>
+            )}
+          </div>
           <Textarea
             id={textId}
             rows={9}
