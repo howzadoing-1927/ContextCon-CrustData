@@ -23,6 +23,7 @@ from services.models.client import AzureModelClient
 
 from . import actions, queue
 from .handlers import handle_normalize_mission
+from .qualify import handle_qualify_and_draft
 from .research import handle_research
 
 log = logging.getLogger("outcome.worker")
@@ -41,6 +42,7 @@ def build_handlers(settings: Settings) -> dict[str, Handler]:
         client = AzureModelClient(settings)
         log.info("model client: %s", client.api_path)
         handlers["normalize_mission"] = partial(handle_normalize_mission, client=client)
+        handlers["qualify_and_draft"] = partial(handle_qualify_and_draft, client=client)
     else:
         log.warning("Azure OpenAI not configured; normalize_mission tasks will stay ready")
     if settings.crustdata_api_key:

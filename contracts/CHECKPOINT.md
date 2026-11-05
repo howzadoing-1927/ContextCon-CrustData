@@ -64,7 +64,14 @@ After `research`, `GET /campaigns/{id}` returns:
   - `content_sha256` and `fact_status: "observed"`. `source_url` is `null`.
 - **Campaign `stage`:** `qualify` when at least one pair is supported. Otherwise `status: "no_match"`, or `needs_human` for mapping, credit or permission problems. The research decision's `input_refs` carries the filter mapping, provider receipts and credits.
 
-Not yet available: `GET /campaigns` (list), `/campaigns/{id}/ledger|control|poll`, `/decisions/*`, `/google/*`. `MissionDetail` conversation and handoff stay empty until B6–B7.
+### B5 qualify, draft, verify (no route changes)
+- `prospects[].criteria` holds `{name, result: pass|fail|unknown, evidence_ids, reason}`, computed by code. `fit` is `qualified`, `rejected` or `needs_evidence`.
+- On success the campaign moves to `stage: "send"` and `conversation` is present, with `state: "drafting"`, `buyer_role_label: "simulated buyer"` and no messages yet.
+- On failure: `needs_human` (draft failed twice, or the gate blocked) or `no_match` (nothing qualified). The reasons appear in `open_exceptions`.
+- Gate checks appear in `DecisionView.policy.checks` as `name: "step N: <check>"`. Deferred steps show a `reason` starting with `[deferred]`.
+- The accepted draft lives in the ledger (`draft` decision, `proposed_action`). It has no recipient fields; To is always the consented test buyer, set by the server.
+
+Not yet available: `GET /campaigns` (list), `/campaigns/{id}/ledger|control|poll`, `/decisions/*`, `/google/*`. Conversation messages, slots, booking and handoff arrive in B6–B7.
 
 ## Fixtures (`contracts/fixtures/`)
 

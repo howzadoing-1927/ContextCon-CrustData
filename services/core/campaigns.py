@@ -16,7 +16,15 @@ from .contracts.base import normalize_email
 from .contracts.enums import ErrorCode
 from .contracts.requests import CampaignCreate
 from .contracts.version import CONTRACT_VERSION
-from .contracts.views import CampaignLaunchView, CampaignView, DecisionView, MissionDetail, ProspectCase, Usage
+from .contracts.views import (
+    CampaignLaunchView,
+    CampaignView,
+    ConversationView,
+    DecisionView,
+    MissionDetail,
+    ProspectCase,
+    Usage,
+)
 from .errors import DomainError
 from .workspace import evidence_view
 
@@ -273,6 +281,16 @@ def launch_campaign(
     return CampaignLaunchView(**_campaign_view(row).model_dump(), task_id=task["id"])
 
 
+def _contract_policy(policy: dict[str, Any]) -> dict[str, Any]:
+    """Ledger checks may carry extra keys (e.g. gate step/status); the contract exposes name/pass/reason only."""
+    checks = []
+    for check in policy.get("checks", []):
+        name = f"step {check['step']}: {check['name']}" if "step" in check else check["name"]
+        reason = f"[{check['status']}] {check['reason']}" if check.get("status") else check["reason"]
+        checks.append({"name": name, "pass": bool(check["pass"]), "reason": reason})
+    return {"pass": bool(policy.get("pass")), "checks": checks}
+
+
 def _decision_view(row: dict[str, Any]) -> DecisionView:
     return DecisionView.model_validate(
         {
@@ -283,7 +301,7 @@ def _decision_view(row: dict[str, Any]) -> DecisionView:
             "evidence_ids": row["evidence_ids"],
             "input_refs": row["input_refs_json"],
             "model": row["model_metadata_json"],
-            "policy": row["policy_result_json"],
+            "policy": _contract_policy(row["policy_result_json"]),
             "proposed_action": row["proposed_action_json"],
             "actual_action": None,
             "resolution": row["resolution_json"],
@@ -311,7 +329,7 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         "select buyer_test_email from campaigns where organization_id = %s and id = %s", (organization_id, campaign_id)
     ).fetchone()["buyer_test_email"]
     prospect_rows = conn.execute(
-        "select id, canonical_company_ref, canonical_person_ref, identity_json, status from prospects "
+        "select id, canonical_company_ref, canonical_person_ref, identity_json, fit_json, status from prospects "
         "where organization_id = %s and campaign_id = %s order by created_at, id",
         (organization_id, campaign_id),
     ).fetchall()
@@ -319,11 +337,18 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         "select * from evidence where organization_id = %s and campaign_id = %s order by created_at, id",
         (organization_id, campaign_id),
     ).fetchall()
-    # Conversation and handoff mapping arrive with B6-B7.
+    conversation = conn.execute(
+        "select id, state, version, buyer_test_email, provider_thread_id from conversations "
+        "where organization_id = %s and campaign_id = %s order by created_at limit 1",
+        (organization_id, campaign_id),
+    ).fetchone()
+    # Messages, slots, booking and handoff mapping arrive with B6-B7.
     return MissionDetail(
         **_campaign_view(row).model_dump(),
         prospects=[_prospect_case(p, evidence_rows, buyer) for p in prospect_rows],
-        conversation=None,
+        conversation=ConversationView.model_validate(
+            {**conversation, "buyer_role_label": "simulated buyer", "messages": [], "offered_slots": [], "booking": None}
+        ) if conversation else None,
         open_exceptions=[_decision_view(d) for d in exceptions],
         evidence=[evidence_view(e) for e in evidence_rows],
         handoff=None,
@@ -339,6 +364,7 @@ def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buy
         if e["prospect_id"] == row["id"] and e["fact_status"] == "observed"
     ]
     status = relationship.get("status")
+    fit_json = row.get("fit_json") or {}
     return ProspectCase.model_validate(
         {
             "id": row["id"],
@@ -350,10 +376,10 @@ def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buy
                 "status": status if status in ("supported", "conflicted") else "unknown",
                 "evidence_ids": relationship.get("evidence_ids", []),
             },
-            "criteria": [],
+            "criteria": fit_json.get("criteria", []),
             "fit": {"qualified": "qualified", "rejected": "rejected"}.get(row["status"], "needs_evidence"),
             "facts": facts,
-            "hypotheses": [],
+            "hypotheses": fit_json.get("hypotheses", []),
             "delivery": {"mode": "simulation", "buyer_test_email": buyer_test_email, "identity_is_simulated": True},
         }
     )

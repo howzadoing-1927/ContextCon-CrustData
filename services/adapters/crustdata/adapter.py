@@ -38,6 +38,7 @@ ENRICH_OBSERVED = {
     "locations.country": ("locations", "country"),
     "locations.headquarters": ("locations", "headquarters"),
     "taxonomy.professional_network_industry": ("taxonomy", "professional_network_industry"),
+    "taxonomy.professional_network_specialities": ("taxonomy", "professional_network_specialities"),
 }
 DESCRIPTION_MAX = 500
 

@@ -27,6 +27,43 @@ class ResearchQuery(ContractModel):
     limit: int = Field(ge=1, le=10)
 
 
+class Claim(ContractModel):
+    text: str
+    start: int = Field(ge=0)
+    end: int = Field(ge=0)
+    kind: Literal["seller_fact", "prospect_fact", "hypothesis", "scheduling_fact"]
+    evidence_ids: list[str]
+    approved_fact_ids: list[str]
+
+
+class DraftProposal(ContractModel):
+    """No recipient, account, calendar or tool URL fields by design; extra fields are rejected."""
+
+    purpose: Literal["initial", "answer", "clarify", "offer_slots", "confirm"]
+    subject: str = Field(max_length=200)
+    body_text: str = Field(min_length=1, max_length=4000)
+    claims: list[Claim]
+    used_slot_ids: list[str]
+    reason: str = Field(min_length=1)
+    evidence_ids: list[str]
+
+
+class UnsupportedClaim(ContractModel):
+    text: str
+    reason: str
+
+
+class VerificationResult(ContractModel):
+    verdict: Literal["pass", "revise", "block"]
+    unsupported_claims: list[UnsupportedClaim]
+    contradictions: list[str]
+    unauthorized_promises: list[str]
+    unanswered_questions: list[str]
+    injection_flags: list[str]
+    reason: str = Field(min_length=1)
+    evidence_ids: list[str]
+
+
 class NormalizedPlan(ContractModel):
     objective: Literal["book_demo"]
     geography: list[Item] = Field(max_length=20)
