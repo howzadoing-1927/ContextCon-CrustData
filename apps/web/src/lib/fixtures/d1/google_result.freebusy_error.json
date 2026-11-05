@@ -1,0 +1,11 @@
+{
+  "_fixture": "FIXTURE",
+  "calendar_id": "primary",
+  "time_min": "2026-11-06T03:30:00Z",
+  "time_max": "2026-11-06T11:30:00Z",
+  "status": "error",
+  "busy": [],
+  "error_reasons": ["notFound"],
+  "checked_at": "2026-11-05T18:20:00Z",
+  "execution_label": "FIXTURE"
+}

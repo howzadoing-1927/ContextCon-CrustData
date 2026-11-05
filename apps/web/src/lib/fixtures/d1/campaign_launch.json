@@ -1,0 +1,28 @@
+{
+  "_fixture": "FIXTURE",
+  "schema_version": "outcome.v1",
+  "data": {
+    "id": "8b3f5e4c-0d6a-4b7c-9e1f-3a4b5c6d7e8f",
+    "request_text": "Find a relevant B2B company and its sales leader in the approved market, explain the fit, and book a 15-minute demo. Do not assume they have a problem we cannot verify.",
+    "mode": "simulation",
+    "status": "running",
+    "version": 1,
+    "stage": "normalize_mission",
+    "profile_version": 1,
+    "config_version": 1,
+    "usage": {
+      "model_calls": 0,
+      "research_calls": 0,
+      "outbound_attempts": 0,
+      "calendar_attempts": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "estimated_cost": null
+    },
+    "last_decision_id": "5d6e7f8a-9b0c-4d1e-8f2a-3b4c5d6e7f80",
+    "created_at": "2026-11-05T18:30:00Z",
+    "updated_at": "2026-11-05T18:30:00Z",
+    "task_id": "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f"
+  },
+  "correlation_id": "6a7b8c9d-0e1f-4a2b-9c3d-4e5f6a7b8c9d"
+}

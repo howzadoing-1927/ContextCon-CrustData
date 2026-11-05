@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "first-viewport-column-overflow",
+        "value": "*",
+        "files": [
+          "apps/web/src/app/(console)/missions/[id]/page.tsx"
+        ],
+        "createdAt": "2026-11-05T20:33:26.392Z",
+        "reason": "agent decided: the route and ledger columns are sticky rails beside a scrolling centre column, so the centre is meant to run past the fold"
+      }
+    ]
+  }
+}

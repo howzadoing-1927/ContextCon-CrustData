@@ -1,0 +1,10 @@
+{
+  "_fixture": "FIXTURE",
+  "operation": "gmail.send",
+  "phase": "dispatch",
+  "retryability": "reconcile_first",
+  "may_have_applied": true,
+  "explicit_rejection": false,
+  "provider_status": null,
+  "redacted_detail": "connection reset after request body was written"
+}

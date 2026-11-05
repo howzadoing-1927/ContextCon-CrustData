@@ -1,0 +1,68 @@
+{
+  "name": "Outcome AI operator console",
+  "source": "apps/web/src/app/globals.css",
+  "theme": "dark",
+  "color": {
+    "background": "oklch(0.168 0.014 248)",
+    "shell": "oklch(0.198 0.02 250)",
+    "raised": "oklch(0.212 0.017 248)",
+    "popover": "oklch(0.238 0.019 248)",
+    "hairline": "oklch(0.285 0.017 248)",
+    "input": "oklch(0.34 0.018 248)",
+    "foreground": "oklch(0.95 0.006 248)",
+    "muted-foreground": "oklch(0.76 0.014 248)",
+    "faint": "oklch(0.66 0.014 248)",
+    "primary": "oklch(0.92 0.008 245)",
+    "primary-foreground": "oklch(0.19 0.014 248)",
+    "signal": "oklch(0.81 0.135 76)",
+    "signal-foreground": "oklch(0.22 0.04 70)",
+    "ring": "oklch(0.81 0.135 76)",
+    "ok": "oklch(0.79 0.13 158)",
+    "info": "oklch(0.78 0.095 238)",
+    "warn": "oklch(0.83 0.13 82)",
+    "bad": "oklch(0.72 0.16 25)",
+    "quiet": "oklch(0.7 0.014 248)",
+    "live": "oklch(0.79 0.13 158)",
+    "cached": "oklch(0.78 0.095 238)",
+    "fixture": "oklch(0.8 0.02 248)",
+    "simbuyer": "oklch(0.83 0.095 196)"
+  },
+  "roles": {
+    "signal": ["needs-you", "current-station", "system-banner", "focus-ring"],
+    "primary": ["main-action", "logo-mark", "checked-controls"]
+  },
+  "font": {
+    "sans": "IBM Plex Sans",
+    "mono": "IBM Plex Mono",
+    "monoUse": "machine data only"
+  },
+  "text": {
+    "2xs": ["0.75rem", "1rem"],
+    "xs": ["0.8125rem", "1.125rem"],
+    "sm": ["0.875rem", "1.25rem"],
+    "base": ["1rem", "1.5rem"],
+    "lg": ["1.25rem", "1.75rem"],
+    "xl": ["1.625rem", "2rem"]
+  },
+  "radius": { "sm": "0.25rem", "md": "0.3125rem", "lg": "0.375rem", "xl": "0.5rem", "stamp": "0" },
+  "motion": {
+    "ease": "cubic-bezier(0.16, 1, 0.3, 1)",
+    "station-pulse": "1.8s",
+    "row-arrive": "ledger rows after first load",
+    "reducedMotion": "disabled"
+  },
+  "stamps": {
+    "LIVE": "solid live fill",
+    "CACHED": "cached outline",
+    "FIXTURE": "fixture dashed outline",
+    "SIMULATED_BUYER": "simbuyer outline with mask glyph"
+  },
+  "layout": {
+    "missionGrid": "13.75rem / 1fr / 23.75rem",
+    "ledgerUnderCentre": "below xl",
+    "compactRoute": "below lg",
+    "topBarWraps": "below md",
+    "drawer": "34rem right sheet"
+  },
+  "bans": ["gradients", "glass", "backdrop-blur", "nested-cards", "eyebrow-labels", "hatched-stripes", "shadow-separation"]
+}
