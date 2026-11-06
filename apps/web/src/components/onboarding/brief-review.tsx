@@ -241,10 +241,10 @@ export function BriefView({
         </Button>
       </div>
 
-      {filled && analysis?.source === "firecrawl" && (
+      {filled && analysis && analysis.source !== "fixture" && (
         <Notice tone="info" title={`Read from ${new URL(website).hostname}`} className="mt-5">
-          Every value came from the pages listed above. Check each one; claims stay proposed until you tick them. Founder details and pricing are
-          never guessed.
+          Company name, what you sell and claims came from the pages listed above. Who you sell to is still yours to type — we will not guess
+          ICP from the site. Tick claims you want approved.
         </Notice>
       )}
       {filled && analysis?.source === "fixture" && (

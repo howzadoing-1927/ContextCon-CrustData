@@ -4,10 +4,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 
 from services.core import db
-from services.core.campaigns import get_mission_detail, launch_campaign, list_campaigns, list_ledger
+from services.core.campaigns import get_mission_detail, inject_buyer_reply, launch_campaign, list_campaigns, list_ledger
 from services.core.contracts.enums import ErrorCode
 from services.core.contracts.envelopes import ListData, SuccessEnvelope
-from services.core.contracts.requests import CampaignCreate
+from services.core.contracts.requests import BuyerReplyInput, CampaignCreate
 from services.core.contracts.version import API_PREFIX
 from services.core.contracts.views import CampaignLaunchView, CampaignView, DecisionView, MissionDetail
 
@@ -80,4 +80,15 @@ def get_campaign(
 ) -> SuccessEnvelope[MissionDetail]:
     with db.connection() as conn:
         detail = get_mission_detail(conn, organization_id=principal.organization_id, campaign_id=campaign_id)
+    return SuccessEnvelope[MissionDetail](data=detail, correlation_id=correlation_id(request))
+
+
+@router.post("/campaigns/{campaign_id}/buyer-reply", response_model=SuccessEnvelope[MissionDetail])
+def post_buyer_reply(
+    request: Request, campaign_id: UUID, body: BuyerReplyInput, principal: Principal = Depends(require_member)
+) -> SuccessEnvelope[MissionDetail]:
+    with db.transaction() as conn:
+        detail = inject_buyer_reply(
+            conn, organization_id=principal.organization_id, campaign_id=campaign_id, body_text=body.body_text
+        )
     return SuccessEnvelope[MissionDetail](data=detail, correlation_id=correlation_id(request))

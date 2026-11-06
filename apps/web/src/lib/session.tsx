@@ -60,22 +60,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setState({ ready: true, email: token ? "fixture.operator@demo-seller.example" : null, accessToken: token, organizationId });
       return;
     }
-    if (!supabase) {
-      setState({ ready: true, email: null, accessToken: null, organizationId });
-      return;
-    }
-    supabase.auth.getSession().then(({ data }) => {
-      setState({
-        ready: true,
-        email: data.session?.user.email ?? null,
-        accessToken: data.session?.access_token ?? null,
-        organizationId,
-      });
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState((prev) => ({ ...prev, email: session?.user.email ?? null, accessToken: session?.access_token ?? null }));
-    });
-    return () => listener.subscription.unsubscribe();
+    void fetch(`${env.apiBaseUrl}/api/v1/demo/session`, { method: "POST" })
+      .then(async (res) => {
+        const body = await res.json().catch(() => null);
+        const data = body?.data;
+        if (!res.ok || !data?.access_token || !data?.organization_id) {
+          setState({ ready: true, email: null, accessToken: null, organizationId });
+          return;
+        }
+        window.localStorage.setItem(ORG_KEY, data.organization_id);
+        sessionRef.current = { accessToken: data.access_token, organizationId: data.organization_id };
+        setState({
+          ready: true,
+          email: "demo.owner@outcome.local",
+          accessToken: data.access_token,
+          organizationId: data.organization_id,
+        });
+      })
+      .catch(() => setState({ ready: true, email: null, accessToken: null, organizationId }));
   }, [supabase]);
 
   const signInWithPassword = useCallback(

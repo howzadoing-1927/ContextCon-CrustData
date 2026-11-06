@@ -2,11 +2,16 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
 from services.core import db
+from services.core.config import get_settings
 from services.core.contracts.envelopes import SuccessEnvelope
-from services.core.contracts.requests import BriefSave, PolicyUpdate, ProfileUpdate, SourceInput
+from services.core.contracts.requests import BriefSave, PolicyUpdate, ProfileUpdate, SourceInput, WebsiteAnalysisRequest
 from services.core.contracts.version import API_PREFIX
 from services.core.contracts.views import EvidenceView, OrganizationView
+from services.core.errors import DomainError
+from services.core.contracts.enums import ErrorCode
+from services.core.website_analysis import analyze_website
 from services.core.workspace import ingest_source, save_brief, update_policy, update_profile, workspace_view
+from services.models.client import AzureModelClient
 
 from .auth import Principal, require_member, require_owner
 from .campaigns import idempotency_key
@@ -26,6 +31,18 @@ def _view(request: Request, principal: Principal) -> SuccessEnvelope[Organizatio
 @router.get("/workspace", response_model=SuccessEnvelope[OrganizationView])
 def get_workspace(request: Request, principal: Principal = Depends(require_member)) -> SuccessEnvelope[OrganizationView]:
     return _view(request, principal)
+
+
+@router.post("/workspace/website-analysis")
+def post_website_analysis(
+    request: Request, body: WebsiteAnalysisRequest, principal: Principal = Depends(require_member)
+):
+    settings = get_settings()
+    if not settings.azure_configured:
+        raise DomainError(503, ErrorCode.DEPENDENCY_UNAVAILABLE, "The website reader needs Azure OpenAI configured.", retryable=True)
+    analysis = analyze_website(body.url, client=AzureModelClient(settings))
+    envelope = SuccessEnvelope(data=analysis, correlation_id=correlation_id(request))
+    return JSONResponse(content=envelope.model_dump(mode="json"))
 
 
 @router.put("/workspace/profile", response_model=SuccessEnvelope[OrganizationView])

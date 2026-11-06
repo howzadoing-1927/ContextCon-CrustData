@@ -9,8 +9,7 @@ import { ModeBadge, ProvenanceStamp } from "@/components/outcome/provenance";
 import { Notice } from "@/components/outcome/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ApiResult } from "@/lib/api/client";
-import { ApiError, describeError } from "@/lib/api/errors";
+import { describeError } from "@/lib/api/errors";
 import type { WebsiteAnalysis } from "@/lib/contracts";
 import { BRIEF_STORAGE_KEY, normalizeWebsite } from "@/lib/fixtures/onboarding";
 import { useMutation } from "@/lib/use-mutation";
@@ -18,23 +17,27 @@ import { useSession } from "@/lib/session";
 
 const DEMO_WEBSITE = "demo-seller.example";
 
-/** Live mode: the website reader is this app's own Firecrawl route, not the Outcome API. */
-async function readWebsiteLive(url: string): Promise<ApiResult<WebsiteAnalysis>> {
-  const res = await fetch("/api/website-analysis", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new ApiError({
-      status: res.status,
-      code: res.status === 501 ? "DEPENDENCY_UNAVAILABLE" : (body?.error?.code ?? "DEPENDENCY_UNAVAILABLE"),
-      message: res.status === 501 ? "The website reader isn't configured on this server." : (body?.error?.message ?? "The website couldn't be read."),
-      retryable: res.status >= 500,
-    });
-  }
-  return { data: body as WebsiteAnalysis, correlationId: res.headers.get("x-correlation-id") ?? "", status: res.status };
+function emptyAnalysis(url: string): WebsiteAnalysis {
+  const blank = { value: null, page: null };
+  return {
+    url,
+    source: "fixture",
+    pages_read: [url],
+    company_name: blank,
+    service: blank,
+    description: blank,
+    pricing: blank,
+    capacity: blank,
+    customer_type: blank,
+    regions: blank,
+    buyer_roles: blank,
+    timeline: blank,
+    criteria: blank,
+    exclusions: blank,
+    timezone: blank,
+    proposed_facts: [],
+    evidence: [],
+  };
 }
 
 const STEPS = [
@@ -53,9 +56,7 @@ export default function LandingPage() {
   const [profileVersion, setProfileVersion] = useState(0);
   const checked = useRef(false);
   const live = mode === "LIVE";
-  const analyze = useMutation("website-analysis", (url: string, key: string) =>
-    live ? readWebsiteLive(url) : client.workspace.analyzeWebsite(url, key),
-  );
+  const analyze = useMutation("website-analysis", (url: string, key: string) => client.workspace.analyzeWebsite(url, key));
   const canSave = !live || Boolean(accessToken && organizationId);
 
   useEffect(() => {
@@ -82,8 +83,7 @@ export default function LandingPage() {
       }
     }
     const result = await analyze.run(url);
-    if (result) setAnalysis(result);
-    else setTarget(null);
+    setAnalysis(result ?? emptyAnalysis(url));
   }
 
   return (

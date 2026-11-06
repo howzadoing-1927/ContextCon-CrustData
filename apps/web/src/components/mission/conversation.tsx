@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarCheck, ExternalLink } from "lucide-react";
+import { useState } from "react";
 import { Instant, MonoId } from "@/components/outcome/mono";
 import { Section } from "@/components/outcome/panel";
 import { ProvenanceStamp } from "@/components/outcome/provenance";
@@ -119,15 +120,69 @@ export function BookingReceiptView({ booking, className }: { booking: BookingRec
   );
 }
 
+function BuyerReplyBox({ campaignId, onSent }: { campaignId: string; onSent: () => void }) {
+  const { client } = useSession();
+  const [text, setText] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function send() {
+    const body = text.trim();
+    if (!body || pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      await client.campaigns.buyerReply(campaignId, body);
+      setText("");
+      onSent();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not record the reply.");
+    } finally {
+      setPending(false);
+    }
+  }
+  return (
+    <div className="mt-3 rounded-lg border border-simbuyer/30 bg-raised px-3.5 py-3">
+      <label htmlFor="buyer-reply" className="text-xs font-medium">
+        Reply as the test buyer
+      </label>
+      <p className="mt-0.5 text-2xs text-muted-foreground">
+        Type what you would send from the test inbox. The worker will read this and answer.
+      </p>
+      <textarea
+        id="buyer-reply"
+        rows={3}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g. How long is onboarding? or Thursday 10:00 works for me."
+        className="mt-2 w-full resize-y rounded-md border border-hairline bg-background px-2.5 py-2 text-sm"
+      />
+      {error ? <p className="mt-1 text-2xs text-bad">{error}</p> : null}
+      <button
+        type="button"
+        disabled={pending || !text.trim()}
+        onClick={() => void send()}
+        className="mt-2 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
+      >
+        {pending ? "Sending…" : "Send reply"}
+      </button>
+    </div>
+  );
+}
+
 export function ConversationThread({
   conversation,
   sellerEmail,
   timeZone,
+  campaignId,
+  onBuyerReply,
 }: {
   conversation: ConversationView;
   sellerEmail: string;
   timeZone: string;
+  campaignId?: string;
+  onBuyerReply?: () => void;
 }) {
+  const waiting = conversation.state === "waiting_reply" || conversation.state === "waiting_slot_acceptance";
   return (
     <Section
       id="conversation"
@@ -151,6 +206,7 @@ export function ConversationThread({
       )}
       <SlotsOffered slots={conversation.offered_slots} booking={conversation.booking} timeZone={timeZone} />
       {conversation.booking && <BookingReceiptView booking={conversation.booking} className="mt-2" />}
+      {waiting && campaignId && onBuyerReply ? <BuyerReplyBox campaignId={campaignId} onSent={onBuyerReply} /> : null}
     </Section>
   );
 }

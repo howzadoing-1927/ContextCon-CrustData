@@ -1,11 +1,8 @@
 """Database test harness.
 
-Reads the repo-root .env (never overriding variables already set). Two auth modes:
-- gotrue (default when SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY exist): real users via
-  the Supabase Auth admin API and real access tokens via password sign-in.
-- local_jwt (OUTCOME_TEST_AUTH_MODE=local_jwt + SUPABASE_JWT_SECRET): throwaway plain Postgres with
-  tests/backend/sql/supabase_local_shim.sql; users inserted into auth.users and HS256 tokens minted.
-Without DATABASE_URL every database test is skipped with that reason; skipped is never passed.
+Prefers local Docker Postgres (`./scripts/local-db.sh`, port 5433) with `local_jwt` auth.
+Set `OUTCOME_TEST_USE_SUPABASE=1` to force the live project from `.env`.
+Without a reachable database every database test is skipped with that reason; skipped is never passed.
 """
 
 import os
@@ -28,7 +25,25 @@ from services.core.config import get_settings, load_dotenv
 from services.core.contracts.requests import CampaignCreate
 from services.core.contracts.views import CampaignLaunchView
 
+LOCAL_DATABASE_URL = "postgresql://outcome:outcome@127.0.0.1:5433/outcome"
+
 load_dotenv()
+
+
+def _prefer_local_database() -> None:
+    if os.environ.get("OUTCOME_TEST_USE_SUPABASE", "").strip().lower() in {"1", "true", "yes"}:
+        return
+    url = os.environ.get("LOCAL_DATABASE_URL", LOCAL_DATABASE_URL)
+    try:
+        with psycopg.connect(url, connect_timeout=1) as conn:
+            conn.execute("select 1")
+    except Exception:
+        return
+    os.environ["DATABASE_URL"] = url
+    os.environ.setdefault("OUTCOME_TEST_AUTH_MODE", "local_jwt")
+
+
+_prefer_local_database()
 
 BUYER_EMAIL = "consenting-buyer@example.invalid"
 
@@ -62,7 +77,7 @@ def _connect(url: str) -> psycopg.Connection:
 def database_url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
-        pytest.skip("DATABASE_URL not set: database tests need the Supabase .env")
+        pytest.skip("DATABASE_URL not set: start local Postgres with ./scripts/local-db.sh")
     return Redacted(url)
 
 

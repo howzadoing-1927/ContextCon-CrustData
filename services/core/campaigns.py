@@ -22,6 +22,7 @@ from .contracts.views import (
     CampaignView,
     ConversationView,
     DecisionView,
+    Handoff,
     MessageView,
     MissionDetail,
     ProspectCase,
@@ -426,11 +427,12 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         (organization_id, campaign_id),
     ).fetchall()
     conversation = conn.execute(
-        "select id, state, version, buyer_test_email, provider_thread_id, crm_json from conversations "
+        "select id, state, version, buyer_test_email, provider_thread_id, crm_json, handoff_json from conversations "
         "where organization_id = %s and campaign_id = %s order by created_at, id limit 1",
         (organization_id, campaign_id),
     ).fetchone()
     messages: list[MessageView] = []
+    inbound_labels = ((conversation or {}).get("crm_json") or {}).get("inbound_labels") or {}
     if conversation:
         message_rows = conn.execute(
             """
@@ -445,17 +447,22 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         messages = [
             _message_view(
                 m,
-                (m["action_result_json"] or {}).get("execution_label") if m.get("action_result_json") else None,
+                (m["action_result_json"] or {}).get("execution_label")
+                if m.get("action_result_json")
+                else inbound_labels.get(m.get("provider_message_id")),
             )
             for m in message_rows
         ]
+    handoff = None
+    if conversation and conversation.get("handoff_json"):
+        handoff = Handoff.model_validate(conversation["handoff_json"])
     return MissionDetail(
         **_campaign_view(row).model_dump(),
         prospects=[_prospect_case(p, evidence_rows, buyer) for p in prospect_rows],
         conversation=_conversation_view(conversation, messages) if conversation else None,
         open_exceptions=[_decision_view(d) for d in exceptions],
         evidence=[evidence_view(e) for e in evidence_rows],
-        handoff=None,
+        handoff=handoff,
     )
 
 
@@ -541,3 +548,104 @@ def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buy
             "delivery": {"mode": "simulation", "buyer_test_email": buyer_test_email, "identity_is_simulated": True},
         }
     )
+
+
+def inject_buyer_reply(
+    conn: psycopg.Connection, *, organization_id: UUID, campaign_id: UUID, body_text: str
+) -> MissionDetail:
+    """Persist a consented-buyer reply typed in the UI and queue handle_reply. Simulation only."""
+    conversation = conn.execute(
+        "select * from conversations where organization_id = %s and campaign_id = %s order by created_at, id limit 1",
+        (organization_id, campaign_id),
+    ).fetchone()
+    if conversation is None or conversation["state"] not in {"waiting_reply", "waiting_slot_acceptance", "offering_slots"}:
+        raise DomainError(409, ErrorCode.CONFLICT, "This conversation is not waiting for a buyer reply.")
+    last_out = conn.execute(
+        """
+        select subject, provider_thread_id from messages
+        where organization_id = %s and conversation_id = %s and direction = 'outbound'
+        order by created_at desc, id desc limit 1
+        """,
+        (organization_id, conversation["id"]),
+    ).fetchone()
+    subject = (last_out["subject"] if last_out else "Re: demo")
+    if not subject.lower().startswith("re:"):
+        subject = f"Re: {subject}"[:200]
+    thread = conversation.get("provider_thread_id") or (last_out["provider_thread_id"] if last_out else f"sim-{conversation['id']}")
+    provider_message_id = f"ui-reply-{uuid4()}"
+    now = conn.execute("select now() as now").fetchone()["now"]
+    row = conn.execute(
+        """
+        insert into messages
+          (organization_id, conversation_id, connection_id, direction, provider_message_id, rfc_message_id,
+           provider_thread_id, from_email, to_emails, subject, body_text, body_sha256, received_at, status)
+        values (%s, %s, %s, 'inbound', %s, %s, %s, %s, %s, %s, %s, %s, %s, 'received')
+        returning id, provider_message_id
+        """,
+        (
+            organization_id,
+            conversation["id"],
+            conversation["connection_id"],
+            provider_message_id,
+            f"<ui.{conversation['id']}.{uuid4()}@outcome.invalid>",
+            thread,
+            conversation["buyer_test_email"],
+            [],
+            subject,
+            body_text,
+            hashlib.sha256(body_text.encode()).hexdigest(),
+            now,
+        ),
+    ).fetchone()
+    labels = dict((conversation.get("crm_json") or {}).get("inbound_labels") or {})
+    labels[row["provider_message_id"]] = "SIMULATED_BUYER"
+    conn.execute(
+        """
+        update conversations
+        set state = 'evaluating_reply', version = version + 1, last_inbound_at = now(),
+            crm_json = coalesce(crm_json, '{}'::jsonb) || %s
+        where organization_id = %s and id = %s
+        """,
+        (
+            Jsonb({"inbound_labels": labels, "last_inbound_id": str(row["id"])}),
+            organization_id,
+            conversation["id"],
+        ),
+    )
+    conn.execute(
+        """
+        insert into decisions (organization_id, campaign_id, prospect_id, conversation_id, kind, status, reason,
+                               input_refs_json, policy_result_json)
+        values (%s, %s, %s, %s, 'poll', 'accepted', 'Buyer reply typed in the product UI.', %s, %s)
+        """,
+        (
+            organization_id,
+            campaign_id,
+            conversation["prospect_id"],
+            conversation["id"],
+            Jsonb({"message_id": str(row["id"]), "execution_label": "SIMULATED_BUYER"}),
+            Jsonb({"pass": True, "checks": []}),
+        ),
+    )
+    conn.execute(
+        """
+        insert into tasks (organization_id, campaign_id, conversation_id, kind, dedupe_key, payload_json, status)
+        values (%s, %s, %s, 'handle_reply', %s, %s, 'ready')
+        on conflict (organization_id, dedupe_key) do nothing
+        """,
+        (
+            organization_id,
+            campaign_id,
+            conversation["id"],
+            f"reply:{conversation['id']}:{row['id']}",
+            Jsonb(
+                {
+                    "schema_version": CONTRACT_VERSION,
+                    "campaign_id": str(campaign_id),
+                    "conversation_id": str(conversation["id"]),
+                    "trigger_message_id": str(row["id"]),
+                }
+            ),
+        ),
+    )
+    return get_mission_detail(conn, organization_id=organization_id, campaign_id=campaign_id)

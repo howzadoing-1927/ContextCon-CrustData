@@ -35,6 +35,10 @@ class CampaignCreate(ContractModel):
     limits: Limits
 
 
+class WebsiteAnalysisRequest(ContractModel):
+    url: str = Field(min_length=3, max_length=2048)
+
+
 class WebsiteSource(ContractModel):
     kind: Literal["website"]
     url: str = Field(min_length=8, max_length=2048)
@@ -167,6 +171,12 @@ class BriefSave(ContractModel):
 class ControlInput(ContractModel):
     action: CampaignControl
     expected_version: int = Field(ge=0)
+
+
+class BuyerReplyInput(ContractModel):
+    """Simulation-only: the operator types the consented buyer's reply so the worker can answer it."""
+
+    body_text: str = Field(min_length=1, max_length=4000)
 
 
 class ResolveInput(ContractModel):

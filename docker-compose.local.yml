@@ -1,0 +1,15 @@
+# Throwaway Postgres for tests and local iteration. Not the live demo database.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: outcome
+      POSTGRES_PASSWORD: outcome
+      POSTGRES_DB: outcome
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U outcome -d outcome"]
+      interval: 2s
+      timeout: 5s
+      retries: 20

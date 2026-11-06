@@ -182,6 +182,10 @@ export class OutcomeClient {
       ),
     poll: (id: string, idempotencyKey: string) =>
       this.call<TaskAccepted>("POST", `/campaigns/${encodeURIComponent(id)}/poll`, { idempotencyKey }),
+    buyerReply: (id: string, bodyText: string) =>
+      this.call<MissionDetail>("POST", `/campaigns/${encodeURIComponent(id)}/buyer-reply`, {
+        body: { body_text: bodyText },
+      }),
   };
 
   decisions = {

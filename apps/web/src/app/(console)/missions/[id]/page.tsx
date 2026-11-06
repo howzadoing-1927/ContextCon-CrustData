@@ -80,7 +80,15 @@ function Centre({ detail, sellerEmail, timeZone, now, refresh, lastReason }: {
         )
       )}
       <RejectedProspects prospects={rejected} />
-      {detail.conversation && <ConversationThread conversation={detail.conversation} sellerEmail={sellerEmail} timeZone={timeZone} />}
+      {detail.conversation && (
+        <ConversationThread
+          conversation={detail.conversation}
+          sellerEmail={sellerEmail}
+          timeZone={timeZone}
+          campaignId={detail.id}
+          onBuyerReply={refresh}
+        />
+      )}
       {!detail.conversation && detail.handoff && <BookingReceiptView booking={detail.handoff.booking} className="mt-4" />}
     </div>
   );
