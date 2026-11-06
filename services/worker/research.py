@@ -101,6 +101,13 @@ def run_research(
                 break
             beat()
             people = research.find_people(company.ref, query.role_terms)
+            if people.status != "supported":
+                retry = query.fallback_role_terms
+                if retry and _billable(research.receipts) + 2 <= research_budget:
+                    beat()
+                    retry_people = research.find_people(company.ref, retry)
+                    if retry_people.status == "supported":
+                        people = retry_people
             examined = Examined(company, people)
             result.examined.append(examined)
             if people.status == "supported":
@@ -362,8 +369,10 @@ def handle_research(conn: psycopg.Connection, lease: queue.Lease, *, research_fa
                         "input_ref_ids": [o["prospect_id"] for o in supported]})),
             )
         else:
-            _decision(conn, lease, status="blocked",
-                      reason="No examined company had a current employee with the buyer role in Crustdata; identity not invented.",
-                      checks=checks, input_refs=input_refs)
+            if not run.discovered:
+                reason = "No companies matched the mapped Crustdata filters; identity not invented."
+            else:
+                reason = "No examined company had a current employee with the buyer role in Crustdata; identity not invented."
+            _decision(conn, lease, status="blocked", reason=reason, checks=checks, input_refs=input_refs)
             _set_campaign(conn, lease, status="no_match", stage="research", terminal=True)
         queue.complete(conn, lease)

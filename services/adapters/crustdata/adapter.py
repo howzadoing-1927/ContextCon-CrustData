@@ -166,11 +166,12 @@ class CrustdataResearch:
 
     def find_people(self, ref: str, roles: list[list[str]], limit: int = 3) -> PeopleResult:
         cid = provider_id(ref)
-        role_conditions = [
-            {"field": "experience.employment_details.current.title", "type": "(.)", "value": " ".join(terms)} for terms in roles
-        ]
         conditions = [{"field": "experience.employment_details.current.company_id", "type": "=", "value": cid}]
-        conditions.append(role_conditions[0] if len(role_conditions) == 1 else {"op": "or", "conditions": role_conditions})
+        if roles:
+            role_conditions = [
+                {"field": "experience.employment_details.current.title", "type": "(.)", "value": " ".join(terms)} for terms in roles
+            ]
+            conditions.append(role_conditions[0] if len(role_conditions) == 1 else {"op": "or", "conditions": role_conditions})
         body = {"filters": {"op": "and", "conditions": conditions}, "fields": PERSON_SEARCH_FIELDS, "limit": limit, "explain": True}
         data, receipt = self._post("/person/search", body, count_key="profiles")
         profiles = data.get("profiles") or []
@@ -184,7 +185,9 @@ class CrustdataResearch:
             for role in roles_now:
                 if not isinstance(role, dict) or role.get("crustdata_company_id") != cid:
                     continue
-                if pid is None or not any(_title_matches(role.get("title"), terms) for terms in roles):
+                if pid is None:
+                    continue
+                if roles and not any(_title_matches(role.get("title"), terms) for terms in roles):
                     continue
                 kept = {k: role.get(k) for k in CURRENT_ROLE_KEEP}
                 record_sha = sha256_json({"crustdata_person_id": pid, "current_role": kept})

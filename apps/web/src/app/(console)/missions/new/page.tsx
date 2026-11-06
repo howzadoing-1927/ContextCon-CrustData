@@ -60,7 +60,6 @@ function requestFromBrief(workspace: OrganizationView, notes: string): string {
     `Find ${icp.customer_type.charAt(0).toLowerCase()}${icp.customer_type.slice(1)}${where}, reach their ${who}, explain the fit, and book a ${workspace.policy.duration_minutes}-minute call.`,
     icp.criteria.length ? `Good fit: ${icp.criteria.join("; ")}.` : null,
     icp.exclusions.length ? `Skip: ${icp.exclusions.join("; ")}.` : null,
-    icp.timeline ? `Timeline: ${icp.timeline}.` : null,
     "Don't assume a problem we can't verify.",
   ]
     .filter(Boolean)

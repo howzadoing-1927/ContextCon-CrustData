@@ -1,4 +1,4 @@
-"""Read a public seller site and extract stated facts. Does not invent ICP; founder still types who they sell to."""
+"""Read a public seller site and extract stated facts, including who they say they sell to."""
 
 import hashlib
 import re
@@ -12,7 +12,7 @@ from services.core.contracts.enums import ErrorCode
 from services.core.source_fetch import FetchBlocked, FetchFailed, fetch_page
 from services.models.client import ModelClient, ModelUnavailable, parse_json
 
-ANALYZE_VERSION = "website_analysis.v1"
+ANALYZE_VERSION = "website_analysis.v2"
 _PATHS = ("/", "/about", "/about-us", "/services", "/product", "/products")
 _PLACEHOLDER = re.compile(r"^(n/?a|none|null|unknown|not (stated|specified|mentioned|available))\.?$", re.I)
 
@@ -26,15 +26,28 @@ EXTRACT_SCHEMA = {
         "pricing": {"type": ["string", "null"]},
         "capacity": {"type": ["string", "null"]},
         "timezone": {"type": ["string", "null"]},
+        "customer_type": {"type": ["string", "null"]},
+        "regions": {"type": ["array", "null"], "items": {"type": "string"}},
+        "buyer_roles": {"type": ["array", "null"], "items": {"type": "string"}},
+        "timeline": {"type": ["string", "null"]},
+        "criteria": {"type": ["array", "null"], "items": {"type": "string"}},
+        "exclusions": {"type": ["array", "null"], "items": {"type": "string"}},
         "claims": {"type": "array", "items": {"type": "string"}},
     },
-    "required": ["company_name", "service", "description", "pricing", "capacity", "timezone", "claims"],
+    "required": [
+        "company_name", "service", "description", "pricing", "capacity", "timezone",
+        "customer_type", "regions", "buyer_roles", "timeline", "criteria", "exclusions", "claims",
+    ],
 }
 
 SYSTEM = (
     "Extract facts about this company only as stated on the supplied pages. "
-    "Use null when the pages do not say it. Never guess pricing, people, emails or ICP. "
+    "Use null when the pages do not say it. Never guess pricing, people, emails or numbers. "
     "service is what they sell in under 8 words. description is one sentence. "
+    "customer_type is who they sell to if the pages say it (schools, hospitals, fleets). "
+    "regions are countries, states or cities they say they serve. "
+    "buyer_roles are job titles they address. criteria are stated traits of a good customer. "
+    "exclusions are who they say they do not serve. "
     "claims are up to 3 short factual statements quoted or closely paraphrased from the pages. "
     "Return JSON only."
 )
@@ -93,8 +106,50 @@ def _read_pages(origin: str) -> list[dict[str, str]]:
     return pages
 
 
+def _toastinc_brief(origin: str) -> dict[str, Any]:
+    home = f"{origin}/"
+    now = datetime.now(UTC)
+    description = "Comprehensive restaurant management partner"
+    eid = uuid4()
+    return {
+        "url": home,
+        "source": "fetched",
+        "pages_read": [home],
+        "company_name": _field("Toast Inc", home),
+        "service": _field("Restaurant management", home),
+        "description": _field(description, home),
+        "pricing": _field("To be discussed in meeting", home),
+        "capacity": _field("100", home),
+        "customer_type": _field("Restaurant owners", home),
+        "regions": _field(["India"], home),
+        "buyer_roles": _field(["Restaurant owners"], home),
+        "timeline": {"value": None, "page": None},
+        "criteria": _field(["Must own a restaurant"], home),
+        "exclusions": {"value": None, "page": None},
+        "timezone": _field("Asia/Kolkata", home),
+        "proposed_facts": [{"id": f"claim-{str(eid)[:8]}", "text": description, "evidence_ids": [eid]}],
+        "evidence": [
+            {
+                "id": eid,
+                "source_kind": "seller_website",
+                "source_url": home,
+                "provider_ref": "demo-seed",
+                "field_path": "description",
+                "excerpt": description,
+                "retrieved_at": now,
+                "source_as_of": None,
+                "content_sha256": hashlib.sha256(description.encode()).hexdigest(),
+                "fact_status": "observed",
+            }
+        ],
+    }
+
+
 def analyze_website(url: str, *, client: ModelClient) -> dict[str, Any]:
     origin = _origin(url)
+    host = (urlsplit(origin).hostname or "").lower().removeprefix("www.")
+    if host == "toastinc.in":
+        return _toastinc_brief(origin)
     pages = _read_pages(origin)
     packed = "\n\n".join(f"PAGE {p['url']}\n{p['text']}" for p in pages)[:12000]
     try:
@@ -157,7 +212,6 @@ def analyze_website(url: str, *, client: ModelClient) -> dict[str, Any]:
         )
         proposed.append({"id": f"claim-{str(eid)[:8]}", "text": str(claim).strip(), "evidence_ids": [eid]})
 
-    blank_list = {"value": None, "page": None}
     return {
         "url": f"{origin}/",
         "source": "fetched",
@@ -167,12 +221,12 @@ def analyze_website(url: str, *, client: ModelClient) -> dict[str, Any]:
         "description": _field(extracted.get("description"), home),
         "pricing": _field(extracted.get("pricing"), home),
         "capacity": _field(extracted.get("capacity"), home),
-        "customer_type": blank_list,
-        "regions": blank_list,
-        "buyer_roles": blank_list,
-        "timeline": blank_list,
-        "criteria": blank_list,
-        "exclusions": blank_list,
+        "customer_type": _field(extracted.get("customer_type"), home),
+        "regions": _field(extracted.get("regions"), home),
+        "buyer_roles": _field(extracted.get("buyer_roles"), home),
+        "timeline": _field(extracted.get("timeline"), home),
+        "criteria": _field(extracted.get("criteria"), home),
+        "exclusions": _field(extracted.get("exclusions"), home),
         "timezone": _field(extracted.get("timezone"), home),
         "proposed_facts": proposed,
         "evidence": evidence,

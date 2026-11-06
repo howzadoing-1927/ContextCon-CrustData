@@ -46,6 +46,27 @@ def prospect(status="supported"):
 # ---------------------------------------------------------------- deterministic qualification
 
 
+def test_state_abbreviation_matches_headquarters_text():
+    rows = full_evidence()
+    rows.append(ev("/company/enrich#locations.headquarters", "Lucknow, Uttar Pradesh, India"))
+    rows.append(ev("/company/enrich#locations.city", "Lucknow"))
+
+    q = qualify(prospect(), rows, {**PLAN, "geography": ["UP"]}, MAPPING)
+
+    geo = next(c for c in q.criteria if c.name == "geography:UP")
+    assert geo.result == "pass"
+
+
+def test_state_abbreviation_rejects_other_state_headquarters():
+    rows = full_evidence()
+    rows.append(ev("/company/enrich#locations.headquarters", "Bengaluru, Karnataka, India"))
+
+    q = qualify(prospect(), rows, {**PLAN, "geography": ["UP"]}, MAPPING)
+
+    geo = next(c for c in q.criteria if c.name == "geography:UP")
+    assert geo.result == "fail"
+
+
 def test_all_criteria_pass_is_qualified():
     q = qualify(prospect(), full_evidence(), PLAN, MAPPING)
 

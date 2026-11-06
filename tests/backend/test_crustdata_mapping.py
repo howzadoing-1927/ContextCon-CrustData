@@ -1,6 +1,6 @@
 import pytest
 
-from services.adapters.crustdata.mapping import UnmappablePlan, map_plan, role_variants
+from services.adapters.crustdata.mapping import UnmappablePlan, expand_buyer_roles, map_plan, role_variants
 from services.core.contracts.model_io import NormalizedPlan
 
 # Suggestions mirror values observed live on 2026-11-06 (FIXTURE).
@@ -14,6 +14,21 @@ SUGGESTIONS = {
     ("funding.last_round_type", "series_a"): ["series_a"],
     ("funding.last_round_type", "series_b"): ["series_b"],
     ("funding.last_round_type", "series_z"): [],
+    ("locations.country", "up"): [],
+    ("locations.country", "uttar pradesh"): [],
+    ("city", "up"): ["Upton", "Uppsala"],
+    ("city", "uttar pradesh"): [],
+    ("locations.headquarters", "uttar pradesh"): [
+        "Noida, Uttar Pradesh, India", "Lucknow, Uttar Pradesh, India", "Uttar Pradesh, India",
+    ],
+    ("locations.headquarters", "up"): ["Upland, California, United States", "Uppsala, Uppsala County, Sweden"],
+    ("locations.country", "us"): [],
+    ("locations.country", "united states"): ["United States"],
+    ("city", "us"): [],
+    ("city", "united states"): [],
+    ("basic_info.industries", "restaurant owners"): [],
+    ("basic_info.industries", "restaurant"): [],
+    ("basic_info.industries", "restaurants"): ["Restaurants"],
 }
 
 
@@ -108,3 +123,42 @@ def test_role_variants_cover_abbreviations_only():
     assert role_variants("VP of Sales") == [["VP", "Sales"], ["Vice", "President", "Sales"]]
     assert role_variants("Vice President Sales") == [["Vice", "President", "Sales"], ["VP", "Sales"]]
     assert role_variants("Head of Sales") == [["Head", "Sales"]]
+
+
+def test_persona_roles_expand_to_real_titles():
+    primary, fallback = expand_buyer_roles(["Health Industry Leaders"])
+    assert ["Health"] in primary
+    assert ["CEO"] in primary
+    assert fallback == []
+    owners, owner_fallback = expand_buyer_roles(["Restaurant owners"])
+    assert ["Owner"] in owners
+    assert ["CEO"] in owners
+    assert owner_fallback == []
+    specific, _ = expand_buyer_roles(["VP of Sales"])
+    assert ["VP", "Sales"] in specific
+    assert ["CEO"] in specific
+
+
+def test_customer_type_with_persona_maps_to_industry():
+    query, report = map_plan(
+        plan(geography=["India"], industries=["Restaurant owners"]), FakeAutocomplete()
+    )
+    assert {"field": "basic_info.industries", "type": "in", "value": ["Restaurants"]} in query.filters()["conditions"]
+    assert any(row.get("value") == "Restaurants" for row in report.mapped)
+
+
+def test_state_abbreviation_maps_via_headquarters_contains():
+    query, report = map_plan(plan(geography=["UP"]), FakeAutocomplete())
+
+    as_dicts = query.filters()["conditions"]
+    assert {"field": "locations.headquarters", "type": "(.)", "value": "Uttar Pradesh"} in as_dicts
+    assert {"field": "locations.country", "type": "in", "value": ["India"]} in as_dicts
+    assert "Upton" not in str(as_dicts)
+    assert "Uppsala" not in str(as_dicts)
+    assert any(row["plan"] == "geography:UP" and row["field"] == "locations.headquarters" for row in report.mapped)
+
+
+def test_country_abbreviation_expands_before_autocomplete():
+    query, _ = map_plan(plan(geography=["US"]), FakeAutocomplete())
+
+    assert {"field": "locations.country", "type": "in", "value": ["United States"]} in query.filters()["conditions"]

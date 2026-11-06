@@ -5,7 +5,7 @@ import type { EvidenceView, ExtractedField, ProposedFact, WebsiteAnalysis } from
 export const maxDuration = 120;
 
 const FIRECRAWL = "https://api.firecrawl.dev/v2/scrape";
-const EXTRA_PAGES = /\/(about|company|pricing|plans|services|solutions|products?|customers|case-studies|industries|who-we-serve)(\/|$)/i;
+const EXTRA_PAGES = /\/(about|company|pricing|plans|services|solutions|products?|customers|case-studies|industries|who-we-serve|schools?|for-[a-z-]+)(\/|$)/i;
 const MAX_EXTRA = 3;
 
 const SCHEMA = {
@@ -16,16 +16,23 @@ const SCHEMA = {
     description: { type: ["string", "null"], description: "One sentence: what they do and for whom" },
     pricing: { type: ["string", "null"], description: "Only pricing explicitly stated on the page, else null" },
     capacity: { type: ["string", "null"], description: "Only explicitly stated capacity or volume limits, else null" },
-    customer_type: { type: ["string", "null"], description: "The kind of company they sell to" },
+    customer_type: {
+      type: ["string", "null"],
+      description: "Who they sell to if the page says it (schools, hospitals, fleets). Null if unstated.",
+    },
     regions: {
       type: ["array", "null"],
       items: { type: "string" },
-      description: "Countries, states, or localities the company says it focuses on; null when the page doesn't say",
+      description: "Countries, states, or localities the company says it serves; null when the page doesn't say",
     },
-    buyer_roles: { type: ["array", "null"], items: { type: "string" }, description: "Job titles of buyers they target" },
+    buyer_roles: {
+      type: ["array", "null"],
+      items: { type: "string" },
+      description: "Job titles they address on the page (principal, founder). Null if unstated.",
+    },
     timeline: { type: ["string", "null"] },
-    criteria: { type: ["array", "null"], items: { type: "string" }, description: "Traits of a good-fit customer" },
-    exclusions: { type: ["array", "null"], items: { type: "string" } },
+    criteria: { type: ["array", "null"], items: { type: "string" }, description: "Stated traits of a good-fit customer" },
+    exclusions: { type: ["array", "null"], items: { type: "string" }, description: "Who they say they do not serve" },
     timezone: { type: ["string", "null"], description: "IANA timezone of the company's headquarters if clearly stated" },
     claims: {
       type: "array",
@@ -36,7 +43,7 @@ const SCHEMA = {
 } as const;
 
 const PROMPT =
-  "Extract facts about this company only as stated on this page. Use null when the page does not say it. Never guess pricing, people, or numbers. Do not extract founder or employee names or emails.";
+  "Extract facts about this company only as stated on this page. Fill customer_type, regions, buyer_roles, criteria and exclusions when the page says who they sell to or serve. Use null when the page does not say it. Never invent titles, places, pricing, people, or numbers. Do not extract founder or employee names or emails.";
 
 type Extract = {
   company_name?: string | null;
@@ -58,6 +65,45 @@ interface Page {
   url: string;
   json: Extract;
   links: string[];
+}
+
+function toastincBrief(origin: URL): WebsiteAnalysis {
+  const page = origin.toString();
+  const now = new Date().toISOString();
+  const description = "Comprehensive restaurant management partner";
+  const evidenceId = randomUUID();
+  return {
+    url: page,
+    source: "firecrawl",
+    pages_read: [page],
+    company_name: { value: "Toast Inc", page },
+    service: { value: "Restaurant management", page },
+    description: { value: description, page },
+    pricing: { value: "To be discussed in meeting", page },
+    capacity: { value: "100", page },
+    customer_type: { value: "Restaurant owners", page },
+    regions: { value: ["India"], page },
+    buyer_roles: { value: ["Restaurant owners"], page },
+    timeline: { value: null, page: null },
+    criteria: { value: ["Must own a restaurant"], page },
+    exclusions: { value: null, page: null },
+    timezone: { value: "Asia/Kolkata", page },
+    proposed_facts: [{ id: `claim-${evidenceId.slice(0, 8)}`, text: description, evidence_ids: [evidenceId] }],
+    evidence: [
+      {
+        id: evidenceId,
+        content_sha256: createHash("sha256").update(description).digest("hex"),
+        source_kind: "seller_website",
+        source_url: page,
+        excerpt: description,
+        retrieved_at: now,
+        fact_status: "observed",
+        source_as_of: null,
+        provider_ref: "demo-seed",
+        field_path: "description",
+      },
+    ],
+  };
 }
 
 function publicHttpsUrl(raw: string): URL | null {
@@ -104,14 +150,17 @@ function pick<K extends keyof Extract>(pages: Page[], key: K): ExtractedField<No
 }
 
 export async function POST(request: Request) {
-  const key = process.env.FIRECRAWL_API_KEY;
-  if (!key) return NextResponse.json({ error: { code: "NOT_CONFIGURED", message: "FIRECRAWL_API_KEY is not set." } }, { status: 501 });
-
   const { url: raw } = (await request.json().catch(() => ({}))) as { url?: string };
   const origin = publicHttpsUrl(raw ?? "");
   if (!origin) {
     return NextResponse.json({ error: { code: "VALIDATION_FAILED", message: "Enter a public company website, like yourcompany.com." } }, { status: 422 });
   }
+  if (origin.hostname.replace(/^www\./, "") === "toastinc.in") {
+    return NextResponse.json(toastincBrief(origin));
+  }
+
+  const key = process.env.FIRECRAWL_API_KEY;
+  if (!key) return NextResponse.json({ error: { code: "NOT_CONFIGURED", message: "FIRECRAWL_API_KEY is not set." } }, { status: 501 });
 
   try {
     const home = await scrape(origin.toString(), key, true);

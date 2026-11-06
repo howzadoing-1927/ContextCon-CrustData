@@ -12,7 +12,6 @@ export interface BriefDraft {
   customer_type: string;
   regions: string;
   buyer_roles: string;
-  timeline: string;
   criteria: string;
   exclusions: string;
   duration: number;
@@ -34,7 +33,11 @@ const tidy = (parts: string[]) => parts.map((s) => s.trim()).filter(Boolean);
 const splitLines = (v: string) => tidy(v.split("\n"));
 const splitList = (v: string) => tidy(v.split(/[\n,]/));
 
-const ICP_KEYS: BriefKey[] = ["customer_type", "regions", "buyer_roles", "timeline", "criteria", "exclusions"];
+function joinExtracted(value: string | string[] | null, sep: string): string {
+  if (value == null) return "";
+  const parts = Array.isArray(value) ? value : [value];
+  return parts.map((item) => String(item).trim()).filter(Boolean).join(sep);
+}
 
 export function draftFromAnalysis(a: WebsiteAnalysis): { draft: BriefDraft; origins: Partial<Record<BriefKey, FieldOrigin>> } {
   const origins: Partial<Record<BriefKey, FieldOrigin>> = {};
@@ -52,12 +55,11 @@ export function draftFromAnalysis(a: WebsiteAnalysis): { draft: BriefDraft; orig
     pricing: site("pricing", a.pricing) ?? "",
     description: site("description", a.description) ?? "",
     capacity: site("capacity", a.capacity) ?? "",
-    customer_type: "",
-    regions: "",
-    buyer_roles: "",
-    timeline: "",
-    criteria: "",
-    exclusions: "",
+    customer_type: joinExtracted(site("customer_type", a.customer_type), ", "),
+    regions: joinExtracted(site("regions", a.regions), ", "),
+    buyer_roles: joinExtracted(site("buyer_roles", a.buyer_roles), ", "),
+    criteria: joinExtracted(site("criteria", a.criteria), "\n"),
+    exclusions: joinExtracted(site("exclusions", a.exclusions), "\n"),
     duration: 30,
     timezone: site("timezone", a.timezone) ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     weekdays: [1, 2, 3, 4, 5],
@@ -65,7 +67,6 @@ export function draftFromAnalysis(a: WebsiteAnalysis): { draft: BriefDraft; orig
     end: "17:00",
     escalation: DEFAULT_ESCALATION.join("\n"),
   };
-  for (const key of ICP_KEYS) origins[key] = { kind: "founder" };
   origins.website_url = { kind: "site", page: a.url };
   origins.founder_name = { kind: "founder" };
   origins.founder_email = { kind: "founder" };
@@ -120,7 +121,7 @@ export function toBriefSave(
       customer_type: d.customer_type.trim(),
       regions: splitList(d.regions),
       buyer_roles: splitList(d.buyer_roles),
-      timeline: d.timeline.trim() || null,
+      timeline: null,
       criteria: splitLines(d.criteria),
       exclusions: splitLines(d.exclusions),
     },

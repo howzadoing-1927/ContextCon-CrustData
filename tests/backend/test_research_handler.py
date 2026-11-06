@@ -154,13 +154,33 @@ def test_happy_path_persists_prospects_evidence_decision_and_queues_qualify(rese
     ).fetchone()["status"] == "ready"
     assert conn.execute("select status from tasks where id = %s", (lease.task_id,)).fetchone()["status"] == "succeeded"
 
-    with db.connect() as c:
-        detail = get_mission_detail(c, organization_id=tenant.organization_id, campaign_id=launched.id)
+    detail = get_mission_detail(conn, organization_id=tenant.organization_id, campaign_id=launched.id)
     case = next(p for p in detail.prospects if p.canonical_person_ref)
     assert case.relationship.status == "supported" and case.person.title == "VP Sales"
     assert case.delivery.buyer_test_email == tenant.buyer_test_email and case.delivery.identity_is_simulated is True
     assert case.fit == "needs_evidence" and case.facts
     assert len(detail.evidence) == len(evidence)
+
+
+def test_fallback_titles_recover_when_named_role_misses(research_campaign, conn):
+    _, launched, lease = research_campaign
+
+    class FallbackResearch(FakeResearch):
+        def find_people(self, ref, roles, limit=3):
+            if any(term == ["CEO"] for term in roles):
+                return super().find_people(ref, roles, limit)
+            self.people_calls.append(ref)
+            r = self._call("/person/search")
+            return PeopleResult(ref, "unknown", None, "no title match", [], r)
+
+    fake = FallbackResearch(n_companies=2, matches={company_ref(100): "supported", company_ref(101): "supported"})
+    handle_research(conn, lease, research_factory=lambda: fake)
+
+    campaign = _campaign(conn, launched.id)
+    assert (campaign["status"], campaign["stage"]) == ("running", "qualify")
+    assert conn.execute(
+        "select count(*) as n from prospects where campaign_id = %s and canonical_person_ref is not null", (launched.id,)
+    ).fetchone()["n"] >= 1
 
 
 def test_no_supported_person_gives_no_match_without_invented_identity(research_campaign, conn):

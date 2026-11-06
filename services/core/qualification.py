@@ -8,15 +8,13 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from services.adapters.crustdata.mapping import _expand_round_range, _slug
+from services.adapters.crustdata.mapping import _expand_round_range, _slug, geography_needles
 
 FIELD_INDUSTRY = ("taxonomy.professional_network_industry",)
 FIELD_SPECIALITIES = ("taxonomy.professional_network_specialities",)
 FIELD_NAME = ("basic_info.name",)
 FIELD_COUNTRY = ("locations.country",)
 FIELD_LOCATION = ("locations.city", "locations.headquarters")
-COUNTRY_ALIASES = {"india": {"ind", "india"}, "united states": {"usa", "united states", "united states of america"},
-                   "united kingdom": {"gbr", "united kingdom"}}
 
 
 @dataclass
@@ -71,15 +69,17 @@ def _stem(term: str) -> str:
 
 
 def _geography(place: str, evidence: list[dict]) -> Criterion:
-    target = place.lower()
-    accepted = COUNTRY_ALIASES.get(target, {target})
+    accepted = geography_needles(place)
+    # Short codes ("up") are not substrings of "Uttar Pradesh"; only 3+ char needles match location text.
+    location_needles = {term for term in accepted if len(term) >= 3}
     country = _values(evidence, FIELD_COUNTRY)
     location = _values(evidence, FIELD_LOCATION)
     for eid, value in country:
         if any(t in accepted for t in _texts(value)):
             return Criterion(f"geography:{place}", "pass", [eid], f"HQ country observed as {value}", "must_have")
     for eid, value in location:
-        if any(target in t for t in _texts(value)):
+        texts = _texts(value)
+        if any(needle in text for text in texts for needle in location_needles):
             return Criterion(f"geography:{place}", "pass", [eid], f"HQ location observed as {value}", "must_have")
     if country or location:
         seen = [v for _, v in country + location]

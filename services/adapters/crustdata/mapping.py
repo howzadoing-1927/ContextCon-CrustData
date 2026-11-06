@@ -16,6 +16,81 @@ FUNDING_RULE_FIELDS = {"funding_stage", "last_round_type", "funding_round", "fun
 HEADCOUNT_RULE_FIELDS = {"employee_count", "headcount", "employees", "company_size"}
 ROLE_STOPWORDS = {"of", "the", "and", "for", "a", "an", "&"}
 MAX_INDUSTRY_VALUES = 3
+MAX_ROLE_VARIANTS = 8
+# Persona words founders type that are not job titles. Dropped before title search.
+_GENERIC_ROLE_WORDS = {
+    "leader", "leaders", "leadership", "buyer", "buyers", "decision", "maker", "makers",
+    "stakeholder", "stakeholders", "executive", "executives", "management",
+    "industry", "industries", "professional", "professionals", "people", "person",
+    "role", "roles", "target", "targets", "customer", "customers", "champion",
+    "team", "teams", "staff", "contact", "contacts",
+}
+_COLLECTIVE_ROLE = {"leader", "leaders", "leadership", "buyer", "buyers", "decision", "maker", "makers",
+                    "stakeholder", "stakeholders", "champion"}
+_ROLE_INDUSTRY_WORDS = {
+    "restaurant", "restaurants", "hotel", "hotels", "school", "schools", "retail",
+    "hospital", "hospitals", "clinic", "clinics",
+}
+_OWNER_WORDS = {"owner", "owners", "proprietor", "proprietors"}
+_OWNER_TITLES = [["Owner"], ["Founder"], ["Proprietor"]]
+_PERSONA_SUFFIX = re.compile(r"\b(owners?|founders?|operators?|managers?|leaders?|buyers?)\b", re.I)
+# Real titles used when the founder wrote a persona instead of a title.
+FALLBACK_ROLE_TERMS = [
+    ["CEO"], ["Founder"], ["President"], ["Managing", "Director"],
+    ["Director"], ["Vice", "President"], ["Head"], ["Partner"],
+]
+# Short codes founders type that are not Crustdata country/city labels. Values are autocomplete queries.
+_GEO_EXPAND: dict[str, list[str]] = {
+    "us": ["United States"],
+    "usa": ["United States"],
+    "america": ["United States"],
+    "uk": ["United Kingdom"],
+    "uae": ["United Arab Emirates"],
+    "britain": ["United Kingdom"],
+    "great britain": ["United Kingdom"],
+    "up": ["Uttar Pradesh"],
+    "mh": ["Maharashtra"],
+    "gj": ["Gujarat"],
+    "rj": ["Rajasthan"],
+    "wb": ["West Bengal"],
+    "pb": ["Punjab"],
+    "hr": ["Haryana"],
+    "kl": ["Kerala"],
+    "ka": ["Karnataka"],
+    "tn": ["Tamil Nadu"],
+    "mp": ["Madhya Pradesh"],
+    "ap": ["Andhra Pradesh"],
+    "ts": ["Telangana"],
+    "tg": ["Telangana"],
+    "dl": ["Delhi"],
+    "ncr": ["Delhi"],
+    "delhi ncr": ["Delhi"],
+    "od": ["Odisha"],
+    "or": ["Odisha"],
+    "jh": ["Jharkhand"],
+    "br": ["Bihar"],
+    "hp": ["Himachal Pradesh"],
+    "cg": ["Chhattisgarh"],
+    "ga": ["Goa"],
+    "as": ["Assam"],
+}
+_REGION_COUNTRY = {
+    "andhra pradesh": "India", "arunachal pradesh": "India", "assam": "India", "bihar": "India",
+    "chhattisgarh": "India", "goa": "India", "gujarat": "India", "haryana": "India",
+    "himachal pradesh": "India", "jharkhand": "India", "karnataka": "India", "kerala": "India",
+    "madhya pradesh": "India", "maharashtra": "India", "manipur": "India", "meghalaya": "India",
+    "mizoram": "India", "nagaland": "India", "odisha": "India", "punjab": "India",
+    "rajasthan": "India", "sikkim": "India", "tamil nadu": "India", "telangana": "India",
+    "tripura": "India", "uttar pradesh": "India", "uttarakhand": "India", "west bengal": "India",
+    "delhi": "India", "jammu and kashmir": "India", "ladakh": "India", "puducherry": "India",
+    "chandigarh": "India",
+}
+_COUNTRY_NEEDLES = {
+    "india": {"ind", "india"},
+    "united states": {"usa", "us", "united states", "united states of america"},
+    "united kingdom": {"gbr", "uk", "united kingdom", "great britain"},
+    "united arab emirates": {"uae", "united arab emirates"},
+}
 
 
 class Autocompleter(Protocol):
@@ -29,6 +104,8 @@ class Condition:
     value: Any
 
     def as_dict(self) -> dict[str, Any]:
+        if self.field == "__group__":
+            return {"op": self.type, "conditions": self.value}
         return {"field": self.field, "type": self.type, "value": self.value}
 
 
@@ -36,6 +113,7 @@ class Condition:
 class CompanyQuery:
     conditions: list[Condition]
     role_terms: list[list[str]]
+    fallback_role_terms: list[list[str]] = field(default_factory=list)
 
     def filters(self) -> dict[str, Any]:
         return {"op": "and", "conditions": [c.as_dict() for c in self.conditions]}
@@ -61,9 +139,43 @@ def _norm(value: str) -> str:
     return " ".join(value.lower().split())
 
 
+def _compact(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", value.lower())
+
+
+def geography_terms(place: str) -> list[str]:
+    """Place as typed, plus canonical expansions (UP → Uttar Pradesh, US → United States)."""
+    seen: list[str] = []
+
+    def add(term: str) -> None:
+        cleaned = term.strip()
+        if cleaned and _norm(cleaned) not in {_norm(item) for item in seen}:
+            seen.append(cleaned)
+
+    add(place)
+    for key in (_norm(place), _compact(place)):
+        for term in _GEO_EXPAND.get(key, []):
+            add(term)
+    return seen
+
+
+def geography_needles(place: str) -> set[str]:
+    """Lowercase terms that mean this place, for qualification matching."""
+    needles = {_norm(term) for term in geography_terms(place)}
+    extra: set[str] = set()
+    for term in needles:
+        extra.update(_COUNTRY_NEEDLES.get(term, set()))
+    return needles | extra
+
+
 def _exact(suggestions: list[str], term: str) -> str | None:
     target = _norm(term)
     return next((s for s in suggestions if _norm(s) == target), None)
+
+
+def _hq_phrase_hits(suggestions: list[str], phrase: str) -> list[str]:
+    needle = _norm(phrase)
+    return [item for item in suggestions if needle and needle in _norm(item)]
 
 
 def role_terms(role: str) -> list[str]:
@@ -87,6 +199,47 @@ def role_variants(role: str) -> list[list[str]]:
     if lowered[:2] == ["vice", "president"]:
         variants.append(["VP"] + base[2:])
     return variants
+
+
+def _dedupe_terms(groups: list[list[str]]) -> list[list[str]]:
+    seen: set[tuple[str, ...]] = set()
+    out: list[list[str]] = []
+    for group in groups:
+        key = tuple(w.lower() for w in group)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(group)
+    return out
+
+
+def _industry_queries(term: str) -> list[str]:
+    """'Restaurant owners' → Restaurant owners, Restaurant, Restaurants (real industry labels)."""
+    queries = [term]
+    stem = " ".join(_PERSONA_SUFFIX.sub("", term).split())
+    if stem and _norm(stem) != _norm(term):
+        queries.append(stem)
+        if not stem.lower().endswith("s"):
+            queries.append(f"{stem}s")
+    return list(dict.fromkeys(queries))
+
+
+def expand_buyer_roles(roles: list[str]) -> tuple[list[list[str]], list[list[str]]]:
+    """Title-search terms plus fallback exec titles. Always OR fallbacks so research does not die on personas."""
+    primary: list[list[str]] = []
+    for role in roles:
+        words = {w.lower() for w in re.split(r"[\s/,\-]+", role) if w}
+        if words & _OWNER_WORDS:
+            primary.extend(_OWNER_TITLES)
+        for variant in role_variants(role):
+            keep = [w for w in variant if w.lower() not in _GENERIC_ROLE_WORDS and w.lower() not in _ROLE_INDUSTRY_WORDS]
+            if keep:
+                primary.append(keep)
+        if words & _COLLECTIVE_ROLE:
+            primary.extend([list(term) for term in FALLBACK_ROLE_TERMS])
+    primary = _dedupe_terms(primary)
+    fallback = [list(term) for term in FALLBACK_ROLE_TERMS]
+    return _dedupe_terms(primary + fallback)[:MAX_ROLE_VARIANTS], []
 
 
 def _range_bounds(value: Any) -> tuple[float | None, float | None]:
@@ -132,33 +285,80 @@ def map_plan(plan: NormalizedPlan, ac: Autocompleter) -> tuple[CompanyQuery, Map
     report = MappingReport()
     conditions: list[Condition] = []
 
-    countries, cities = [], []
+    countries, cities, headquarters = [], [], []
     for place in plan.geography:
-        country = _exact(ac.autocomplete("locations.country", place, limit=10), place)
-        if country:
-            countries.append(country)
-            report.mapped.append({"plan": f"geography:{place}", "field": "locations.country", "value": country})
+        mapped = False
+        for term in geography_terms(place):
+            country = _exact(ac.autocomplete("locations.country", term, limit=10), term)
+            if country:
+                if country not in countries:
+                    countries.append(country)
+                report.mapped.append({"plan": f"geography:{place}", "field": "locations.country", "value": country})
+                mapped = True
+                break
+            city = _exact(ac.autocomplete("city", term, limit=10), term)
+            if city:
+                if city not in cities:
+                    cities.append(city)
+                report.mapped.append({"plan": f"geography:{place}", "field": "locations.city", "value": city})
+                mapped = True
+                break
+        if mapped:
             continue
-        city = _exact(ac.autocomplete("city", place, limit=10), place)
-        if city:
-            cities.append(city)
-            report.mapped.append({"plan": f"geography:{place}", "field": "locations.city", "value": city})
-            continue
-        report.unmapped.append({"plan": f"geography:{place}", "reason": "no exact country or city value in Crustdata"})
+        # States/regions are not countries or cities. Confirm the phrase exists in HQ autocomplete, then
+        # filter locations.headquarters with contains — `in` on one HQ string misses cities in that state.
+        for term in geography_terms(place):
+            if len(term.strip()) < 3:
+                continue
+            hits = _hq_phrase_hits(ac.autocomplete("locations.headquarters", term, limit=10), term)
+            if not hits:
+                continue
+            if term not in headquarters:
+                headquarters.append(term)
+            report.mapped.append({"plan": f"geography:{place}", "field": "locations.headquarters", "value": term})
+            parent = _REGION_COUNTRY.get(_norm(term))
+            if parent:
+                country = _exact(ac.autocomplete("locations.country", parent, limit=10), parent)
+                if country and country not in countries:
+                    countries.append(country)
+                    report.mapped.append({"plan": f"geography:{place}", "field": "locations.country", "value": country})
+            mapped = True
+            break
+        if not mapped:
+            report.unmapped.append({"plan": f"geography:{place}", "reason": "no exact country, city, or headquarters region in Crustdata"})
     if countries:
         conditions.append(Condition("locations.country", "in", countries))
     if cities:
         conditions.append(Condition("locations.city", "in", cities))
+    if headquarters:
+        hq_conds = [Condition("locations.headquarters", "(.)", phrase) for phrase in headquarters]
+        if len(hq_conds) == 1:
+            conditions.append(hq_conds[0])
+        else:
+            conditions.append(Condition("__group__", "or", [item.as_dict() for item in hq_conds]))
 
     industries, specialities = [], []
     for term in plan.industries:
-        exact = _exact(ac.autocomplete("basic_info.industries", term, limit=20), term)
-        if exact:
-            industries.append(exact)
-            report.mapped.append({"plan": f"industry:{term}", "field": "basic_info.industries", "value": exact})
+        mapped = False
+        for query in _industry_queries(term):
+            exact = _exact(ac.autocomplete("basic_info.industries", query, limit=20), query)
+            if exact:
+                if exact not in industries:
+                    industries.append(exact)
+                report.mapped.append({"plan": f"industry:{term}", "field": "basic_info.industries", "value": exact})
+                mapped = True
+                break
+        if mapped:
             continue
-        spec = [s for s in ac.autocomplete("taxonomy.professional_network_specialities", term, limit=20)
-                if _norm(term) in _norm(s)][:MAX_INDUSTRY_VALUES]
+        spec: list[str] = []
+        for query in _industry_queries(term):
+            spec.extend(
+                s for s in ac.autocomplete("taxonomy.professional_network_specialities", query, limit=20)
+                if _norm(query) in _norm(s) and s not in spec
+            )
+            if len(spec) >= MAX_INDUSTRY_VALUES:
+                break
+        spec = spec[:MAX_INDUSTRY_VALUES]
         if spec:
             specialities.extend(s for s in spec if s not in specialities)
             report.weak_matches.append({
@@ -200,15 +400,25 @@ def map_plan(plan: NormalizedPlan, ac: Autocompleter) -> tuple[CompanyQuery, Map
     for assumption in plan.assumptions:
         report.unmapped.append({"plan": f"assumption:{assumption.text}", "reason": "hypothesis; never used as a filter"})
 
-    roles: list[list[str]] = []
-    for role in plan.buyer_roles:
-        variants = role_variants(role)
-        roles.extend(v for v in variants if v not in roles)
-        report.mapped.append({"plan": f"buyer_role:{role}", "field": "experience.employment_details.current.title", "value": variants})
-    roles = roles[:6]
-
-    if not (countries or cities) or not (industries or specialities):
-        raise UnmappablePlan("plan needs at least one mapped geography and one mapped industry", report)
-    if not roles:
+    if not plan.buyer_roles:
         raise UnmappablePlan("plan has no buyer role to search for", report)
-    return CompanyQuery(conditions=conditions, role_terms=roles), report
+    roles, fallback_roles = expand_buyer_roles(plan.buyer_roles)
+    for role in plan.buyer_roles:
+        report.mapped.append({
+            "plan": f"buyer_role:{role}",
+            "field": "experience.employment_details.current.title",
+            "value": roles or fallback_roles,
+        })
+
+    missing = []
+    if not (countries or cities or headquarters):
+        missing.append("geography")
+    if not (industries or specialities):
+        missing.append("industry")
+    if missing:
+        raise UnmappablePlan("plan needs at least one mapped " + " and one mapped ".join(missing), report)
+    return CompanyQuery(
+        conditions=conditions,
+        role_terms=roles or fallback_roles,
+        fallback_role_terms=fallback_roles,
+    ), report

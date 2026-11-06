@@ -41,7 +41,6 @@ const ORDER = [
   "customer_type",
   "regions",
   "buyer_roles",
-  "timeline",
   "criteria",
   "exclusions",
   "meeting",
@@ -63,7 +62,6 @@ const LABELS: Record<BriefKey, string> = {
   customer_type: "Customer type",
   regions: "Any place you focus on?",
   buyer_roles: "Buyer roles",
-  timeline: "Buying timeline",
   criteria: "Fit criteria",
   exclusions: "Exclusions",
   timezone: "Timezone",
@@ -117,19 +115,16 @@ export function BriefView({
   website,
   analysis,
   profileVersion,
-  canSave,
   onStartOver,
   onSaved,
 }: {
   website: string;
   analysis: WebsiteAnalysis | null;
   profileVersion: number;
-  /** False in live mode until the backend's demo session exists; the brief is read and checked but not stored. */
-  canSave: boolean;
   onStartOver: () => void;
   onSaved: () => void;
 }) {
-  const { client } = useSession();
+  const { client, mode, ensureLiveSession } = useSession();
   const seeded = useMemo(() => (analysis ? draftFromAnalysis(analysis) : null), [analysis]);
   const [draft, setDraft] = useState<BriefDraft | null>(null);
   const [approvedFacts, setApprovedFacts] = useState<Set<string>>(new Set());
@@ -220,11 +215,23 @@ export function BriefView({
       setFocusRequest((n) => n + 1);
       return;
     }
-    if (!canSave) {
-      setSaveBlocked(true);
-      return;
+    if (mode === "LIVE") {
+      const ok = await ensureLiveSession();
+      if (!ok) {
+        setSaveBlocked(true);
+        return;
+      }
     }
-    const result = await save.run(toBriefSave(draft, analysis, [...approvedFacts], profileVersion));
+    let version = profileVersion;
+    if (mode === "LIVE") {
+      try {
+        version = (await client.workspace.get()).data.profile_version;
+      } catch {
+        version = profileVersion;
+      }
+    }
+    setSaveBlocked(false);
+    const result = await save.run(toBriefSave(draft, analysis, [...approvedFacts], version));
     if (result) onSaved();
   }
 
@@ -243,8 +250,8 @@ export function BriefView({
 
       {filled && analysis && analysis.source !== "fixture" && (
         <Notice tone="info" title={`Read from ${new URL(website).hostname}`} className="mt-5">
-          Company name, what you sell and claims came from the pages listed above. Who you sell to is still yours to type — we will not guess
-          ICP from the site. Tick claims you want approved.
+          Company name, what you sell, who you sell to and claims came from the pages listed above. Correct anything we got
+          wrong. Tick claims you want approved.
         </Notice>
       )}
       {filled && analysis?.source === "fixture" && (
@@ -327,14 +334,16 @@ export function BriefView({
           </fieldset>
         </BriefSection>
 
-        <BriefSection title="Your ideal customer" description="You tell us who to sell to. We will not guess this from your site.">
+        <BriefSection title="Your ideal customer" description="Filled from your site when the pages say who you sell to. Change anything that is wrong.">
           {text("customer_type", { wide: true, placeholder: "e.g. K-12 schools" })}
           {text("regions", {
             hint: "A country, a state, or a locality. Leave blank if you don't focus on a place.",
             placeholder: "e.g. India, or schools in Pune",
           })}
-          {text("buyer_roles", { hint: "Separate with commas.", placeholder: "e.g. Principal, school administrator" })}
-          {text("timeline", { wide: true, placeholder: "e.g. Buying this quarter" })}
+          {text("buyer_roles", {
+            hint: "Who we email at each company. Separate with commas.",
+            placeholder: "e.g. Principal, school administrator",
+          })}
           {text("criteria", { multiline: true, hint: "One per line.", placeholder: "e.g. Has a dedicated academic coordinator" })}
           {text("exclusions", { multiline: true, hint: "One per line. Companies matching these are skipped." })}
         </BriefSection>
@@ -435,9 +444,8 @@ export function BriefView({
             </Notice>
           )}
           {saveBlocked && (
-            <Notice tone="info" title="Your brief is checked but not saved yet" className="mb-4">
-              Saving needs the backend&apos;s demo session for the seeded workspace, which isn&apos;t live yet. Nothing was stored and no
-              session was made up.
+            <Notice tone="bad" title="Could not start a session" className="mb-4">
+              The API on port 8000 did not return a demo session. Keep the backend running and try again.
             </Notice>
           )}
           {save.error != null && (

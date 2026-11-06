@@ -9,13 +9,28 @@ import { ModeBadge, ProvenanceStamp } from "@/components/outcome/provenance";
 import { Notice } from "@/components/outcome/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { describeError } from "@/lib/api/errors";
+import type { ApiResult } from "@/lib/api/client";
+import { ApiError, describeError } from "@/lib/api/errors";
 import type { WebsiteAnalysis } from "@/lib/contracts";
 import { BRIEF_STORAGE_KEY, normalizeWebsite } from "@/lib/fixtures/onboarding";
 import { useMutation } from "@/lib/use-mutation";
 import { useSession } from "@/lib/session";
 
 const DEMO_WEBSITE = "demo-seller.example";
+
+/** Firecrawl first when the server has a key; Outcome API fetch is the fallback. */
+async function readWebsiteLive(url: string, fallback: (url: string, key: string) => Promise<ApiResult<WebsiteAnalysis>>, idempotencyKey: string): Promise<ApiResult<WebsiteAnalysis>> {
+  const res = await fetch("/api/website-analysis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  const body = await res.json().catch(() => null);
+  if (res.ok && body && typeof body === "object" && "url" in body) {
+    return { data: body as WebsiteAnalysis, correlationId: res.headers.get("x-correlation-id") ?? "", status: res.status };
+  }
+  return fallback(url, idempotencyKey);
+}
 
 function emptyAnalysis(url: string): WebsiteAnalysis {
   const blank = { value: null, page: null };
@@ -56,8 +71,10 @@ export default function LandingPage() {
   const [profileVersion, setProfileVersion] = useState(0);
   const checked = useRef(false);
   const live = mode === "LIVE";
-  const analyze = useMutation("website-analysis", (url: string, key: string) => client.workspace.analyzeWebsite(url, key));
-  const canSave = !live || Boolean(accessToken && organizationId);
+  const analyze = useMutation("website-analysis", (url: string, key: string) =>
+    live ? readWebsiteLive(url, client.workspace.analyzeWebsite, key) : client.workspace.analyzeWebsite(url, key),
+  );
+  const signedIn = Boolean(accessToken && organizationId);
 
   useEffect(() => {
     if (!ready || checked.current) return;
@@ -75,7 +92,7 @@ export default function LandingPage() {
     if (!live) enterFixture();
     setTarget(url);
     setAnalysis(null);
-    if (canSave) {
+    if (signedIn) {
       try {
         setProfileVersion((await client.workspace.get()).data.profile_version);
       } catch {
@@ -106,7 +123,6 @@ export default function LandingPage() {
           website={target}
           analysis={analysis}
           profileVersion={profileVersion}
-          canSave={canSave}
           onStartOver={() => {
             setTarget(null);
             setAnalysis(null);

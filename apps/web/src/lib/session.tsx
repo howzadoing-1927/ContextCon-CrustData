@@ -19,6 +19,18 @@ interface SessionState {
   organizationId: string | null;
 }
 
+async function mintDemoSession(): Promise<{ accessToken: string; organizationId: string } | null> {
+  try {
+    const res = await fetch(`${env.apiBaseUrl}/api/v1/demo/session`, { method: "POST" });
+    const body = await res.json().catch(() => null);
+    const data = body?.data;
+    if (!res.ok || !data?.access_token || !data?.organization_id) return null;
+    return { accessToken: data.access_token, organizationId: String(data.organization_id) };
+  } catch {
+    return null;
+  }
+}
+
 interface SessionContextValue extends SessionState {
   client: OutcomeClient;
   mode: "LIVE" | "FIXTURE";
@@ -27,6 +39,8 @@ interface SessionContextValue extends SessionState {
   startFixtureSession: () => void;
   /** Starts the fixture session and selects the demo organization without any sign-in screen. */
   enterFixture: () => void;
+  /** Mint or reuse the live demo session. Updates the client token before resolving. */
+  ensureLiveSession: () => Promise<boolean>;
   signOut: () => Promise<void>;
   selectOrganization: (id: string | null) => void;
 }
@@ -60,24 +74,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setState({ ready: true, email: token ? "fixture.operator@demo-seller.example" : null, accessToken: token, organizationId });
       return;
     }
-    void fetch(`${env.apiBaseUrl}/api/v1/demo/session`, { method: "POST" })
-      .then(async (res) => {
-        const body = await res.json().catch(() => null);
-        const data = body?.data;
-        if (!res.ok || !data?.access_token || !data?.organization_id) {
-          setState({ ready: true, email: null, accessToken: null, organizationId });
-          return;
-        }
-        window.localStorage.setItem(ORG_KEY, data.organization_id);
-        sessionRef.current = { accessToken: data.access_token, organizationId: data.organization_id };
-        setState({
-          ready: true,
-          email: "demo.owner@outcome.local",
-          accessToken: data.access_token,
-          organizationId: data.organization_id,
-        });
-      })
-      .catch(() => setState({ ready: true, email: null, accessToken: null, organizationId }));
+    void mintDemoSession().then((minted) => {
+      if (!minted) {
+        setState({ ready: true, email: null, accessToken: null, organizationId });
+        return;
+      }
+      window.localStorage.setItem(ORG_KEY, minted.organizationId);
+      sessionRef.current = minted;
+      setState({
+        ready: true,
+        email: "demo.owner@outcome.local",
+        accessToken: minted.accessToken,
+        organizationId: minted.organizationId,
+      });
+    });
   }, [supabase]);
 
   const signInWithPassword = useCallback(
@@ -93,6 +103,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const token = "fixture-session";
     window.sessionStorage.setItem(FIXTURE_SESSION_KEY, token);
     setState((prev) => ({ ...prev, email: "fixture.operator@demo-seller.example", accessToken: token }));
+  }, []);
+
+  const ensureLiveSession = useCallback(async () => {
+    if (sessionRef.current?.accessToken && sessionRef.current.organizationId) return true;
+    const minted = await mintDemoSession();
+    if (!minted) return false;
+    window.localStorage.setItem(ORG_KEY, minted.organizationId);
+    sessionRef.current = minted;
+    setState({
+      ready: true,
+      email: "demo.owner@outcome.local",
+      accessToken: minted.accessToken,
+      organizationId: minted.organizationId,
+    });
+    return true;
   }, []);
 
   const enterFixture = useCallback(() => {
@@ -126,6 +151,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     signInWithPassword,
     startFixtureSession,
     enterFixture,
+    ensureLiveSession,
     signOut,
     selectOrganization,
   };
