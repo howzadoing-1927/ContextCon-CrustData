@@ -19,7 +19,10 @@ export function nextExpected(detail: MissionDetail): string {
   if (detail.status === "draft") return "The worker picks up the mission.";
   if (detail.status === "completed") return "Nothing. The mission is complete.";
   if (detail.status === "no_match" || detail.status === "failed" || detail.status === "stopped") return "Nothing. The mission has ended.";
-  if (!conv) return "Research finishes: a prospect qualifies, or none match.";
+  if (!conv) {
+    if (detail.prospects.some((p) => p.draft)) return "The drafted emails are ready to review.";
+    return "Research finishes: a prospect qualifies, or none match.";
+  }
   switch (conv.state) {
     case "researching":
       return "Research finishes: a prospect qualifies, or none match.";

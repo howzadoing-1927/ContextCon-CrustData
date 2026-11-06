@@ -90,11 +90,18 @@ class EvidenceView(ContractModel):
 class ProspectCompany(ContractModel):
     name: str
     domain: str | None
+    location: str | None = None
 
 
 class ProspectPerson(ContractModel):
     name: str
     title: str | None
+    found_email: str | None = None
+
+
+class OutreachDraft(ContractModel):
+    subject: str
+    body_text: str
 
 
 class ProspectRelationship(ContractModel):
@@ -137,6 +144,7 @@ class ProspectCase(ContractModel):
     facts: list[ProspectFact]
     hypotheses: list[ProspectHypothesis]
     delivery: Delivery
+    draft: OutreachDraft | None = None
 
 
 class DecisionModelMeta(ContractModel):

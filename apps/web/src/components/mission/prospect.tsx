@@ -70,6 +70,72 @@ function Criteria({ criteria }: { criteria: CriterionResult[] }) {
   );
 }
 
+function locationOf(prospect: ProspectCase) {
+  if (prospect.company.location) return prospect.company.location;
+  const fact = prospect.facts.find((item) => /headquarters|locations\.city/i.test(item.text));
+  return fact?.text.replace(/^[^:]+:\s*/, "").replace(/^"|"$/g, "") ?? null;
+}
+
+export function FoundPeople({ prospects }: { prospects: ProspectCase[] }) {
+  const people = prospects.filter((p) => p.person);
+  if (!people.length) return null;
+  return (
+    <Section id="found-people" title="People found">
+      <p className="mb-3 max-w-[64ch] text-xs text-muted-foreground">
+        Restaurant owners and operators across India, with the work email Crustdata returned. Outbound still goes to the consented test inbox.
+      </p>
+      <ul className="divide-y divide-hairline border-t border-hairline">
+        {people.map((p) => {
+          const place = locationOf(p);
+          return (
+            <li key={p.id} className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.1fr)] gap-3 py-3 max-sm:grid-cols-1">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{p.person?.name}</p>
+                <p className="text-xs text-muted-foreground">{p.person?.title}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm">{p.company.name}</p>
+                <p className="text-xs text-muted-foreground">{place ?? p.company.domain ?? "India"}</p>
+              </div>
+              <div className="min-w-0">
+                {p.person?.found_email ? (
+                  <p className="font-mono text-xs text-foreground">{p.person.found_email}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{p.company.domain ? `via ${p.company.domain}` : "Email not on the record"}</p>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
+export function OutreachDrafts({ prospects }: { prospects: ProspectCase[] }) {
+  const drafts = prospects.filter((p) => p.draft && p.person);
+  if (!drafts.length) return null;
+  return (
+    <Section id="outbound-drafts" title="Personalized outbound">
+      <p className="mb-3 max-w-[64ch] text-xs text-muted-foreground">
+        One short email per qualified person, written from the company evidence. Delivery is to the test inbox playing the buyer.
+      </p>
+      <ul className="flex flex-col gap-3">
+        {drafts.map((p) => (
+          <li key={p.id} className="rounded-md border border-hairline px-3 py-3">
+            <p className="text-xs text-muted-foreground">
+              To {p.person?.name}
+              {p.person?.found_email ? <span className="font-mono"> · {p.person.found_email}</span> : null}
+            </p>
+            <p className="mt-1 text-sm font-medium">{p.draft?.subject}</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{p.draft?.body_text}</p>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 export function ProspectCaseView({ prospect }: { prospect: ProspectCase }) {
   const fit = FIT[prospect.fit];
   return (

@@ -413,7 +413,7 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
     ).fetchone()
     if row is None:
         raise DomainError(404, ErrorCode.NOT_FOUND, "Campaign not found.")
-    exceptions = _select_decisions(conn, organization_id, campaign_id, status="blocked")
+    decision_rows = _select_decisions(conn, organization_id, campaign_id)
     buyer = conn.execute(
         "select buyer_test_email from campaigns where organization_id = %s and id = %s", (organization_id, campaign_id)
     ).fetchone()["buyer_test_email"]
@@ -460,7 +460,7 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         **_campaign_view(row).model_dump(),
         prospects=[_prospect_case(p, evidence_rows, buyer) for p in prospect_rows],
         conversation=_conversation_view(conversation, messages) if conversation else None,
-        open_exceptions=[_decision_view(d) for d in exceptions],
+        open_exceptions=[_decision_view(d) for d in _open_exceptions(decision_rows, prospect_rows)],
         evidence=[evidence_view(e) for e in evidence_rows],
         handoff=handoff,
     )
@@ -520,23 +520,88 @@ def list_ledger(
     return ListData[DecisionView](items=[_decision_view(r) for r in page], next_cursor=next_cursor)
 
 
+def _open_exceptions(rows: list[dict[str, Any]], prospects: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    """Blocked decisions that still need a human. Qualify misses and superseded research are not exceptions."""
+    latest_accepted: dict[str, Any] = {}
+    for row in rows:
+        if row["status"] == "accepted":
+            latest_accepted[row["kind"]] = row["created_at"]
+    drafts_ready = any(isinstance((p.get("identity_json") or {}).get("draft"), dict) for p in (prospects or []))
+    open_rows = []
+    for row in rows:
+        if row["status"] != "blocked":
+            continue
+        if row["kind"] == "qualify":
+            continue
+        if drafts_ready and row["kind"] == "draft":
+            continue
+        if drafts_ready and row["kind"] == "policy_gate":
+            reason = row.get("reason") or ""
+            if "deterministic_claim_checks" in reason or "hypothesis not phrased" in reason:
+                continue
+        accepted_at = latest_accepted.get(row["kind"])
+        if accepted_at is not None and row["created_at"] < accepted_at:
+            continue
+        open_rows.append(row)
+    return open_rows
+
+
+def _excerpt_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (dict, list)):
+        return json.dumps(value)
+    text = str(value).strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return text.strip("\"'")
+        return parsed if isinstance(parsed, str) else text
+    return text
+
+
+def _location_from(identity: dict[str, Any], evidence_rows: list[dict[str, Any]]) -> str | None:
+    company = identity.get("company") or {}
+    if company.get("location"):
+        return str(company["location"])
+    for path in ("locations.headquarters", "locations.city"):
+        for row in evidence_rows:
+            if str(row.get("field_path") or "").endswith(path):
+                text = _excerpt_text(row.get("excerpt"))
+                if text:
+                    return text
+    return None
+
+
 def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buyer_test_email: str) -> ProspectCase:
     identity = row["identity_json"] or {}
     company, person, relationship = identity.get("company") or {}, identity.get("person"), identity.get("relationship") or {}
+    mine = [e for e in evidence_rows if e["prospect_id"] == row["id"]]
     facts = [
         {"text": f"{e['field_path'].split('#', 1)[-1]}: {e['excerpt']}", "evidence_ids": [e["id"]]}
-        for e in evidence_rows
-        if e["prospect_id"] == row["id"] and e["fact_status"] == "observed"
+        for e in mine
+        if e["fact_status"] == "observed"
     ]
     status = relationship.get("status")
     fit_json = row.get("fit_json") or {}
+    draft = identity.get("draft") if isinstance(identity.get("draft"), dict) else None
+    found_email = (person or {}).get("found_email") or (person or {}).get("email")
     return ProspectCase.model_validate(
         {
             "id": row["id"],
             "canonical_company_ref": row["canonical_company_ref"],
             "canonical_person_ref": row["canonical_person_ref"],
-            "company": {"name": company.get("name") or row["canonical_company_ref"], "domain": company.get("domain")},
-            "person": {"name": person.get("name") or "", "title": person.get("title")} if person else None,
+            "company": {
+                "name": company.get("name") or row["canonical_company_ref"],
+                "domain": company.get("domain"),
+                "location": _location_from(identity, mine),
+            },
+            "person": {
+                "name": person.get("name") or "",
+                "title": person.get("title"),
+                "found_email": found_email,
+            } if person else None,
             "relationship": {
                 "status": status if status in ("supported", "conflicted") else "unknown",
                 "evidence_ids": relationship.get("evidence_ids", []),
@@ -546,6 +611,7 @@ def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buy
             "facts": facts,
             "hypotheses": fit_json.get("hypotheses", []),
             "delivery": {"mode": "simulation", "buyer_test_email": buyer_test_email, "identity_is_simulated": True},
+            "draft": {"subject": draft["subject"], "body_text": draft["body_text"]} if draft and draft.get("subject") and draft.get("body_text") else None,
         }
     )
 

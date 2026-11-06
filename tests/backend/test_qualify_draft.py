@@ -160,6 +160,21 @@ def test_unsafe_content_is_flagged(body):
     assert findings
 
 
+def test_simulation_sentence_without_period_is_framing_not_a_hypothesis():
+    env = envelope_for(full_evidence())
+    body = "Seller schedules demos. In this test you are playing the buyer."
+    d = draft(body, [
+        claim(body, "Seller schedules demos.", "seller_fact", facts=["F1"]),
+        {"text": "In this test you are playing the buyer", "start": 24, "end": 62, "kind": "hypothesis", "evidence_ids": [], "approved_fact_ids": []},
+    ])
+
+    findings, repairs, fixed = deterministic_findings(d, env)
+
+    assert findings == []
+    assert any("simulation sentence" in r for r in repairs)
+    assert [c.kind for c in fixed.claims] == ["seller_fact"]
+
+
 def test_offsets_are_repaired_only_for_exact_unique_text():
     rows = full_evidence()
     env = envelope_for(rows)
@@ -304,8 +319,7 @@ def test_handler_happy_path_ledger_conversation_and_inert_send_task(qualify_camp
     assert convo["state"] == "drafting" and convo["buyer_test_email"] == tenant.buyer_test_email
     assert conn.execute("select status from tasks where campaign_id = %s and kind = 'send_email'", (launched.id,)).fetchone()["status"] == "ready"
     assert conn.execute("select stage from campaigns where id = %s", (launched.id,)).fetchone()["stage"] == "send"
-    with db.connect() as c:
-        detail = get_mission_detail(c, organization_id=tenant.organization_id, campaign_id=launched.id)
+    detail = get_mission_detail(conn, organization_id=tenant.organization_id, campaign_id=launched.id)
     assert detail.prospects[0].fit == "qualified" and detail.prospects[0].criteria
     assert detail.conversation.state == "drafting"
 
@@ -341,8 +355,7 @@ def test_handler_suppressed_company_blocks_at_gate(qualify_campaign, conn):
     gate = conn.execute("select reason from decisions where campaign_id = %s and kind = 'policy_gate'", (launched.id,)).fetchone()
     assert "not_suppressed" in gate["reason"]
     assert conn.execute("select count(*) as n from conversations where campaign_id = %s", (launched.id,)).fetchone()["n"] == 0
-    with db.connect() as c:
-        detail = get_mission_detail(c, organization_id=tenant.organization_id, campaign_id=launched.id)
+    detail = get_mission_detail(conn, organization_id=tenant.organization_id, campaign_id=launched.id)
     gate_view = next(d for d in detail.open_exceptions if any(ch.name.startswith("step 4") for ch in d.policy.checks))
     assert any(ch.reason.startswith("[deferred]") for ch in gate_view.policy.checks)
 

@@ -119,7 +119,8 @@ def handle_qualify_and_draft(conn: psycopg.Connection, lease: queue.Lease, *, cl
     ).fetchall()
     by_prospect = {p["id"]: [e for e in evidence if e["prospect_id"] == p["id"]] for p in prospects}
     results = {p["id"]: qualify(p, by_prospect[p["id"]], plan, mapping) for p in prospects}
-    selected = next((p for p in prospects if results[p["id"]].eligible), None)
+    eligible = [p for p in prospects if results[p["id"]].eligible]
+    selected = eligible[0] if eligible else None
 
     if selected is None:
         with queue.fenced(conn, lease):
@@ -132,7 +133,9 @@ def handle_qualify_and_draft(conn: psycopg.Connection, lease: queue.Lease, *, cl
         return
 
     used = campaign["budget_json"].get("usage", {}).get("model_calls", 0)
-    if used + MAX_ROUNDS * CALLS_PER_ROUND > campaign["limits_json"]["max_model_calls"]:
+    per = MAX_ROUNDS * CALLS_PER_ROUND
+    max_calls = campaign["limits_json"]["max_model_calls"]
+    if used + per > max_calls:
         with queue.fenced(conn, lease):
             _write_qualifications(conn, lease, prospects, results)
             _decision(conn, lease, kind="draft", status="blocked", prospect_id=selected["id"],
@@ -143,9 +146,14 @@ def handle_qualify_and_draft(conn: psycopg.Connection, lease: queue.Lease, *, cl
         return
 
     queue.heartbeat(conn, lease, LEASE_SECONDS)
-    envelope = build_envelope(campaign_id=str(lease.campaign_id), snapshot=snapshot, prospect=selected,
-                              evidence=by_prospect[selected["id"]], hypotheses=results[selected["id"]].hypotheses)
-    outcome: DraftOutcome = draft_and_verify(client, envelope)
+    draft_targets = eligible if used + len(eligible) * per <= max_calls else [selected]
+    outcomes: dict[UUID, DraftOutcome] = {}
+    for prospect in draft_targets:
+        queue.heartbeat(conn, lease, LEASE_SECONDS)
+        envelope = build_envelope(campaign_id=str(lease.campaign_id), snapshot=snapshot, prospect=prospect,
+                                  evidence=by_prospect[prospect["id"]], hypotheses=results[prospect["id"]].hypotheses)
+        outcomes[prospect["id"]] = draft_and_verify(client, envelope)
+    outcome = outcomes[selected["id"]]
     seller = conn.execute(
         "select id, account_email from connections where organization_id = %s and provider = 'google' and purpose = 'seller' "
         "and status = 'connected'",
@@ -155,7 +163,17 @@ def handle_qualify_and_draft(conn: psycopg.Connection, lease: queue.Lease, *, cl
     with queue.fenced(conn, lease):
         current = conn.execute("select status, stage from campaigns where organization_id = %s and id = %s for update",
                                (lease.organization_id, lease.campaign_id)).fetchone()
-        _add_usage(conn, lease.organization_id, lease.campaign_id, outcome.calls)
+        _add_usage(conn, lease.organization_id, lease.campaign_id, [call for item in outcomes.values() for call in item.calls])
+        for prospect in draft_targets:
+            drafted = outcomes[prospect["id"]].final.draft if outcomes[prospect["id"]].final else None
+            if drafted is None:
+                continue
+            identity = dict(prospect["identity_json"] or {})
+            identity["draft"] = {"subject": drafted.subject, "body_text": drafted.body_text}
+            conn.execute(
+                "update prospects set identity_json = %s where organization_id = %s and id = %s",
+                (Jsonb(identity), lease.organization_id, prospect["id"]),
+            )
         if current["status"] != "running" or current["stage"] != "qualify":
             _decision(conn, lease, kind="draft", status="rejected", reason=f"Campaign became {current['status']}; draft discarded.",
                       checks=[{"name": "campaign_running", "pass": False, "reason": current["status"]}])

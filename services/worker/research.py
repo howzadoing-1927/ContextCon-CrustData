@@ -189,8 +189,21 @@ def _persist_prospect(conn: psycopg.Connection, lease: queue.Lease, item: Examin
         enrich_evidence = [
             e for e in (_evidence_row(conn, lease, prospect_id, "company", company.ref, o) for o in item.enrich.observations) if e
         ]
+    location = next(
+        (
+            str(obs.value)
+            for obs in (*company.observations, *(item.enrich.observations if item.enrich else []))
+            if obs.field_path.endswith("locations.headquarters") or obs.field_path.endswith("locations.city")
+        ),
+        None,
+    )
     identity = {
-        "company": {"name": company.name, "domain": company.domain, "evidence_ids": [str(e) for e in company_evidence + enrich_evidence]},
+        "company": {
+            "name": company.name,
+            "domain": company.domain,
+            "location": location,
+            "evidence_ids": [str(e) for e in company_evidence + enrich_evidence],
+        },
         "person": {"name": people.person.name, "title": people.person.title} if supported else None,
         "relationship": {
             "status": people.status,

@@ -9,7 +9,7 @@ import { ExceptionDrawer, ExceptionStrip } from "@/components/mission/exceptions
 import { HandoffCard } from "@/components/mission/handoff";
 import { MissionHeader } from "@/components/mission/header";
 import { DecisionLedger, useLedger } from "@/components/mission/ledger";
-import { ProspectCaseView, RejectedProspects } from "@/components/mission/prospect";
+import { FoundPeople, OutreachDrafts, ProspectCaseView, RejectedProspects } from "@/components/mission/prospect";
 import { lastDecisionReason, nextExpected, StagePanel } from "@/components/mission/stage-panel";
 import { ErrorState } from "@/components/outcome/error-state";
 import { EvidenceProvider } from "@/components/outcome/evidence";
@@ -60,9 +60,10 @@ function Centre({ detail, sellerEmail, timeZone, now, refresh, lastReason }: {
   refresh: () => void;
   lastReason: string | null;
 }) {
-  const chosen = detail.prospects.find((p) => p.fit !== "rejected") ?? null;
+  const found = detail.prospects.filter((p) => p.person);
+  const chosen = detail.prospects.find((p) => p.fit === "qualified") ?? detail.prospects.find((p) => p.fit !== "rejected") ?? null;
   const rejected = detail.prospects.filter((p) => p.fit === "rejected");
-  const researching = !chosen && !SETTLED.has(detail.status) && detail.status !== "draft";
+  const researching = !found.length && !SETTLED.has(detail.status) && detail.status !== "draft";
 
   return (
     <div className="min-w-0 px-6 pb-10">
@@ -70,14 +71,13 @@ function Centre({ detail, sellerEmail, timeZone, now, refresh, lastReason }: {
         <StagePanel detail={detail} now={now} onRefresh={refresh} lastReason={lastReason} />
       </div>
       {detail.handoff && <HandoffCard handoff={detail.handoff} />}
-      {chosen ? (
-        <ProspectCaseView prospect={chosen} />
-      ) : (
-        researching && (
-          <p className="border-b border-hairline py-5 text-sm text-muted-foreground">
-            Researching. Candidates appear here as they are scored against the mission&apos;s must-haves.
-          </p>
-        )
+      <FoundPeople prospects={found} />
+      <OutreachDrafts prospects={detail.prospects} />
+      {!found.length && chosen && <ProspectCaseView prospect={chosen} />}
+      {researching && (
+        <p className="border-b border-hairline py-5 text-sm text-muted-foreground">
+          Researching. Candidates appear here as they are scored against the mission&apos;s must-haves.
+        </p>
       )}
       <RejectedProspects prospects={rejected} />
       {detail.conversation && (

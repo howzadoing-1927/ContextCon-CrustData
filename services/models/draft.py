@@ -95,6 +95,12 @@ SIMULATION_SENTENCE = "In this test you are playing the buyer."
 _MIN_SNAPPED_CLAIM = 24
 
 
+def _is_simulation_sentence(text: str) -> bool:
+    """The model often cites the mandated sentence without its trailing period."""
+    normalize = lambda value: re.sub(r"[.!\s]+$", "", (value or "").strip().lower())
+    return bool(text) and normalize(text) == normalize(SIMULATION_SENTENCE)
+
+
 def _snap_claim_to_body(text: str, body: str) -> tuple[int, str] | None:
     """Exact unique substring, or the longest unique prefix of the claim that already appears in the body."""
     if not text:
@@ -133,7 +139,7 @@ def deterministic_findings(draft: DraftProposal, envelope: dict) -> tuple[list[s
     if draft.purpose != envelope["allowed_purpose"]:
         findings.append(f"purpose {draft.purpose!r} is not the permitted {envelope['allowed_purpose']!r}")
     for claim in draft.claims:
-        if claim.text.strip() == SIMULATION_SENTENCE:
+        if _is_simulation_sentence(claim.text):
             repairs.append("mandated simulation sentence removed from claims (framing, not a factual claim)")
             continue
         if body[claim.start:claim.end] != claim.text:

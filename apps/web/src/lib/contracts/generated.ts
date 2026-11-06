@@ -823,6 +823,7 @@ export interface ProspectCase {
   id: Id7;
   person: ProspectPerson | null;
   relationship: ProspectRelationship;
+  draft?: { subject: string; body_text: string } | null;
 }
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -831,6 +832,7 @@ export interface ProspectCase {
 export interface ProspectCompany {
   domain: Domain;
   name: Name2;
+  location?: string | null;
 }
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -855,6 +857,7 @@ export interface ProspectHypothesis {
 export interface ProspectPerson {
   name: Name3;
   title: Title;
+  found_email?: string | null;
 }
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
