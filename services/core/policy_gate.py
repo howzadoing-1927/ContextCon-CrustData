@@ -72,11 +72,13 @@ def initial_send_gate(
     gate.add(2, "no_inbound_yet", True, "initial message; no conversation exists yet")
 
     # 3. simulation, consent, exact single recipient, authorized sender
-    buyer = (snapshot.get("policy") or {}).get("buyer_test") or {}
+    policy = snapshot.get("policy") or {}
+    rotation = policy.get("buyer_tests") or ([policy["buyer_test"]] if policy.get("buyer_test") else [])
+    buyer = next((b for b in rotation if normalize_email(b["email"]) == normalize_email(recipient)), {})
     gate.add(3, "simulation_mode", (snapshot.get("policy") or {}).get("simulation") is True, "launch snapshot simulation=true")
     gate.add(3, "consent_persisted", bool(buyer.get("consent_record") and buyer.get("consented_at")), "buyer_test consent record and timestamp")
     gate.add(3, "recipient_is_snapshot_buyer", bool(buyer) and normalize_email(buyer["email"]) == normalize_email(recipient),
-             "To is exactly the consented test buyer from the launch snapshot; Cc/Bcc empty")
+             "To is exactly a consented test inbox from the launch snapshot; Cc/Bcc empty")
     gate.add(3, "sender_is_seller_connection", bool(sender), "From is the connected seller account" if sender else "no seller connection account")
     body_emails = _EMAIL.findall((draft.body_text + " " + draft.subject) if draft else "")
     gate.add(3, "no_addresses_in_content", not body_emails, "draft contains no email addresses" if not body_emails else "draft contains an email address")
@@ -102,11 +104,14 @@ def initial_send_gate(
              f"verifier verdict {verification.verdict if verification else 'missing'}")
 
     # 6. action eligibility
-    prior = conn.execute(
-        "select count(*) as n from conversations where organization_id = %s and campaign_id = %s", (organization_id, campaign_id)
-    ).fetchone()["n"]
-    gate.add(6, "initial_send_eligible", bool(draft) and draft.purpose == "initial" and prior == 0,
-             "first outbound for this campaign; no existing conversation or booking")
+    counts = conn.execute(
+        "select count(*) as n, count(*) filter (where prospect_id = %s) as mine from conversations "
+        "where organization_id = %s and campaign_id = %s",
+        (prospect["id"], organization_id, campaign_id),
+    ).fetchone()
+    cap = ((snapshot.get("policy") or {}).get("limits") or {}).get("max_conversations", 1)
+    gate.add(6, "initial_send_eligible", bool(draft) and draft.purpose == "initial" and counts["mine"] == 0 and counts["n"] < cap,
+             f"first outbound to this prospect; {counts['n']} of {cap} conversations opened")
 
     # 7-8 run at dispatch time
     gate.checks.append({"step": 7, "name": "budget_scopes_token", "pass": False, "status": "deferred", "reason": "checked atomically at dispatch (B6)"})

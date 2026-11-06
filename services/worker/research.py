@@ -35,8 +35,8 @@ from services.core.contracts.version import CONTRACT_VERSION
 
 from . import queue
 
-HARD_MAX_DISCOVERED = 10
-HARD_MAX_ENRICHED = 3
+HARD_MAX_DISCOVERED = 50
+HARD_MAX_ENRICHED = 25
 LEASE_SECONDS = 120
 UNAVAILABLE_RETRY_SECONDS = 60
 _EMAIL = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+")

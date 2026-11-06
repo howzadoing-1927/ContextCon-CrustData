@@ -26,6 +26,7 @@ ENDPOINTS: dict[str, tuple[int, bool]] = {
     "/company/search": (30, True),
     "/company/enrich": (15, True),
     "/person/search": (30, True),
+    "/person/enrich": (15, True),
 }
 
 

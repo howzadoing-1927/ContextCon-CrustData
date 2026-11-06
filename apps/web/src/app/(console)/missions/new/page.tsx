@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
@@ -21,10 +21,25 @@ import { cn } from "@/lib/utils";
 const MAX = 4000;
 
 function Summary({ workspace, versions }: { workspace: OrganizationView; versions: { profile: number; config: number } }) {
-  const buyer = workspace.policy.consented_recipients.find((r) => r.role === "buyer_test");
+  const buyers = workspace.policy.consented_recipients.filter((r) => r.role === "buyer_test");
   const { limits, working_hours: hours } = workspace.policy;
   const rows: [string, React.ReactNode][] = [
-    ["Sends to", buyer ? <span className="font-mono text-2xs">{buyer.email}</span> : <span className="text-signal">No consented inbox</span>],
+    [
+      "Sends to",
+      buyers.length ? (
+        <span key="to" className="block">
+          {buyers.length > 1 && <span className="block text-muted-foreground">Rotates across {buyers.length} test inboxes</span>}
+          {buyers.map((b, i) => (
+            <span key={b.email} className="block font-mono text-2xs">
+              {buyers.length > 1 ? `${i + 1}. ` : ""}
+              {b.email}
+            </span>
+          ))}
+        </span>
+      ) : (
+        <span key="to" className="text-signal">No consented inbox</span>
+      ),
+    ],
     ["Sends from", <span key="from" className="font-mono text-2xs">{workspace.connection?.account_email ?? "not connected"}</span>],
     ["Seller profile", versions.profile > 0 ? <span key="p" className="tabular">version {versions.profile}</span> : <span key="p" className="text-signal">Not approved</span>],
     ["Policy", versions.config > 0 ? <span key="c" className="tabular">version {versions.config}</span> : <span key="c" className="text-signal">Not saved</span>],
@@ -32,8 +47,8 @@ function Summary({ workspace, versions }: { workspace: OrganizationView; version
     [
       "Limits",
       <span key="l" className="tabular">
-        {limits.max_discovered} discovered · {limits.max_enriched} enriched · {limits.max_outbound_messages} emails · {limits.max_model_calls} model calls ·{" "}
-        {Math.round(limits.max_runtime_seconds / 60)} min
+        Up to {limits.max_conversations} {limits.max_conversations === 1 ? "person" : "people"} · {limits.max_discovered} companies searched ·{" "}
+        {limits.max_outbound_messages} emails per person · {limits.max_model_calls} model calls
       </span>,
     ],
   ];
@@ -50,7 +65,12 @@ function Summary({ workspace, versions }: { workspace: OrganizationView; version
 }
 
 function requestFromBrief(workspace: OrganizationView): string {
-  const icp = workspace.ideal_customer!;
+  const people = workspace.policy.limits.max_conversations;
+  const reach = `Reach up to ${people} ${people === 1 ? "person" : "people"}, one decision maker per company.`;
+  const icp = workspace.ideal_customer;
+  if (!icp) {
+    return `Find companies that would benefit from ${workspace.name}, reach their decision maker, explain the fit, and book a ${workspace.policy.duration_minutes}-minute call. ${reach} Don't assume a problem we can't verify.`;
+  }
   const where = icp.regions.length ? ` in ${icp.regions.join(" or ")}` : "";
   const who = icp.buyer_roles.length ? icp.buyer_roles.join(" or ") : "the right decision maker";
   return [
@@ -58,6 +78,7 @@ function requestFromBrief(workspace: OrganizationView): string {
     icp.criteria.length ? `Good fit: ${icp.criteria.join("; ")}.` : null,
     icp.exclusions.length ? `Skip: ${icp.exclusions.join("; ")}.` : null,
     icp.timeline ? `Timeline: ${icp.timeline}.` : null,
+    reach,
     "Don't assume a problem we can't verify.",
   ]
     .filter(Boolean)
@@ -72,6 +93,7 @@ export default function NewMissionPage() {
   const [text, setText] = useState("");
   const [touched, setTouched] = useState(false);
   const [versions, setVersions] = useState<{ profile: number; config: number } | null>(null);
+  const [writing, setWriting] = useState(false);
   const textId = useId();
   const create = useMutation("campaign", (input: CampaignCreate, key: string) => client.campaigns.create(input, key));
 
@@ -100,17 +122,18 @@ export default function NewMissionPage() {
   const empty = trimmed.length === 0;
   const blockers = readiness(data).filter((i) => !i.done);
   const buyer = data.policy.consented_recipients.find((r) => r.role === "buyer_test");
+  const readyMade = requestFromBrief(data);
   const canLaunch = data.viewer_role === "owner";
   const stale = data.profile_version !== versions.profile || data.policy.config_version !== versions.config;
   const error = create.error;
   const fieldError = touched && empty ? "Describe who to find and what meeting to book." : tooLong ? `Keep it under ${MAX} characters.` : null;
   const serverFieldError = isApiError(error) && error.code === "VALIDATION_FAILED" ? error.message : null;
 
-  async function submit() {
+  async function submit(request = trimmed) {
     setTouched(true);
-    if (empty || tooLong || !buyer || !versions) return;
+    if (!request || request.length > MAX || !buyer || !versions) return;
     const result = await create.run({
-      request_text: trimmed,
+      request_text: request,
       mode: "simulation",
       buyer_test_email: buyer.email,
       profile_version: versions.profile,
@@ -140,45 +163,91 @@ export default function NewMissionPage() {
           }}
           className="flex flex-col gap-3"
         >
-          <div className="flex items-end justify-between gap-3">
-            <label htmlFor={textId} className="text-sm font-medium">
-              What should the agent accomplish?
-            </label>
-            {data.ideal_customer && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => setText(requestFromBrief(data))} className="shrink-0">
-                <FileText data-icon="inline-start" />
-                {trimmed ? "Replace with your brief" : "Start from your brief"}
-              </Button>
-            )}
-          </div>
-          <Textarea
-            id={textId}
-            rows={9}
-            value={text}
-            autoFocus
-            onChange={(e) => setText(e.target.value)}
-            onBlur={() => setTouched(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                void submit();
-              }
-            }}
-            aria-invalid={Boolean(fieldError || serverFieldError) || undefined}
-            aria-describedby={`${textId}-hint`}
-            placeholder="Find a mid-market logistics company in India and its sales leader, explain the fit, and book a 15-minute demo. Don't assume a problem we can't verify."
-            className="min-h-48 text-sm leading-relaxed placeholder:text-faint"
-          />
-          <div id={`${textId}-hint`} className="flex items-start justify-between gap-4 text-2xs">
-            <p className={cn(fieldError || serverFieldError ? "text-bad" : "text-muted-foreground")}>
-              {fieldError ??
-                serverFieldError ??
-                "Who to find, what qualifies them, and what meeting to book. The agent asks for help instead of\u00a0guessing."}
-            </p>
-            <span className={cn("shrink-0 tabular", tooLong ? "text-bad" : "text-faint")}>
-              {text.length.toLocaleString("en-US")} / {MAX.toLocaleString("en-US")}
-            </span>
-          </div>
+          {!writing ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-medium">Start a mission</p>
+              <section className="rounded-lg border border-hairline bg-shell px-4 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-semibold">Ready-made mission</h2>
+                    <p className="mt-0.5 text-2xs text-muted-foreground">
+                      Written from your brief and setup. Finds up to {data.policy.limits.max_conversations} real people and shows their real
+                      email, but mails only your test inboxes.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    className="shrink-0"
+                    disabled={create.pending || blockers.length > 0 || !canLaunch}
+                    onClick={() => void submit(readyMade)}
+                  >
+                    {create.pending ? "Launching…" : "Launch this mission"}
+                  </Button>
+                </div>
+                <p className="mt-3 rounded-md border border-hairline bg-background px-3 py-2 text-xs leading-relaxed text-foreground">{readyMade}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setText(readyMade);
+                    setWriting(true);
+                  }}
+                  className="mt-2 text-2xs text-muted-foreground underline hover:text-foreground"
+                >
+                  Edit before launching
+                </button>
+              </section>
+              <section className="flex items-center justify-between gap-4 rounded-lg border border-dashed border-hairline px-4 py-4">
+                <div>
+                  <h2 className="text-sm font-semibold">Write your own mission</h2>
+                  <p className="mt-0.5 text-2xs text-muted-foreground">Describe who to find, what qualifies them, and what meeting to book.</p>
+                </div>
+                <Button type="button" variant="outline" className="shrink-0" onClick={() => setWriting(true)}>
+                  <Plus data-icon="inline-start" />
+                  Add a mission
+                </Button>
+              </section>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-end justify-between gap-3">
+                <label htmlFor={textId} className="text-sm font-medium">
+                  What should the agent accomplish?
+                </label>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setText(readyMade)} className="shrink-0">
+                  <FileText data-icon="inline-start" />
+                  {trimmed ? "Replace with the ready-made mission" : "Start from the ready-made mission"}
+                </Button>
+              </div>
+              <Textarea
+                id={textId}
+                rows={9}
+                value={text}
+                autoFocus
+                onChange={(e) => setText(e.target.value)}
+                onBlur={() => setTouched(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    void submit();
+                  }
+                }}
+                aria-invalid={Boolean(fieldError || serverFieldError) || undefined}
+                aria-describedby={`${textId}-hint`}
+                placeholder="Find a mid-market logistics company in India and its sales leader, explain the fit, and book a 15-minute demo. Don't assume a problem we can't verify."
+                className="min-h-48 text-sm leading-relaxed placeholder:text-faint"
+              />
+              <div id={`${textId}-hint`} className="flex items-start justify-between gap-4 text-2xs">
+                <p className={cn(fieldError || serverFieldError ? "text-bad" : "text-muted-foreground")}>
+                  {fieldError ??
+                    serverFieldError ??
+                    "Who to find, what qualifies them, and what meeting to book. The agent asks for help instead of\u00a0guessing."}
+                </p>
+                <span className={cn("shrink-0 tabular", tooLong ? "text-bad" : "text-faint")}>
+                  {text.length.toLocaleString("en-US")} / {MAX.toLocaleString("en-US")}
+                </span>
+              </div>
+            </>
+          )}
 
           {blockers.length > 0 && (
             <Notice
@@ -234,12 +303,17 @@ export default function NewMissionPage() {
             </Notice>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <span className="text-2xs text-faint">⌘ Enter to launch</span>
-            <Button type="submit" size="lg" disabled={create.pending || blockers.length > 0 || !canLaunch || tooLong}>
-              {create.pending ? "Launching…" : "Launch mission"}
-            </Button>
-          </div>
+          {writing && (
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <Button type="button" variant="ghost" onClick={() => setWriting(false)}>
+                Back
+              </Button>
+              <span className="text-2xs text-faint">⌘ Enter to launch</span>
+              <Button type="submit" size="lg" disabled={create.pending || blockers.length > 0 || !canLaunch || tooLong}>
+                {create.pending ? "Launching…" : "Launch mission"}
+              </Button>
+            </div>
+          )}
         </form>
 
         <aside aria-label="What this mission will use" className="self-start rounded-lg border border-hairline bg-shell px-4 py-3">

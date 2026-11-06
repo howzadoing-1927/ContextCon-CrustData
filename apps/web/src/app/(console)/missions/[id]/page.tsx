@@ -9,7 +9,7 @@ import { ExceptionDrawer, ExceptionStrip } from "@/components/mission/exceptions
 import { HandoffCard } from "@/components/mission/handoff";
 import { MissionHeader } from "@/components/mission/header";
 import { DecisionLedger, useLedger } from "@/components/mission/ledger";
-import { ProspectCaseView, RejectedProspects } from "@/components/mission/prospect";
+import { PeopleList, ProspectCaseView, RejectedProspects } from "@/components/mission/prospect";
 import { lastDecisionReason, nextExpected, StagePanel } from "@/components/mission/stage-panel";
 import { ErrorState } from "@/components/outcome/error-state";
 import { EvidenceProvider } from "@/components/outcome/evidence";
@@ -60,8 +60,19 @@ function Centre({ detail, sellerEmail, timeZone, now, refresh, lastReason }: {
   refresh: () => void;
   lastReason: string | null;
 }) {
-  const chosen = detail.prospects.find((p) => p.fit !== "rejected") ?? null;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const candidates = detail.prospects.filter((p) => p.fit !== "rejected");
   const rejected = detail.prospects.filter((p) => p.fit === "rejected");
+  const chosen =
+    candidates.find((p) => p.id === selectedId) ?? candidates.find((p) => p.delivery.conversation_id) ?? candidates[0] ?? null;
+  const conversations = detail.conversations ?? (detail.conversation ? [detail.conversation] : []);
+  const conversation = chosen?.delivery.conversation_id
+    ? (conversations.find((c) => c.id === chosen.delivery.conversation_id) ?? null)
+    : candidates.length > 1
+      ? null
+      : detail.conversation;
+  const handoffs = detail.handoffs ?? (detail.handoff ? [detail.handoff] : []);
+  const handoff = chosen ? (handoffs.find((h) => h.prospect_id === chosen.id) ?? null) : detail.handoff;
   const researching = !chosen && !SETTLED.has(detail.status) && detail.status !== "draft";
 
   return (
@@ -69,7 +80,8 @@ function Centre({ detail, sellerEmail, timeZone, now, refresh, lastReason }: {
       <div className="pt-5 empty:hidden">
         <StagePanel detail={detail} now={now} onRefresh={refresh} lastReason={lastReason} />
       </div>
-      {detail.handoff && <HandoffCard handoff={detail.handoff} />}
+      {candidates.length > 1 && <PeopleList prospects={candidates} selectedId={chosen?.id ?? null} onSelect={setSelectedId} />}
+      {handoff && <HandoffCard handoff={handoff} />}
       {chosen ? (
         <ProspectCaseView prospect={chosen} />
       ) : (
@@ -80,8 +92,8 @@ function Centre({ detail, sellerEmail, timeZone, now, refresh, lastReason }: {
         )
       )}
       <RejectedProspects prospects={rejected} />
-      {detail.conversation && <ConversationThread conversation={detail.conversation} sellerEmail={sellerEmail} timeZone={timeZone} />}
-      {!detail.conversation && detail.handoff && <BookingReceiptView booking={detail.handoff.booking} className="mt-4" />}
+      {conversation && <ConversationThread conversation={conversation} sellerEmail={sellerEmail} timeZone={timeZone} />}
+      {!conversation && handoff && <BookingReceiptView booking={handoff.booking} className="mt-4" />}
     </div>
   );
 }

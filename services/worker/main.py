@@ -19,9 +19,12 @@ from services.core.config import Settings, get_settings
 
 from services.adapters.crustdata.adapter import CrustdataResearch
 from services.adapters.crustdata.client import CrustdataClient
+from services.adapters.crustdata.contact import lookup_business_email
+from services.adapters.google.adapter import LiveGoogleAdapter
 from services.models.client import AzureModelClient
 
 from . import actions, queue
+from .converse import handle_poll_inbox, handle_send_email
 from .handlers import handle_normalize_mission
 from .qualify import handle_qualify_and_draft
 from .research import handle_research
@@ -38,6 +41,7 @@ def build_handlers(settings: Settings) -> dict[str, Handler]:
     """Task kind -> handler. A kind is only claimed when its dependencies are configured, so unconfigured
     providers leave tasks ready instead of failing them."""
     handlers: dict[str, Handler] = {}
+    client = None
     if settings.azure_configured:
         client = AzureModelClient(settings)
         log.info("model client: %s", client.api_path)
@@ -59,6 +63,17 @@ def build_handlers(settings: Settings) -> dict[str, Handler]:
         handlers["research"] = partial(handle_research, research_factory=research_factory)
     else:
         log.warning("CRUSTDATA_API_KEY not configured; research tasks will stay ready")
+    if settings.live_effects_enabled:
+        google = LiveGoogleAdapter(timeout=float(settings.provider_timeout_seconds))
+        lookup = None
+        if settings.crustdata_api_key:
+            contact_client = CrustdataClient(api_key=settings.crustdata_api_key, base_url=settings.crustdata_base_url,
+                                             timeout=float(settings.provider_timeout_seconds))
+            lookup = partial(lookup_business_email, contact_client)
+        handlers["send_email"] = partial(handle_send_email, google=google, email_lookup=lookup)
+        handlers["poll_inbox"] = partial(handle_poll_inbox, google=google, client=client)
+    else:
+        log.warning("LIVE_EFFECTS_ENABLED is off; send_email and poll_inbox tasks will stay ready")
     return handlers
 
 
@@ -88,7 +103,8 @@ def write_heartbeat(conn: psycopg.Connection, settings: Settings, worker_id: str
 def run_once(conn: psycopg.Connection, settings: Settings, worker_id: str, handlers: dict[str, Handler]) -> bool:
     queue.sweep_exhausted(conn)
     actions.expire_executing(conn, timeout_seconds=settings.action_executing_timeout_seconds)
-    lease = queue.claim(conn, owner=worker_id, kinds=handlers, lease_seconds=settings.task_lease_seconds)
+    lease = queue.claim(conn, owner=worker_id, kinds=handlers, lease_seconds=settings.task_lease_seconds,
+                        organization_id=settings.runtime_organization_id)
     if lease is None:
         return False
     try:

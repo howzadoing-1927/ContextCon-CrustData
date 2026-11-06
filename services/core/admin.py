@@ -16,6 +16,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from .contracts.base import normalize_email
+from .contracts.requests import DEFAULT_PEOPLE, limits_for
 from .db import reset_pool, transaction
 
 REQUIRED_GOOGLE_SCOPES = (
@@ -25,17 +26,7 @@ REQUIRED_GOOGLE_SCOPES = (
     "https://www.googleapis.com/auth/calendar.freebusy",
 )
 
-DEFAULT_LIMITS = {
-    "max_discovered": 10,
-    "max_enriched": 3,
-    "max_conversations": 1,
-    "max_outbound_messages": 6,
-    "max_model_calls": 20,
-    "max_research_calls": 10,
-    "max_runtime_seconds": 600,
-    "max_reply_turns": 4,
-    "no_reply_followups": 0,
-}
+DEFAULT_LIMITS = limits_for(DEFAULT_PEOPLE)
 
 # Deletion order respects composite foreign keys; decisions/evidence deletes are allowed only while
 # app.purge_tenant equals this organization for the current transaction.

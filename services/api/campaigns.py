@@ -1,20 +1,31 @@
 import re
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from services.core import db
-from services.core.campaigns import get_mission_detail, launch_campaign
+from services.core.campaigns import campaign_ledger, get_mission_detail, launch_campaign, list_campaigns
 from services.core.contracts.enums import ErrorCode
+from services.core.contracts.base import ContractModel
 from services.core.contracts.envelopes import SuccessEnvelope
 from services.core.contracts.requests import CampaignCreate
 from services.core.contracts.version import API_PREFIX
-from services.core.contracts.views import CampaignLaunchView, MissionDetail
+from services.core.contracts.views import CampaignLaunchView, CampaignView, DecisionView, MissionDetail
 
 from .auth import Principal, require_member
 from .errors import ApiError, correlation_id
 
 router = APIRouter(prefix=API_PREFIX, tags=["campaigns"])
+
+
+class CampaignPage(ContractModel):
+    items: list[CampaignView]
+    next_cursor: str | None
+
+
+class LedgerPage(ContractModel):
+    items: list[DecisionView]
+    next_cursor: str | None
 
 _IDEMPOTENCY_KEY = re.compile(r"^[\x21-\x7e]{1,128}$")
 
@@ -54,3 +65,21 @@ def get_campaign(
     with db.connection() as conn:
         detail = get_mission_detail(conn, organization_id=principal.organization_id, campaign_id=campaign_id)
     return SuccessEnvelope[MissionDetail](data=detail, correlation_id=correlation_id(request))
+
+
+@router.get("/campaigns", response_model=SuccessEnvelope[CampaignPage])
+def get_campaigns(
+    request: Request, limit: int = Query(25, ge=1, le=100), principal: Principal = Depends(require_member)
+) -> SuccessEnvelope[CampaignPage]:
+    with db.connection() as conn:
+        items = list_campaigns(conn, organization_id=principal.organization_id, limit=limit)
+    return SuccessEnvelope[CampaignPage](data=CampaignPage(items=items, next_cursor=None), correlation_id=correlation_id(request))
+
+
+@router.get("/campaigns/{campaign_id}/ledger", response_model=SuccessEnvelope[LedgerPage])
+def get_ledger(
+    request: Request, campaign_id: UUID, limit: int = Query(200, ge=1, le=500), principal: Principal = Depends(require_member)
+) -> SuccessEnvelope[LedgerPage]:
+    with db.connection() as conn:
+        items = campaign_ledger(conn, organization_id=principal.organization_id, campaign_id=campaign_id, limit=limit)
+    return SuccessEnvelope[LedgerPage](data=LedgerPage(items=items, next_cursor=None), correlation_id=correlation_id(request))

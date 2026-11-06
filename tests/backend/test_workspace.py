@@ -193,8 +193,8 @@ def test_policy_update_cas_replay_and_validation(api, make_tenant):
         {"consented_recipients": [{"email": BUYER_EMAIL, "role": "buyer_test", "consent_record": "", "consented_at": "2026-11-05T17:00:00Z"}]},
         {"consented_recipients": [{"email": BUYER_EMAIL, "role": "buyer_test", "consent_record": "ok form"}]},
         {"consented_recipients": [
-            {"email": BUYER_EMAIL, "role": "buyer_test", "consent_record": "a1b", "consented_at": "2026-11-05T17:00:00Z"},
-            {"email": "second@example.invalid", "role": "buyer_test", "consent_record": "a2b", "consented_at": "2026-11-05T17:00:00Z"},
+            {"email": f"inbox{i}@example.invalid", "role": "buyer_test", "consent_record": "a1b", "consented_at": "2026-11-05T17:00:00Z"}
+            for i in range(6)
         ]},
         {"duration_minutes": 30},
         {"working_hours": {"timezone": "Mars/Base", "weekdays": [1], "start": "09:00", "end": "17:00"}},

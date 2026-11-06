@@ -104,7 +104,7 @@ def test_unconsented_recipient_is_422(api, make_tenant, conn):
 def test_limits_above_policy_or_contract_rejected(api, make_tenant):
     tenant = make_tenant()
     body = campaign_body(tenant)
-    body["limits"] = {**body["limits"], "max_conversations": 2}
+    body["limits"] = {**body["limits"], "max_conversations": 26}
 
     assert _post(api, tenant, "limits", body).status_code == 400
 

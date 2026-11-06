@@ -256,7 +256,8 @@ def test_handler_discards_plan_if_campaign_stopped_meanwhile(leased, conn):
 def test_handler_refuses_when_model_budget_exhausted(leased, conn):
     _, launched, lease = leased
     conn.execute(
-        "update campaigns set budget_json = jsonb_set(budget_json, '{usage,model_calls}', '19') where id = %s", (launched.id,)
+        "update campaigns set budget_json = jsonb_set(budget_json, '{usage,model_calls}', "
+        "to_jsonb((limits_json ->> 'max_model_calls')::int - 1)) where id = %s", (launched.id,)
     )
     client = FakeClient(VALID_PLAN)
 

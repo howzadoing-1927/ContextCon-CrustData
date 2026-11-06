@@ -24,9 +24,11 @@
     "updated_at": "2026-11-05T18:10:00Z",
     "prospects": [],
     "conversation": null,
+    "conversations": [],
     "open_exceptions": [],
     "evidence": [],
-    "handoff": null
+    "handoff": null,
+    "handoffs": []
   },
   "correlation_id": "4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b7c"
 }

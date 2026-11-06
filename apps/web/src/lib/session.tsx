@@ -4,7 +4,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { OutcomeClient, type Session } from "@/lib/api/client";
-import { createHttpTransport } from "@/lib/api/transport";
+import { createLiveTransport } from "@/lib/api/live-transport";
 import { env, supabaseConfigured } from "@/lib/env";
 import { BRIEF_STORAGE_KEY } from "@/lib/fixtures/onboarding";
 import { createFixtureTransport, FIXTURE_ORG_ID } from "@/lib/fixtures/transport";
@@ -43,7 +43,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   sessionRef.current = state.accessToken ? { accessToken: state.accessToken, organizationId: state.organizationId } : null;
 
   const client = useMemo(() => {
-    const transport = env.apiMode === "live" ? createHttpTransport(env.apiBaseUrl) : createFixtureTransport();
+    const transport = env.apiMode === "live" ? createLiveTransport(env.apiBaseUrl) : createFixtureTransport();
     return new OutcomeClient(transport, () => sessionRef.current);
   }, []);
 
@@ -60,6 +60,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setState({ ready: true, email: token ? "fixture.operator@demo-seller.example" : null, accessToken: token, organizationId });
       return;
     }
+    organizationId ??= env.organizationId || null;
     if (!supabase) {
       setState({ ready: true, email: null, accessToken: null, organizationId });
       return;
@@ -81,8 +82,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const signInWithPassword = useCallback(
     async (email: string, password: string) => {
       if (!supabase) return "Supabase isn't configured for this build.";
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      return error ? error.message : null;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error || !data.session) return error?.message ?? "Sign-in failed.";
+      const organizationId = window.localStorage.getItem(ORG_KEY) ?? (env.organizationId || null);
+      if (organizationId) window.localStorage.setItem(ORG_KEY, organizationId);
+      sessionRef.current = { accessToken: data.session.access_token, organizationId };
+      setState({ ready: true, email: data.session.user.email ?? email, accessToken: data.session.access_token, organizationId });
+      return null;
     },
     [supabase],
   );

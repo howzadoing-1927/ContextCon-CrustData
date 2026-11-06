@@ -32,14 +32,37 @@ export const REQUIRED_GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.freebusy",
 ] as const;
 
-export const DEFAULT_LIMITS: Limits = {
-  max_discovered: 10,
-  max_enriched: 3,
-  max_conversations: 1,
+export const MAX_PEOPLE = 25;
+export const DEFAULT_PEOPLE = 10;
+export const MAX_BUYER_INBOXES = 5;
+
+/** Mirrors `limits_for` in services/core/contracts/requests.py. */
+export function limitsFor(people: number): Limits {
+  const n = Math.max(1, Math.min(MAX_PEOPLE, Math.floor(people) || 1));
+  return {
+    max_discovered: Math.min(50, Math.max(10, 2 * n)),
+    max_enriched: n,
+    max_conversations: n,
+    max_outbound_messages: 6,
+    max_model_calls: Math.min(150, 5 * n + 10),
+    max_research_calls: Math.min(80, 3 * n + 5),
+    max_runtime_seconds: Math.min(1800, 60 * n + 300),
+    max_reply_turns: 4,
+    no_reply_followups: 0,
+  };
+}
+
+export const DEFAULT_LIMITS: Limits = limitsFor(DEFAULT_PEOPLE);
+
+/** Contract ceilings for each budget. */
+export const LIMIT_CEILINGS: Limits = {
+  max_discovered: 50,
+  max_enriched: MAX_PEOPLE,
+  max_conversations: MAX_PEOPLE,
   max_outbound_messages: 6,
-  max_model_calls: 20,
-  max_research_calls: 10,
-  max_runtime_seconds: 600,
+  max_model_calls: 150,
+  max_research_calls: 80,
+  max_runtime_seconds: 1800,
   max_reply_turns: 4,
   no_reply_followups: 0,
 };

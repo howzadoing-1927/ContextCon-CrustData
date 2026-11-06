@@ -1,5 +1,26 @@
 {
   "$defs": {
+    "ConversationState": {
+      "enum": [
+        "researching",
+        "qualified",
+        "drafting",
+        "waiting_reply",
+        "evaluating_reply",
+        "offering_slots",
+        "waiting_slot_acceptance",
+        "booking",
+        "booked",
+        "completed",
+        "declined",
+        "suppressed",
+        "needs_human",
+        "send_unknown",
+        "stopped"
+      ],
+      "title": "ConversationState",
+      "type": "string"
+    },
     "CriterionResult": {
       "additionalProperties": false,
       "properties": {
@@ -45,6 +66,30 @@
           "title": "Buyer Test Email",
           "type": "string"
         },
+        "conversation_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversation Id"
+        },
+        "conversation_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConversationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "identity_is_simulated": {
           "const": true,
           "title": "Identity Is Simulated",
@@ -62,6 +107,44 @@
         "identity_is_simulated"
       ],
       "title": "Delivery",
+      "type": "object"
+    },
+    "FoundEmail": {
+      "additionalProperties": false,
+      "description": "Display-only contact data. Never a recipient: delivery always goes to the consented test inbox.",
+      "properties": {
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Email"
+        },
+        "looked_up_at": {
+          "format": "date-time",
+          "title": "Looked Up At",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "status",
+        "source",
+        "looked_up_at"
+      ],
+      "title": "FoundEmail",
       "type": "object"
     },
     "ProspectCompany": {
@@ -139,6 +222,17 @@
     "ProspectPerson": {
       "additionalProperties": false,
       "properties": {
+        "found_email": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FoundEmail"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "title": "Name",
           "type": "string"

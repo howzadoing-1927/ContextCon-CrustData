@@ -214,6 +214,19 @@
           "title": "Offered Slots",
           "type": "array"
         },
+        "prospect_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prospect Id"
+        },
         "provider_thread_id": {
           "anyOf": [
             {
@@ -442,6 +455,30 @@
           "title": "Buyer Test Email",
           "type": "string"
         },
+        "conversation_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Conversation Id"
+        },
+        "conversation_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ConversationState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "identity_is_simulated": {
           "const": true,
           "title": "Identity Is Simulated",
@@ -606,6 +643,44 @@
       ],
       "title": "FactStatus",
       "type": "string"
+    },
+    "FoundEmail": {
+      "additionalProperties": false,
+      "description": "Display-only contact data. Never a recipient: delivery always goes to the consented test inbox.",
+      "properties": {
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Email"
+        },
+        "looked_up_at": {
+          "format": "date-time",
+          "title": "Looked Up At",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "email",
+        "status",
+        "source",
+        "looked_up_at"
+      ],
+      "title": "FoundEmail",
+      "type": "object"
     },
     "Handoff": {
       "additionalProperties": false,
@@ -1026,6 +1101,17 @@
     "ProspectPerson": {
       "additionalProperties": false,
       "properties": {
+        "found_email": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FoundEmail"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "name": {
           "title": "Name",
           "type": "string"
@@ -1190,6 +1276,14 @@
         }
       ]
     },
+    "conversations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ConversationView"
+      },
+      "title": "Conversations",
+      "type": "array"
+    },
     "created_at": {
       "format": "date-time",
       "title": "Created At",
@@ -1211,6 +1305,14 @@
           "type": "null"
         }
       ]
+    },
+    "handoffs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Handoff"
+      },
+      "title": "Handoffs",
+      "type": "array"
     },
     "id": {
       "format": "uuid",

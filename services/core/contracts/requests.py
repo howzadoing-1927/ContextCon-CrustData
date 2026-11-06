@@ -11,18 +11,40 @@ _CLOCK = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 ShortText = Annotated[str, Field(min_length=1, max_length=1000)]
 
 
-class Limits(ContractModel):
-    """P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change."""
+MAX_PEOPLE = 25
+DEFAULT_PEOPLE = 10
+MAX_BUYER_INBOXES = 5
 
-    max_discovered: int = Field(ge=1, le=10)
-    max_enriched: int = Field(ge=1, le=3)
-    max_conversations: int = Field(ge=1, le=1)
+
+class Limits(ContractModel):
+    """Per-mission ceilings. `max_conversations` is the number of people reached; outbound messages and reply turns
+    are per conversation. Raising a bound needs a reviewed contract and quota change."""
+
+    max_discovered: int = Field(ge=1, le=50)
+    max_enriched: int = Field(ge=1, le=MAX_PEOPLE)
+    max_conversations: int = Field(ge=1, le=MAX_PEOPLE)
     max_outbound_messages: int = Field(ge=1, le=6)
-    max_model_calls: int = Field(ge=1, le=20)
-    max_research_calls: int = Field(ge=1, le=10)
-    max_runtime_seconds: int = Field(ge=1, le=600)
+    max_model_calls: int = Field(ge=1, le=150)
+    max_research_calls: int = Field(ge=1, le=80)
+    max_runtime_seconds: int = Field(ge=1, le=1800)
     max_reply_turns: int = Field(ge=1, le=4)
     no_reply_followups: int = Field(ge=0, le=0)
+
+
+def limits_for(people: int) -> dict[str, int]:
+    """Budgets that let a mission reach `people` prospects. Mirrored by `limitsFor` in apps/web/src/lib/contracts."""
+    n = max(1, min(MAX_PEOPLE, people))
+    return {
+        "max_discovered": min(50, max(10, 2 * n)),
+        "max_enriched": n,
+        "max_conversations": n,
+        "max_outbound_messages": 6,
+        "max_model_calls": min(150, 5 * n + 10),
+        "max_research_calls": min(80, 3 * n + 5),
+        "max_runtime_seconds": min(1800, 60 * n + 300),
+        "max_reply_turns": 4,
+        "no_reply_followups": 0,
+    }
 
 
 class CampaignCreate(ContractModel):
@@ -113,7 +135,7 @@ class WorkingHours(ContractModel):
 class PolicyUpdate(ContractModel):
     expected_config_version: int = Field(ge=0)
     simulation: Literal[True]
-    consented_recipients: list[ConsentedRecipient] = Field(min_length=1, max_length=2)
+    consented_recipients: list[ConsentedRecipient] = Field(min_length=1, max_length=MAX_BUYER_INBOXES + 1)
     selected_calendar_id: str = Field(min_length=1, max_length=300)
     working_hours: WorkingHours
     duration_minutes: Literal[15]
@@ -122,8 +144,8 @@ class PolicyUpdate(ContractModel):
     @model_validator(mode="after")
     def _p0_recipients(self) -> "PolicyUpdate":
         roles = [r.role for r in self.consented_recipients]
-        if roles.count("buyer_test") != 1 or roles.count("owner_test") > 1:
-            raise ValueError("P0 requires exactly one buyer_test and at most one owner_test recipient")
+        if not 1 <= roles.count("buyer_test") <= MAX_BUYER_INBOXES or roles.count("owner_test") > 1:
+            raise ValueError(f"requires 1 to {MAX_BUYER_INBOXES} buyer_test inboxes and at most one owner_test recipient")
         if len({r.email for r in self.consented_recipients}) != len(self.consented_recipients):
             raise ValueError("recipient emails must be distinct")
         return self

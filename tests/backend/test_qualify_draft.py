@@ -13,6 +13,7 @@ from services.core.qualification import qualify
 from services.models.client import ModelCall
 from services.models.draft import build_envelope, deterministic_findings
 from services.worker import queue
+from services.core.policy_gate import initial_send_gate
 from services.worker.qualify import handle_qualify_and_draft
 
 PLAN = {"objective": "book_demo", "geography": ["India"], "industries": ["software development"],
@@ -196,7 +197,17 @@ def verdict(v):
 
 @pytest.fixture
 def qualify_campaign(make_tenant, database_url, conn):
+    return _qualify_setup(make_tenant, database_url, conn)
+
+
+def _qualify_setup(make_tenant, database_url, conn, extra_inboxes=()):
     tenant = make_tenant()
+    if extra_inboxes:
+        stamp = {"role": "buyer_test", "consent_record": "pytest consent", "consented_at": "2026-11-05T18:00:00+00:00"}
+        conn.execute(
+            "update organizations set policy_json = jsonb_set(policy_json, '{consented_recipients}', "
+            "(policy_json -> 'consented_recipients') || %s) where id = %s",
+            (Jsonb([{"email": e, **stamp} for e in extra_inboxes]), tenant.organization_id))
     launched = launch(database_url, tenant)
     snapshot = conn.execute("select launch_snapshot_json from campaigns where id = %s", (launched.id,)).fetchone()["launch_snapshot_json"]
     conn.execute("update campaigns set stage = 'qualify', normalized_plan_json = %s where id = %s", (Jsonb(PLAN), launched.id))
@@ -305,3 +316,60 @@ def test_handler_unknown_must_have_means_no_match_and_no_model_call(qualify_camp
     assert model.calls == []
     assert conn.execute("select status from campaigns where id = %s", (launched.id,)).fetchone()["status"] == "no_match"
     assert ("select_prospect", "blocked") in _kinds(conn, launched.id)
+
+
+def _add_prospect(conn, tenant, campaign_id, n: int, name: str):
+    pid, company = uuid4(), f"crustdata:company:{n}"
+    conn.execute(
+        "insert into prospects (id, organization_id, campaign_id, canonical_company_ref, canonical_person_ref, identity_json, status) "
+        "values (%s, %s, %s, %s, %s, '{}'::jsonb, 'researching')",
+        (pid, tenant.organization_id, campaign_id, company, f"crustdata:person:{n}"))
+    ids = []
+    for row in full_evidence(name=name):
+        rid = uuid4()
+        conn.execute(
+            "insert into evidence (id, organization_id, campaign_id, prospect_id, entity_kind, entity_id, source_kind, provider_ref, "
+            "field_path, excerpt, retrieved_at, content_sha256, fact_status) values (%s,%s,%s,%s,'company',%s,'crustdata',"
+            "%s,%s,%s,now(),%s,'observed')",
+            (rid, tenant.organization_id, campaign_id, pid, pid, company, row["field_path"], row["excerpt"], "f" * 64))
+        ids.append(str(rid))
+    identity = {"company": {"name": name}, "person": {"name": f"Person {n}", "title": "VP Sales"},
+                "relationship": {"status": "supported", "evidence_ids": ids[:1], "reason": "matched"}}
+    conn.execute("update prospects set identity_json = %s where id = %s", (Jsonb(identity), pid))
+    return pid
+
+
+def test_handler_reaches_several_people_rotating_test_inboxes(make_tenant, database_url, conn):
+    tenant, launched, lease, _ = _qualify_setup(make_tenant, database_url, conn, extra_inboxes=["second.inbox@example.com"])
+    _add_prospect(conn, tenant, launched.id, 7, "Beta Works")
+    _add_prospect(conn, tenant, launched.id, 8, "Gamma Systems")
+    model = FakeModel(*[good_draft, verdict("pass")] * 3)
+
+    handle_qualify_and_draft(conn, lease, client=model)
+
+    convos = conn.execute("select buyer_test_email from conversations where campaign_id = %s", (launched.id,)).fetchall()
+    assert sorted(c["buyer_test_email"] for c in convos) == sorted([tenant.buyer_test_email, tenant.buyer_test_email,
+                                                                   "second.inbox@example.com"])
+    sends = conn.execute("select count(*) as n from tasks where campaign_id = %s and kind = 'send_email'", (launched.id,)).fetchone()
+    assert sends["n"] == 3
+    assert conn.execute("select stage from campaigns where id = %s", (launched.id,)).fetchone()["stage"] == "send"
+    with db.connect() as c:
+        detail = get_mission_detail(c, organization_id=tenant.organization_id, campaign_id=launched.id)
+    assert len(detail.conversations) == 3
+    assert {p.delivery.buyer_test_email for p in detail.prospects} == {tenant.buyer_test_email, "second.inbox@example.com"}
+
+
+def test_gate_blocks_an_inbox_outside_the_snapshot(qualify_campaign, conn):
+    tenant, launched, _, snapshot = qualify_campaign
+    policy = {**snapshot["policy"], "buyer_tests": [snapshot["policy"]["buyer_test"]]}
+    row = conn.execute("select id, canonical_company_ref, canonical_person_ref from prospects where campaign_id = %s",
+                       (launched.id,)).fetchone()
+
+    def recipient_check(recipient):
+        gate = initial_send_gate(conn, organization_id=tenant.organization_id, campaign_id=launched.id, prospect=dict(row),
+                                 qualified=True, draft=None, verification=None, deterministic_findings=[],
+                                 snapshot={**snapshot, "policy": policy}, recipient=recipient, sender="seller@example.com")
+        return next(c for c in gate.checks if c["name"] == "recipient_is_snapshot_buyer")["pass"]
+
+    assert recipient_check(tenant.buyer_test_email) is True
+    assert recipient_check("researched.person@prospect.example") is False

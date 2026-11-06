@@ -1,5 +1,6 @@
-"""qualify_and_draft task: deterministic qualification -> select one prospect -> draft (fast) -> verify (decision),
-one revision max -> policy gate (doc 04 steps 1-6) -> conversation ready for dispatch. Never sends.
+"""qualify_and_draft task: deterministic qualification -> select up to max_conversations prospects -> per prospect:
+draft (fast) -> verify (decision), one revision max -> policy gate (doc 04 steps 1-6) -> conversation ready for dispatch,
+addressed to the next consented test inbox in the launch snapshot's rotation. Never sends.
 
 Model calls run outside DB locks; prospects' fit, every ledger entry, usage, the conversation and the next task
 commit in ONE fenced transaction.
@@ -119,9 +120,9 @@ def handle_qualify_and_draft(conn: psycopg.Connection, lease: queue.Lease, *, cl
     ).fetchall()
     by_prospect = {p["id"]: [e for e in evidence if e["prospect_id"] == p["id"]] for p in prospects}
     results = {p["id"]: qualify(p, by_prospect[p["id"]], plan, mapping) for p in prospects}
-    selected = next((p for p in prospects if results[p["id"]].eligible), None)
+    eligible = [p for p in prospects if results[p["id"]].eligible]
 
-    if selected is None:
+    if not eligible:
         with queue.fenced(conn, lease):
             _write_qualifications(conn, lease, prospects, results)
             _decision(conn, lease, kind="select_prospect", status="blocked",
@@ -132,74 +133,47 @@ def handle_qualify_and_draft(conn: psycopg.Connection, lease: queue.Lease, *, cl
         return
 
     used = campaign["budget_json"].get("usage", {}).get("model_calls", 0)
-    if used + MAX_ROUNDS * CALLS_PER_ROUND > campaign["limits_json"]["max_model_calls"]:
+    per_prospect = MAX_ROUNDS * CALLS_PER_ROUND
+    affordable = (campaign["limits_json"]["max_model_calls"] - used) // per_prospect
+    cap = min(campaign["limits_json"].get("max_conversations", 1), affordable)
+    if cap < 1:
         with queue.fenced(conn, lease):
             _write_qualifications(conn, lease, prospects, results)
-            _decision(conn, lease, kind="draft", status="blocked", prospect_id=selected["id"],
+            _decision(conn, lease, kind="draft", status="blocked", prospect_id=eligible[0]["id"],
                       reason="Model-call budget cannot cover draft + verify + one revision; no call made.",
                       checks=[{"name": "model_budget", "pass": False, "reason": f"{used} calls used"}])
             _set_campaign(conn, lease, status="needs_human", stage="qualify")
             queue.complete(conn, lease)
         return
+    selected = eligible[:cap]
 
-    queue.heartbeat(conn, lease, LEASE_SECONDS)
-    envelope = build_envelope(campaign_id=str(lease.campaign_id), snapshot=snapshot, prospect=selected,
-                              evidence=by_prospect[selected["id"]], hypotheses=results[selected["id"]].hypotheses)
-    outcome: DraftOutcome = draft_and_verify(client, envelope)
+    outcomes: list[DraftOutcome] = []
+    for prospect in selected:
+        queue.heartbeat(conn, lease, LEASE_SECONDS)
+        envelope = build_envelope(campaign_id=str(lease.campaign_id), snapshot=snapshot, prospect=prospect,
+                                  evidence=by_prospect[prospect["id"]], hypotheses=results[prospect["id"]].hypotheses)
+        outcomes.append(draft_and_verify(client, envelope))
     seller = conn.execute(
         "select id, account_email from connections where organization_id = %s and provider = 'google' and purpose = 'seller' "
         "and status = 'connected'",
         (lease.organization_id,),
     ).fetchone()
+    policy = snapshot.get("policy") or {}
+    rotation = [b["email"] for b in policy.get("buyer_tests") or [policy["buyer_test"]]]
 
     with queue.fenced(conn, lease):
         current = conn.execute("select status, stage from campaigns where organization_id = %s and id = %s for update",
                                (lease.organization_id, lease.campaign_id)).fetchone()
-        _add_usage(conn, lease.organization_id, lease.campaign_id, outcome.calls)
+        _add_usage(conn, lease.organization_id, lease.campaign_id, [c for o in outcomes for c in o.calls])
         if current["status"] != "running" or current["stage"] != "qualify":
-            _decision(conn, lease, kind="draft", status="rejected", reason=f"Campaign became {current['status']}; draft discarded.",
+            _decision(conn, lease, kind="draft", status="rejected", reason=f"Campaign became {current['status']}; drafts discarded.",
                       checks=[{"name": "campaign_running", "pass": False, "reason": current["status"]}])
             queue.complete(conn, lease)
             return
 
-        _write_qualifications(conn, lease, prospects, results)
-        others = [p for p in prospects if p["id"] != selected["id"]]
-        _decision(conn, lease, kind="select_prospect", status="accepted", prospect_id=selected["id"],
-                  reason=f"Selected the first eligible prospect ({selected['canonical_company_ref']}); P0 allows one conversation.",
-                  evidence_ids=sorted({e for c in results[selected["id"]].criteria for e in c.evidence_ids}),
-                  input_refs={"selected": str(selected["id"]),
-                              "not_selected": {str(p["id"]): results[p["id"]].fit for p in others}})
-
-        last_draft_id = None
-        for i, rnd in enumerate(outcome.rounds, start=1):
-            last_draft_id = _decision(
-                conn, lease, kind="draft", prospect_id=selected["id"],
-                status="accepted" if rnd.draft and not rnd.findings else "rejected",
-                reason=(f"Draft attempt {i}: " + ("no deterministic findings" if rnd.draft and not rnd.findings
-                        else "; ".join((rnd.draft_errors or rnd.findings)[:3]))),
-                checks=[{"name": "deterministic", "pass": not rnd.findings and rnd.draft is not None,
-                         "reason": "; ".join(rnd.findings + rnd.draft_errors) or "none"}],
-                evidence_ids=list(rnd.draft.evidence_ids) if rnd.draft else [],
-                input_refs={"attempt": i, "repairs": rnd.repairs, "prompt_version": DRAFT_VERSION},
-                model=_meta(rnd.draft_call, DRAFT_VERSION),
-                proposed=rnd.draft.model_dump(mode="json") if rnd.draft else None,
-            )
-            if rnd.verify_call or rnd.verify_errors:
-                v = rnd.verification
-                _decision(
-                    conn, lease, kind="verify", prospect_id=selected["id"],
-                    status="accepted" if v and v.verdict == "pass" else "rejected",
-                    reason=f"Verify attempt {i}: " + (f"{v.verdict}: {v.reason}" if v else "; ".join(rnd.verify_errors)[:300]),
-                    checks=[{"name": "semantic_verifier", "pass": bool(v and v.verdict == "pass"), "reason": v.verdict if v else "invalid output"}],
-                    evidence_ids=list(v.evidence_ids) if v else [],
-                    input_refs={"attempt": i, "draft_decision_id": str(last_draft_id), "prompt_version": VERIFY_VERSION},
-                    model=_meta(rnd.verify_call, VERIFY_VERSION),
-                    proposed=v.model_dump(mode="json") if v else None,
-                )
-
-        if outcome.unavailable:
+        if all(o.unavailable for o in outcomes):
             final = lease.attempt >= lease.max_attempts
-            _decision(conn, lease, kind="draft", status="blocked" if final else "rejected", prospect_id=selected["id"],
+            _decision(conn, lease, kind="draft", status="blocked" if final else "rejected", prospect_id=selected[0]["id"],
                       reason="Model deployment unavailable" + ("; needs operator attention." if final else "; retry scheduled."),
                       checks=[{"name": "model_available", "pass": False, "reason": "ModelUnavailable"}])
             if final:
@@ -207,44 +181,100 @@ def handle_qualify_and_draft(conn: psycopg.Connection, lease: queue.Lease, *, cl
             queue.fail(conn, lease, {"error_class": "ModelUnavailable"}, retry_after_seconds=None if final else UNAVAILABLE_RETRY_SECONDS)
             return
 
-        final_round = outcome.final
-        gate = initial_send_gate(
-            conn, organization_id=lease.organization_id, campaign_id=lease.campaign_id, prospect=selected,
-            qualified=results[selected["id"]].eligible, draft=final_round.draft if final_round else None,
-            verification=final_round.verification if final_round else None,
-            deterministic_findings=(final_round.findings + final_round.draft_errors) if final_round else ["no draft"],
-            snapshot=snapshot, recipient=campaign["buyer_test_email"], sender=seller["account_email"] if seller else None,
-        )
-        failure = gate.first_failure
-        gate_id = _decision(
-            conn, lease, kind="policy_gate", prospect_id=selected["id"], status="accepted" if gate.passed else "blocked",
-            reason=("Steps 1-6 pass; steps 7-8 run at dispatch." if gate.passed
-                    else f"Blocked at step {failure['step']} {failure['name']}: {failure['reason']}"),
-            policy=gate.as_policy(), input_refs={"draft_decision_id": str(last_draft_id)},
-        )
-        if not (outcome.ready and gate.passed and seller):
-            _set_campaign(conn, lease, status="needs_human", stage="qualify")
-            queue.complete(conn, lease)
-            return
+        _write_qualifications(conn, lease, prospects, results)
+        chosen = {p["id"] for p in selected}
+        _decision(conn, lease, kind="select_prospect", status="accepted", prospect_id=selected[0]["id"],
+                  reason=(f"Selected {len(selected)} of {len(eligible)} eligible prospects "
+                          f"(limit {campaign['limits_json'].get('max_conversations', 1)} people, {affordable} affordable by model budget)."),
+                  evidence_ids=sorted({e for p in selected for c in results[p["id"]].criteria for e in c.evidence_ids}),
+                  input_refs={"selected": [str(p["id"]) for p in selected],
+                              "not_selected": {str(p["id"]): results[p["id"]].fit for p in prospects if p["id"] not in chosen}})
 
-        conversation_id = uuid4()
-        conn.execute(
-            """
-            insert into conversations (id, organization_id, campaign_id, prospect_id, connection_id, buyer_test_email, state,
-                                       version, crm_json)
-            values (%s, %s, %s, %s, %s, %s, 'drafting', 1, %s)
-            """,
-            (conversation_id, lease.organization_id, lease.campaign_id, selected["id"], seller["id"], campaign["buyer_test_email"],
-             Jsonb({"stage": "draft_ready", "draft_decision_id": str(last_draft_id), "gate_decision_id": str(gate_id),
-                    "last_decision_id": str(gate_id)})),
-        )
-        _set_campaign(conn, lease, status="running", stage="send")
-        conn.execute(
-            "insert into tasks (organization_id, campaign_id, conversation_id, kind, dedupe_key, payload_json, status) "
-            "values (%s, %s, %s, 'send_email', %s, %s, 'ready') on conflict (organization_id, dedupe_key) do nothing",
-            (lease.organization_id, lease.campaign_id, conversation_id, f"email:{conversation_id}:initial:initial",
-             Jsonb({"schema_version": CONTRACT_VERSION, "campaign_id": str(lease.campaign_id), "conversation_id": str(conversation_id),
-                    "expected_conversation_version": 1, "trigger_message_id": None, "decision_id": str(last_draft_id),
-                    "input_ref_ids": [str(gate_id)]})),
-        )
+        opened = 0
+        for prospect, outcome in zip(selected, outcomes, strict=True):
+            recipient = rotation[opened % len(rotation)]
+            if _draft_conversation(conn, lease, snapshot=snapshot, prospect=prospect,
+                                   qualification=results[prospect["id"]], outcome=outcome, seller=seller, recipient=recipient):
+                opened += 1
+
+        if opened:
+            _set_campaign(conn, lease, status="running", stage="send")
+        else:
+            _set_campaign(conn, lease, status="needs_human", stage="qualify")
         queue.complete(conn, lease)
+
+
+def _draft_conversation(conn, lease, *, snapshot, prospect, qualification: Qualification, outcome: DraftOutcome,
+                        seller, recipient: str) -> bool:
+    """Ledger the draft/verify rounds and gate for one prospect; open its conversation and queue the send if it passes."""
+    last_draft_id = None
+    for i, rnd in enumerate(outcome.rounds, start=1):
+        last_draft_id = _decision(
+            conn, lease, kind="draft", prospect_id=prospect["id"],
+            status="accepted" if rnd.draft and not rnd.findings else "rejected",
+            reason=(f"Draft attempt {i}: " + ("no deterministic findings" if rnd.draft and not rnd.findings
+                    else "; ".join((rnd.draft_errors or rnd.findings)[:3]))),
+            checks=[{"name": "deterministic", "pass": not rnd.findings and rnd.draft is not None,
+                     "reason": "; ".join(rnd.findings + rnd.draft_errors) or "none"}],
+            evidence_ids=list(rnd.draft.evidence_ids) if rnd.draft else [],
+            input_refs={"attempt": i, "repairs": rnd.repairs, "prompt_version": DRAFT_VERSION},
+            model=_meta(rnd.draft_call, DRAFT_VERSION),
+            proposed=rnd.draft.model_dump(mode="json") if rnd.draft else None,
+        )
+        if rnd.verify_call or rnd.verify_errors:
+            v = rnd.verification
+            _decision(
+                conn, lease, kind="verify", prospect_id=prospect["id"],
+                status="accepted" if v and v.verdict == "pass" else "rejected",
+                reason=f"Verify attempt {i}: " + (f"{v.verdict}: {v.reason}" if v else "; ".join(rnd.verify_errors)[:300]),
+                checks=[{"name": "semantic_verifier", "pass": bool(v and v.verdict == "pass"), "reason": v.verdict if v else "invalid output"}],
+                evidence_ids=list(v.evidence_ids) if v else [],
+                input_refs={"attempt": i, "draft_decision_id": str(last_draft_id), "prompt_version": VERIFY_VERSION},
+                model=_meta(rnd.verify_call, VERIFY_VERSION),
+                proposed=v.model_dump(mode="json") if v else None,
+            )
+
+    if outcome.unavailable:
+        _decision(conn, lease, kind="draft", status="blocked", prospect_id=prospect["id"],
+                  reason="Model deployment unavailable for this prospect; skipped.",
+                  checks=[{"name": "model_available", "pass": False, "reason": "ModelUnavailable"}])
+        return False
+
+    final_round = outcome.final
+    gate = initial_send_gate(
+        conn, organization_id=lease.organization_id, campaign_id=lease.campaign_id, prospect=prospect,
+        qualified=qualification.eligible, draft=final_round.draft if final_round else None,
+        verification=final_round.verification if final_round else None,
+        deterministic_findings=(final_round.findings + final_round.draft_errors) if final_round else ["no draft"],
+        snapshot=snapshot, recipient=recipient, sender=seller["account_email"] if seller else None,
+    )
+    failure = gate.first_failure
+    gate_id = _decision(
+        conn, lease, kind="policy_gate", prospect_id=prospect["id"], status="accepted" if gate.passed else "blocked",
+        reason=("Steps 1-6 pass; steps 7-8 run at dispatch." if gate.passed
+                else f"Blocked at step {failure['step']} {failure['name']}: {failure['reason']}"),
+        policy=gate.as_policy(), input_refs={"draft_decision_id": str(last_draft_id), "test_inbox": recipient},
+    )
+    if not (outcome.ready and gate.passed and seller):
+        return False
+
+    conversation_id = uuid4()
+    conn.execute(
+        """
+        insert into conversations (id, organization_id, campaign_id, prospect_id, connection_id, buyer_test_email, state,
+                                   version, crm_json)
+        values (%s, %s, %s, %s, %s, %s, 'drafting', 1, %s)
+        """,
+        (conversation_id, lease.organization_id, lease.campaign_id, prospect["id"], seller["id"], recipient,
+         Jsonb({"stage": "draft_ready", "draft_decision_id": str(last_draft_id), "gate_decision_id": str(gate_id),
+                "last_decision_id": str(gate_id)})),
+    )
+    conn.execute(
+        "insert into tasks (organization_id, campaign_id, conversation_id, kind, dedupe_key, payload_json, status) "
+        "values (%s, %s, %s, 'send_email', %s, %s, 'ready') on conflict (organization_id, dedupe_key) do nothing",
+        (lease.organization_id, lease.campaign_id, conversation_id, f"email:{conversation_id}:initial:initial",
+         Jsonb({"schema_version": CONTRACT_VERSION, "campaign_id": str(lease.campaign_id), "conversation_id": str(conversation_id),
+                "expected_conversation_version": 1, "trigger_message_id": None, "decision_id": str(last_draft_id),
+                "input_ref_ids": [str(gate_id)]})),
+    )
+    return True

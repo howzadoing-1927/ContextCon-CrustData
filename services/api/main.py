@@ -1,19 +1,22 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
 import psycopg
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from psycopg_pool import PoolTimeout
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from services.core.config import get_settings
 from services.core.contracts.enums import ErrorCode
 from services.core.contracts.version import CONTRACT_VERSION
 from services.core.db import DatabaseNotConfigured, reset_pool
 
-from . import campaigns, health, workspace
+from . import campaigns, google, health, workspace
 from .errors import ApiError, error_response
 
 log = logging.getLogger("outcome.api")
@@ -81,6 +84,18 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(campaigns.router)
     app.include_router(workspace.router)
+    app.include_router(google.router)
+
+    get_settings()
+    origins = {o.strip() for o in os.environ.get("ALLOWED_CORS_ORIGINS", "").split(",") if o.strip()}
+    origins |= {o for o in (os.environ.get("WEB_PUBLIC_ORIGIN", "").strip(), "http://localhost:3100") if o}
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=sorted(origins),
+        allow_methods=["GET", "POST", "PUT"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "Idempotency-Key", "X-Organization-ID"],
+        expose_headers=[CORRELATION_HEADER],
+    )
     return app
 
 

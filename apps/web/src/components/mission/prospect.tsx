@@ -94,6 +94,21 @@ export function ProspectCaseView({ prospect }: { prospect: ProspectCase }) {
               <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-2xs text-muted-foreground">
                 <MonoId value={prospect.canonical_person_ref} length={22} />
               </p>
+              {prospect.person.found_email && (
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 text-2xs text-muted-foreground">
+                  {prospect.person.found_email.email ? (
+                    <>
+                      <span>Found</span>
+                      <span className="font-mono text-foreground">{prospect.person.found_email.email}</span>
+                      <span className="text-faint">
+                        {prospect.person.found_email.status} · Crustdata · not contacted
+                      </span>
+                    </>
+                  ) : (
+                    <span>No business email found ({prospect.person.found_email.status})</span>
+                  )}
+                </p>
+              )}
             </>
           ) : (
             <p className="text-sm text-muted-foreground">Not identified yet</p>
@@ -134,8 +149,74 @@ export function ProspectCaseView({ prospect }: { prospect: ProspectCase }) {
         <p className="max-w-[64ch] text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Delivery goes to a test inbox playing the buyer.</span> Every email for{" "}
           {prospect.person?.name ?? "this prospect"} is sent to <span className="font-mono text-2xs text-foreground">{prospect.delivery.buyer_test_email}</span>, a
-          consenting teammate. The real person is never contacted.
+          consenting teammate. The real person is never contacted
+          {prospect.person?.found_email?.email ? ", even though their address was found" : ""}.
         </p>
+      </div>
+    </Section>
+  );
+}
+
+export function PeopleList({
+  prospects,
+  selectedId,
+  onSelect,
+}: {
+  prospects: ProspectCase[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const reached = prospects.filter((p) => p.delivery.conversation_id).length;
+  return (
+    <Section
+      id="people"
+      title="People"
+      description={`${prospects.length} found · ${reached} emailed. Real emails are shown, never mailed; each person's email goes to a test inbox.`}
+    >
+      <div className="overflow-hidden rounded-md border border-hairline">
+        <table className="w-full table-fixed text-left text-xs">
+          <caption className="sr-only">People found for this mission</caption>
+          <thead className="bg-shell text-2xs text-faint">
+            <tr>
+              <th scope="col" className="w-[30%] px-3 py-1.5 font-medium">Company and person</th>
+              <th scope="col" className="w-[28%] px-3 py-1.5 font-medium">Real email found</th>
+              <th scope="col" className="w-[26%] px-3 py-1.5 font-medium">Mailed to test inbox</th>
+              <th scope="col" className="px-3 py-1.5 font-medium">State</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-hairline">
+            {prospects.map((p) => {
+              const found = p.person?.found_email;
+              const selected = p.id === selectedId;
+              return (
+                <tr
+                  key={p.id}
+                  aria-selected={selected}
+                  onClick={() => onSelect(p.id)}
+                  className={cn("cursor-pointer align-top transition-colors duration-150 hover:bg-raised", selected && "bg-raised")}
+                >
+                  <td className="px-3 py-2">
+                    <button type="button" onClick={() => onSelect(p.id)} className="block w-full truncate text-left font-medium text-foreground">
+                      {p.company.name}
+                    </button>
+                    <span className="block truncate text-2xs text-muted-foreground">
+                      {p.person ? `${p.person.name}${p.person.title ? `, ${p.person.title}` : ""}` : "No person identified"}
+                    </span>
+                  </td>
+                  <td className="truncate px-3 py-2 font-mono text-2xs">
+                    {found?.email ?? <span className="font-sans text-faint">{found ? "None found" : "Not looked up yet"}</span>}
+                  </td>
+                  <td className="truncate px-3 py-2 font-mono text-2xs">
+                    {p.delivery.conversation_id ? p.delivery.buyer_test_email : <span className="font-sans text-faint">Not emailed</span>}
+                  </td>
+                  <td className="px-3 py-2 text-2xs text-muted-foreground">
+                    {p.delivery.conversation_state ? p.delivery.conversation_state.replaceAll("_", " ") : FIT[p.fit].label}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </Section>
   );

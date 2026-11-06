@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from services.core.contracts import enums
 from services.core.contracts.envelopes import SuccessEnvelope
 from services.core.contracts.google_adapter import FreeBusyResult, GoogleFailure
-from services.core.contracts.requests import CampaignCreate, Limits
+from services.core.contracts.requests import DEFAULT_PEOPLE, CampaignCreate, Limits, PolicyUpdate, limits_for
 from services.core.contracts.views import CampaignLaunchView, CampaignView, HealthLive, MissionDetail, PolicyCheck
 
 FIXTURES = Path(__file__).resolve().parents[2] / "contracts" / "fixtures"
@@ -23,17 +23,7 @@ FIXTURE_MODELS = {
     "google_result.freebusy_error.json": FreeBusyResult,
 }
 
-DEFAULT_LIMITS = {
-    "max_discovered": 10,
-    "max_enriched": 3,
-    "max_conversations": 1,
-    "max_outbound_messages": 6,
-    "max_model_calls": 20,
-    "max_research_calls": 10,
-    "max_runtime_seconds": 600,
-    "max_reply_turns": 4,
-    "no_reply_followups": 0,
-}
+DEFAULT_LIMITS = limits_for(DEFAULT_PEOPLE)
 
 
 def load_fixture(name: str) -> dict:
@@ -86,11 +76,39 @@ def test_unknown_cost_is_null_not_zero():
 
 @pytest.mark.parametrize(
     ("field", "value"),
-    [("max_conversations", 2), ("max_discovered", 11), ("max_outbound_messages", 0), ("no_reply_followups", 1)],
+    [("max_conversations", 26), ("max_conversations", 0), ("max_discovered", 51), ("max_outbound_messages", 0),
+     ("no_reply_followups", 1)],
 )
 def test_limits_bounds_enforced(field, value):
     with pytest.raises(ValidationError):
         Limits.model_validate({**DEFAULT_LIMITS, field: value})
+
+
+def test_people_drive_every_budget_within_ceilings():
+    assert DEFAULT_LIMITS["max_conversations"] == 10
+    for people in (1, 10, 25, 99):
+        limits = Limits.model_validate(limits_for(people))
+        assert limits.max_conversations == min(people, 25) == limits.max_enriched
+
+
+def _policy(buyers: int) -> dict:
+    stamp = {"consent_record": "kickoff notes", "consented_at": "2026-11-05T18:00:00+00:00"}
+    return {
+        "expected_config_version": 1, "simulation": True,
+        "consented_recipients": [{"email": f"buyer{i}@test.example", "role": "buyer_test", **stamp} for i in range(buyers)],
+        "selected_calendar_id": "primary",
+        "working_hours": {"timezone": "Asia/Kolkata", "weekdays": [1, 2, 3, 4, 5], "start": "09:00", "end": "17:00"},
+        "duration_minutes": 15, "limits": DEFAULT_LIMITS,
+    }
+
+
+@pytest.mark.parametrize(("buyers", "ok"), [(0, False), (1, True), (4, True), (5, True), (6, False)])
+def test_policy_accepts_one_to_five_test_inboxes(buyers, ok):
+    if ok:
+        PolicyUpdate.model_validate(_policy(buyers))
+    else:
+        with pytest.raises(ValidationError):
+            PolicyUpdate.model_validate(_policy(buyers))
 
 
 def test_campaign_create_accepts_doc_example():

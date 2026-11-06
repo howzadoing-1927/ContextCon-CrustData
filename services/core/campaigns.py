@@ -21,6 +21,7 @@ from .contracts.views import (
     CampaignView,
     ConversationView,
     DecisionView,
+    Handoff,
     MissionDetail,
     ProspectCase,
     Usage,
@@ -180,6 +181,9 @@ def _check_launch_policy(
         {"name": "seller_google_ready", "pass": True, "reason": "seller connection connected with required scopes"},
     ]
     profile = org["approved_profile_json"]
+    rotation = [r for r in buyers if _complete_consent(r)]
+    start = next(i for i, r in enumerate(rotation) if normalize_email(r["email"]) == body.buyer_test_email)
+    rotation = rotation[start:] + rotation[:start]
     snapshot = {
         "profile_version": org["profile_version"],
         "config_version": org["config_version"],
@@ -191,7 +195,8 @@ def _check_launch_policy(
         },
         "policy": {
             "simulation": True,
-            "buyer_test": next(r for r in buyers if normalize_email(r["email"]) == body.buyer_test_email),
+            "buyer_test": rotation[0],
+            "buyer_tests": rotation,
             "selected_calendar_id": policy.get("selected_calendar_id"),
             "working_hours": policy.get("working_hours"),
             "duration_minutes": policy.get("duration_minutes"),
@@ -337,25 +342,50 @@ def get_mission_detail(conn: psycopg.Connection, *, organization_id: UUID, campa
         "select * from evidence where organization_id = %s and campaign_id = %s order by created_at, id",
         (organization_id, campaign_id),
     ).fetchall()
-    conversation = conn.execute(
-        "select id, state, version, buyer_test_email, provider_thread_id from conversations "
-        "where organization_id = %s and campaign_id = %s order by created_at limit 1",
+    conversations = conn.execute(
+        "select id, prospect_id, state, version, buyer_test_email, provider_thread_id, crm_json, handoff_json from conversations "
+        "where organization_id = %s and campaign_id = %s order by created_at, id",
         (organization_id, campaign_id),
-    ).fetchone()
-    # Messages, slots, booking and handoff mapping arrive with B6-B7.
+    ).fetchall()
+    messages = conn.execute(
+        "select id, conversation_id, direction, subject, body_text, status, provider_message_id, received_at, updated_at "
+        "from messages where organization_id = %s and conversation_id = any(%s) order by coalesce(received_at, created_at), id",
+        (organization_id, [c["id"] for c in conversations]),
+    ).fetchall() if conversations else []
+    views = [_conversation_view(c, [m for m in messages if m["conversation_id"] == c["id"]]) for c in conversations]
+    by_prospect = {c["prospect_id"]: c for c in conversations}
+    handoffs = [Handoff.model_validate(c["handoff_json"]) for c in conversations if c["handoff_json"]]
     return MissionDetail(
         **_campaign_view(row).model_dump(),
-        prospects=[_prospect_case(p, evidence_rows, buyer) for p in prospect_rows],
-        conversation=ConversationView.model_validate(
-            {**conversation, "buyer_role_label": "simulated buyer", "messages": [], "offered_slots": [], "booking": None}
-        ) if conversation else None,
+        prospects=[_prospect_case(p, evidence_rows, buyer, by_prospect.get(p["id"])) for p in prospect_rows],
+        conversation=views[0] if views else None,
+        conversations=views,
         open_exceptions=[_decision_view(d) for d in exceptions],
         evidence=[evidence_view(e) for e in evidence_rows],
-        handoff=None,
+        handoff=handoffs[0] if handoffs else None,
+        handoffs=handoffs,
     )
 
 
-def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buyer_test_email: str) -> ProspectCase:
+def _conversation_view(conversation: dict[str, Any], messages: list[dict[str, Any]]) -> ConversationView:
+    crm = conversation.get("crm_json") or {}
+    return ConversationView.model_validate({
+        "id": conversation["id"], "prospect_id": conversation["prospect_id"], "state": conversation["state"],
+        "version": conversation["version"], "buyer_test_email": conversation["buyer_test_email"],
+        "provider_thread_id": conversation["provider_thread_id"], "buyer_role_label": "simulated buyer",
+        "messages": [
+            {"id": m["id"], "direction": m["direction"], "subject": m["subject"], "body_text": m["body_text"],
+             "sent_at": m["updated_at"] if m["direction"] == "outbound" and m["status"] == "sent" else None,
+             "received_at": m["received_at"], "provider_message_id": m["provider_message_id"], "status": m["status"]}
+            for m in messages
+        ],
+        "offered_slots": [{k: v for k, v in slot.items() if k != "label"} for slot in crm.get("offered_slots", [])],
+        "booking": crm.get("booking"),
+    })
+
+
+def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buyer_test_email: str,
+                   conversation: dict[str, Any] | None = None) -> ProspectCase:
     identity = row["identity_json"] or {}
     company, person, relationship = identity.get("company") or {}, identity.get("person"), identity.get("relationship") or {}
     facts = [
@@ -371,7 +401,12 @@ def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buy
             "canonical_company_ref": row["canonical_company_ref"],
             "canonical_person_ref": row["canonical_person_ref"],
             "company": {"name": company.get("name") or row["canonical_company_ref"], "domain": company.get("domain")},
-            "person": {"name": person.get("name") or "", "title": person.get("title")} if person else None,
+            "person": {
+                "name": person.get("name") or "",
+                "title": person.get("title"),
+                "found_email": {k: identity["found_email"].get(k) for k in ("email", "status", "source", "looked_up_at")}
+                if identity.get("found_email") else None,
+            } if person else None,
             "relationship": {
                 "status": status if status in ("supported", "conflicted") else "unknown",
                 "evidence_ids": relationship.get("evidence_ids", []),
@@ -380,6 +415,27 @@ def _prospect_case(row: dict[str, Any], evidence_rows: list[dict[str, Any]], buy
             "fit": {"qualified": "qualified", "rejected": "rejected"}.get(row["status"], "needs_evidence"),
             "facts": facts,
             "hypotheses": fit_json.get("hypotheses", []),
-            "delivery": {"mode": "simulation", "buyer_test_email": buyer_test_email, "identity_is_simulated": True},
+            "delivery": {"mode": "simulation", "identity_is_simulated": True,
+                         "buyer_test_email": conversation["buyer_test_email"] if conversation else buyer_test_email,
+                         "conversation_id": conversation["id"] if conversation else None,
+                         "conversation_state": conversation["state"] if conversation else None},
         }
     )
+
+
+def list_campaigns(conn: psycopg.Connection, *, organization_id: UUID, limit: int) -> list[CampaignView]:
+    rows = conn.execute(
+        f"select {_CAMPAIGN_COLUMNS} from campaigns c where c.organization_id = %s order by c.created_at desc, c.id desc limit %s",
+        (organization_id, limit),
+    ).fetchall()
+    return [_campaign_view(r) for r in rows]
+
+
+def campaign_ledger(conn: psycopg.Connection, *, organization_id: UUID, campaign_id: UUID, limit: int) -> list[DecisionView]:
+    if conn.execute("select 1 from campaigns where organization_id = %s and id = %s", (organization_id, campaign_id)).fetchone() is None:
+        raise DomainError(404, ErrorCode.NOT_FOUND, "Campaign not found.")
+    rows = conn.execute(
+        "select * from decisions where organization_id = %s and campaign_id = %s order by created_at, id limit %s",
+        (organization_id, campaign_id, limit),
+    ).fetchall()
+    return [_decision_view(r) for r in rows]

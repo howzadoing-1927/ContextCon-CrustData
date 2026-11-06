@@ -1,4 +1,4 @@
-/* Generated from …/ContextCon-backend/contracts/schemas by scripts/gen-contracts.mjs. Do not edit; run `pnpm contracts:gen`. */
+/* Generated from …/context-con/contracts/schemas by scripts/gen-contracts.mjs. Do not edit; run `pnpm contracts:gen`. */
 
 export type ActionId = string;
 export type AttendeeAcceptance = "not_verified";
@@ -153,6 +153,7 @@ export type BuyerTestEmail1 = string;
 export type Id4 = string;
 export type Messages = MessageView[];
 export type OfferedSlots = Slot[];
+export type ProspectId = string | null;
 export type ProviderThreadId = string | null;
 export type Version2 = number;
 /**
@@ -283,7 +284,7 @@ export type NextSteps = string[];
 export type NotificationStatus = "not_requested" | "pending" | "sent" | "failed";
 export type OpenQuestions = string[];
 export type OwnerEmail = string | null;
-export type ProspectId = string;
+export type ProspectId1 = string;
 export type Status2 = "complete";
 export type Version3 = 1;
 export type ContractVersion = "outcome.v1";
@@ -298,8 +299,13 @@ export type Name1 = string;
 export type Reason2 = string;
 export type Result = "pass" | "fail" | "unknown";
 export type BuyerTestEmail2 = string;
+export type ConversationId1 = string | null;
 export type IdentityIsSimulated = true;
 export type Mode5 = "simulation";
+export type Email = string | null;
+export type LookedUpAt = string;
+export type Source = string;
+export type Status5 = string;
 export type CanonicalCompanyRef = string;
 export type CanonicalPersonRef = string | null;
 export type Domain = string | null;
@@ -316,10 +322,12 @@ export type Id7 = string;
 export type Name3 = string;
 export type Title = string | null;
 export type EvidenceIds3 = string[];
-export type Status5 = "supported" | "unknown" | "conflicted";
+export type Status6 = "supported" | "unknown" | "conflicted";
 export type ConfigVersion3 = number;
+export type Conversations = ConversationView[];
 export type CreatedAt3 = string;
 export type Evidence = EvidenceView[];
+export type Handoffs = Handoff[];
 export type Id8 = string;
 export type LastDecisionId2 = string | null;
 export type Mode6 = "simulation";
@@ -330,6 +338,1288 @@ export type RequestText3 = string;
 export type Stage2 = string;
 export type UpdatedAt2 = string;
 export type Version4 = number;
+export type Status7 = "hypothesis";
+export type Text3 = string;
+export type Field = string;
+export type MustHave = boolean;
+export type Operator = "equals" | "contains" | "range";
+export type Value = string | number | boolean | (string | number | boolean)[];
+export type Intent = string;
+export type Limit = number;
+/**
+ * @maxItems 20
+ */
+export type Assumptions =
+  | []
+  | [Assumption]
+  | [Assumption, Assumption]
+  | [Assumption, Assumption, Assumption]
+  | [Assumption, Assumption, Assumption, Assumption]
+  | [Assumption, Assumption, Assumption, Assumption, Assumption]
+  | [Assumption, Assumption, Assumption, Assumption, Assumption, Assumption]
+  | [Assumption, Assumption, Assumption, Assumption, Assumption, Assumption, Assumption]
+  | [Assumption, Assumption, Assumption, Assumption, Assumption, Assumption, Assumption, Assumption]
+  | [Assumption, Assumption, Assumption, Assumption, Assumption, Assumption, Assumption, Assumption, Assumption]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ]
+  | [
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption,
+      Assumption
+    ];
+/**
+ * @maxItems 20
+ */
+export type BuyerRoles =
+  | []
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ];
+/**
+ * @maxItems 20
+ */
+export type CompanyRules =
+  | []
+  | [CompanyRule]
+  | [CompanyRule, CompanyRule]
+  | [CompanyRule, CompanyRule, CompanyRule]
+  | [CompanyRule, CompanyRule, CompanyRule, CompanyRule]
+  | [CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule]
+  | [CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule]
+  | [CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule]
+  | [CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule, CompanyRule]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ]
+  | [
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule,
+      CompanyRule
+    ];
+/**
+ * @maxItems 20
+ */
+export type Exclusions =
+  | []
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ];
+/**
+ * @maxItems 20
+ */
+export type Geography =
+  | []
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ];
+/**
+ * @maxItems 20
+ */
+export type Industries =
+  | []
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ];
+/**
+ * @maxItems 20
+ */
+export type MissingRequiredFields =
+  | []
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ];
+export type Objective = "book_demo";
+/**
+ * @maxItems 10
+ */
+export type ResearchQueries =
+  | []
+  | [ResearchQuery]
+  | [ResearchQuery, ResearchQuery]
+  | [ResearchQuery, ResearchQuery, ResearchQuery]
+  | [ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery]
+  | [ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery]
+  | [ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery]
+  | [ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery, ResearchQuery]
+  | [
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery
+    ]
+  | [
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery
+    ]
+  | [
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery,
+      ResearchQuery
+    ];
+/**
+ * @maxItems 20
+ */
+export type StopConditions =
+  | []
+  | [string]
+  | [string, string]
+  | [string, string, string]
+  | [string, string, string, string]
+  | [string, string, string, string, string]
+  | [string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [string, string, string, string, string, string, string, string, string, string, string, string, string, string]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ]
+  | [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
+    ];
 export type ConnectionId2 = string;
 export type InitiatorUserId = string;
 export type OrganizationId1 = string;
@@ -337,6 +1627,39 @@ export type Purpose = "seller";
 export type ReturnPath = "/setup";
 export type AuthorizationUrl = string;
 export type ExpiresAt = string;
+export type ApprovedFacts = {
+  [k: string]: unknown | undefined;
+}[];
+export type Faq = {
+  [k: string]: unknown | undefined;
+}[];
+export type ForbiddenPromises = string[];
+export type AccountEmail2 = string | null;
+export type CalendarId5 = string | null;
+export type GrantedScopes1 = string[];
+export type Purpose1 = "seller" | "buyer_test";
+export type Status8 = "pending" | "connected" | "reauth_required" | "revoked";
+export type ConsentedRecipients = {
+  [k: string]: unknown | undefined;
+}[];
+export type DurationMinutes = number | null;
+export type Limits1 = {
+  [k: string]: number | undefined;
+} | null;
+export type SelectedCalendarId = string | null;
+export type Simulation = boolean;
+export type WorkingHours = {
+  [k: string]: unknown | undefined;
+} | null;
+export type ApprovedAt = string | null;
+export type ConfigVersion4 = number;
+export type Connections = ConnectionSummaryView[];
+export type Id9 = string;
+export type Name4 = string;
+export type ProfileVersion4 = number;
+export type Role = "owner" | "member";
+export type Timezone4 = string;
+export type WebsiteUrl = string | null;
 export type ActionId3 = string;
 export type ActionKey = string;
 export type BodyText1 = string;
@@ -348,14 +1671,87 @@ export type RequestHash = string;
 export type RfcMessageId1 = string;
 export type Subject1 = string;
 export type ToEmail = string;
+export type Kind1 = "pasted_text";
+export type Text4 = string;
+export type Title1 = string;
+export type ConsentRecord = string;
+export type ConsentedAt = string;
+export type Email1 = string;
+export type Role1 = "buyer_test" | "owner_test";
+export type End5 = string;
+export type Start5 = string;
+export type Timezone5 = string;
+/**
+ * @minItems 1
+ * @maxItems 7
+ */
+export type Weekdays =
+  | [number]
+  | [number, number]
+  | [number, number, number]
+  | [number, number, number, number]
+  | [number, number, number, number, number]
+  | [number, number, number, number, number, number]
+  | [number, number, number, number, number, number, number];
+/**
+ * @minItems 1
+ * @maxItems 6
+ */
+export type ConsentedRecipients1 =
+  | [ConsentedRecipient]
+  | [ConsentedRecipient, ConsentedRecipient]
+  | [ConsentedRecipient, ConsentedRecipient, ConsentedRecipient]
+  | [ConsentedRecipient, ConsentedRecipient, ConsentedRecipient, ConsentedRecipient]
+  | [ConsentedRecipient, ConsentedRecipient, ConsentedRecipient, ConsentedRecipient, ConsentedRecipient]
+  | [
+      ConsentedRecipient,
+      ConsentedRecipient,
+      ConsentedRecipient,
+      ConsentedRecipient,
+      ConsentedRecipient,
+      ConsentedRecipient
+    ];
+export type DurationMinutes1 = 15;
+export type ExpectedConfigVersion = number;
+export type SelectedCalendarId1 = string;
+export type Simulation1 = true;
+export type Approved = true;
+export type Authority = "operator_approved";
+/**
+ * @minItems 1
+ */
+export type EvidenceIds4 = [string, ...string[]];
+export type Id10 = string;
+export type Text5 = string;
+export type Answer = string;
+export type FactIds = string[];
+export type Question = string;
+export type ApprovalKey = string;
+/**
+ * @minItems 1
+ * @maxItems 50
+ */
+export type ApprovedFacts1 = [ApprovedFact, ...ApprovedFact[]];
+export type ExpectedProfileVersion = number;
+/**
+ * @maxItems 50
+ */
+export type Faq1 = FAQ[];
+/**
+ * @maxItems 50
+ */
+export type ForbiddenPromises1 = string[];
+export type Name5 = string;
+export type Timezone6 = string;
+export type WebsiteUrl1 = string;
 export type CheckedAt1 = string;
-export type Status6 = "matched" | "unresolved";
+export type Status9 = "matched" | "unresolved";
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
  * via the `definition` "ResolutionType".
  */
 export type ResolutionType = "supply_fact" | "clarify_time" | "confirm_identity" | "reauthorize_complete" | "stop";
-export type EvidenceIds4 = string[];
+export type EvidenceIds5 = string[];
 export type ExpectedConversationVersion = number | null;
 export type Note = string;
 export type BodyText2 = string;
@@ -370,6 +1766,8 @@ export type ToEmails = string[];
 export type Messages1 = PolledMessage[];
 export type PolledAt = string;
 export type ProviderThreadId4 = string;
+export type Kind2 = "website";
+export type Url = string;
 
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -430,7 +1828,8 @@ export interface CalendarEventRequest {
   timezone: Timezone2;
 }
 /**
- * P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.
+ * Per-mission ceilings. `max_conversations` is the number of people reached; outbound messages and reply turns
+ * are per conversation. Raising a bound needs a reviewed contract and quota change.
  *
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
  * via the `definition` "Limits".
@@ -577,6 +1976,7 @@ export interface ConversationView {
   id: Id4;
   messages: Messages;
   offered_slots: OfferedSlots;
+  prospect_id?: ProspectId;
   provider_thread_id: ProviderThreadId;
   state: ConversationState;
   version: Version2;
@@ -763,7 +2163,7 @@ export interface Handoff {
   notification_status: NotificationStatus;
   open_questions: OpenQuestions;
   owner_email: OwnerEmail;
-  prospect_id: ProspectId;
+  prospect_id: ProspectId1;
   status: Status2;
   version: Version3;
 }
@@ -804,8 +2204,22 @@ export interface CriterionResult {
  */
 export interface Delivery {
   buyer_test_email: BuyerTestEmail2;
+  conversation_id?: ConversationId1;
+  conversation_state?: ConversationState | null;
   identity_is_simulated: IdentityIsSimulated;
   mode: Mode5;
+}
+/**
+ * Display-only contact data. Never a recipient: delivery always goes to the consented test inbox.
+ *
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "FoundEmail".
+ */
+export interface FoundEmail {
+  email: Email;
+  looked_up_at: LookedUpAt;
+  source: Source;
+  status: Status5;
 }
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -853,6 +2267,7 @@ export interface ProspectHypothesis {
  * via the `definition` "ProspectPerson".
  */
 export interface ProspectPerson {
+  found_email?: FoundEmail | null;
   name: Name3;
   title: Title;
 }
@@ -862,7 +2277,7 @@ export interface ProspectPerson {
  */
 export interface ProspectRelationship {
   evidence_ids: EvidenceIds3;
-  status: Status5;
+  status: Status6;
 }
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -871,9 +2286,11 @@ export interface ProspectRelationship {
 export interface MissionDetail {
   config_version: ConfigVersion3;
   conversation: ConversationView | null;
+  conversations?: Conversations;
   created_at: CreatedAt3;
   evidence: Evidence;
   handoff: Handoff | null;
+  handoffs?: Handoffs;
   id: Id8;
   last_decision_id: LastDecisionId2;
   mode: Mode6;
@@ -886,6 +2303,48 @@ export interface MissionDetail {
   updated_at: UpdatedAt2;
   usage: Usage;
   version: Version4;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "Assumption".
+ */
+export interface Assumption {
+  status: Status7;
+  text: Text3;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "CompanyRule".
+ */
+export interface CompanyRule {
+  field: Field;
+  must_have: MustHave;
+  operator: Operator;
+  value: Value;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "ResearchQuery".
+ */
+export interface ResearchQuery {
+  intent: Intent;
+  limit: Limit;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "NormalizedPlan".
+ */
+export interface NormalizedPlan {
+  assumptions: Assumptions;
+  buyer_roles: BuyerRoles;
+  company_rules: CompanyRules;
+  exclusions: Exclusions;
+  geography: Geography;
+  industries: Industries;
+  missing_required_fields: MissingRequiredFields;
+  objective: Objective;
+  research_queries: ResearchQueries;
+  stop_conditions: StopConditions;
 }
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -907,6 +2366,56 @@ export interface OAuthStartResult {
   expires_at: ExpiresAt;
 }
 /**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "ApprovedProfileView".
+ */
+export interface ApprovedProfileView {
+  approved_facts: ApprovedFacts;
+  faq: Faq;
+  forbidden_promises: ForbiddenPromises;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "ConnectionSummaryView".
+ */
+export interface ConnectionSummaryView {
+  account_email: AccountEmail2;
+  calendar_id: CalendarId5;
+  granted_scopes: GrantedScopes1;
+  purpose: Purpose1;
+  status: Status8;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "SafePolicyView".
+ */
+export interface SafePolicyView {
+  consented_recipients: ConsentedRecipients;
+  duration_minutes: DurationMinutes;
+  limits: Limits1;
+  selected_calendar_id: SelectedCalendarId;
+  simulation: Simulation;
+  working_hours: WorkingHours;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "OrganizationView".
+ */
+export interface OrganizationView {
+  approved_at: ApprovedAt;
+  config_version: ConfigVersion4;
+  connections: Connections;
+  id: Id9;
+  name: Name4;
+  policy: SafePolicyView;
+  profile: ApprovedProfileView | null;
+  profile_version: ProfileVersion4;
+  role: Role;
+  timezone: Timezone4;
+  website_url: WebsiteUrl;
+  worker: HealthReady;
+}
+/**
  * Immutable plain-text message built by the server. Exactly one recipient; no Cc/Bcc/Reply-To.
  *
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -926,6 +2435,82 @@ export interface OutboundEmail {
   to_email: ToEmail;
 }
 /**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "PastedTextSource".
+ */
+export interface PastedTextSource {
+  kind: Kind1;
+  text: Text4;
+  title: Title1;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "ConsentedRecipient".
+ */
+export interface ConsentedRecipient {
+  consent_record: ConsentRecord;
+  consented_at: ConsentedAt;
+  email: Email1;
+  role: Role1;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "WorkingHours".
+ */
+export interface WorkingHours1 {
+  end: End5;
+  start: Start5;
+  timezone: Timezone5;
+  weekdays: Weekdays;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "PolicyUpdate".
+ */
+export interface PolicyUpdate {
+  consented_recipients: ConsentedRecipients1;
+  duration_minutes: DurationMinutes1;
+  expected_config_version: ExpectedConfigVersion;
+  limits: Limits;
+  selected_calendar_id: SelectedCalendarId1;
+  simulation: Simulation1;
+  working_hours: WorkingHours1;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "ApprovedFact".
+ */
+export interface ApprovedFact {
+  approved: Approved;
+  authority: Authority;
+  evidence_ids: EvidenceIds4;
+  id: Id10;
+  text: Text5;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "FAQ".
+ */
+export interface FAQ {
+  answer: Answer;
+  fact_ids: FactIds;
+  question: Question;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "ProfileUpdate".
+ */
+export interface ProfileUpdate {
+  approval_key: ApprovalKey;
+  approved_facts: ApprovedFacts1;
+  expected_profile_version: ExpectedProfileVersion;
+  faq: Faq1;
+  forbidden_promises: ForbiddenPromises1;
+  name: Name5;
+  timezone: Timezone6;
+  website_url: WebsiteUrl1;
+}
+/**
  * `unresolved` is inconclusive (indexing lag), never proof that nothing was sent.
  *
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
@@ -935,20 +2520,20 @@ export interface ReconcileResult {
   checked_at: CheckedAt1;
   execution_label: ExecutionLabel;
   receipt: GmailSendReceipt | null;
-  status: Status6;
+  status: Status9;
 }
 /**
  * This interface was referenced by `OutcomeContracts`'s JSON-Schema
  * via the `definition` "ResolveInput".
  */
 export interface ResolveInput {
-  evidence_ids: EvidenceIds4;
+  evidence_ids: EvidenceIds5;
   expected_conversation_version: ExpectedConversationVersion;
   note: Note;
   resolution_type: ResolutionType;
-  value: Value;
+  value: Value1;
 }
-export interface Value {
+export interface Value1 {
   [k: string]: unknown | undefined;
 }
 /**
@@ -975,4 +2560,12 @@ export interface ThreadPoll {
   messages: Messages1;
   polled_at: PolledAt;
   provider_thread_id: ProviderThreadId4;
+}
+/**
+ * This interface was referenced by `OutcomeContracts`'s JSON-Schema
+ * via the `definition` "WebsiteSource".
+ */
+export interface WebsiteSource {
+  kind: Kind2;
+  url: Url;
 }

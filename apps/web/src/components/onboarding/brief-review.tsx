@@ -124,19 +124,22 @@ export function BriefView({
   website: string;
   analysis: WebsiteAnalysis | null;
   profileVersion: number;
-  /** False in live mode until the backend's demo session exists; the brief is read and checked but not stored. */
+  /** False in live mode until the founder signs in; saving then asks for the workspace login first. */
   canSave: boolean;
   onStartOver: () => void;
   onSaved: () => void;
 }) {
-  const { client } = useSession();
+  const { client, signInWithPassword } = useSession();
   const seeded = useMemo(() => (analysis ? draftFromAnalysis(analysis) : null), [analysis]);
   const [draft, setDraft] = useState<BriefDraft | null>(null);
   const [approvedFacts, setApprovedFacts] = useState<Set<string>>(new Set());
   const [approved, setApproved] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
-  const [saveBlocked, setSaveBlocked] = useState(false);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
+  const [login, setLogin] = useState({ email: "", password: "" });
+  const [signInError, setSignInError] = useState<string | null>(null);
+  const [signingIn, setSigningIn] = useState(false);
   const revealed = useReveal(ORDER.length, analysis !== null);
   const filled = analysis !== null && revealed >= ORDER.length;
   const save = useMutation("brief", (input: BriefSave, key: string) => client.workspace.saveBrief(input, key));
@@ -220,11 +223,28 @@ export function BriefView({
       setFocusRequest((n) => n + 1);
       return;
     }
+    let version = profileVersion;
     if (!canSave) {
-      setSaveBlocked(true);
-      return;
+      if (!needsSignIn) {
+        setNeedsSignIn(true);
+        return;
+      }
+      setSigningIn(true);
+      const failure = await signInWithPassword(login.email.trim(), login.password);
+      if (failure) {
+        setSignInError(failure);
+        setSigningIn(false);
+        return;
+      }
+      setSignInError(null);
+      try {
+        version = (await client.workspace.get()).data.profile_version;
+      } catch {
+        version = 0;
+      }
+      setSigningIn(false);
     }
-    const result = await save.run(toBriefSave(draft, analysis, [...approvedFacts], profileVersion));
+    const result = await save.run(toBriefSave(draft, analysis, [...approvedFacts], version));
     if (result) onSaved();
   }
 
@@ -434,11 +454,30 @@ export function BriefView({
               .
             </Notice>
           )}
-          {saveBlocked && (
-            <Notice tone="info" title="Your brief is checked but not saved yet" className="mb-4">
-              Saving needs the backend&apos;s demo session for the seeded workspace, which isn&apos;t live yet. Nothing was stored and no
-              session was made up.
-            </Notice>
+          {needsSignIn && !canSave && (
+            <div className="mb-5 rounded-lg border border-hairline bg-raised px-4 py-3.5">
+              <h2 className="text-sm font-semibold">Sign in to save your brief</h2>
+              <p className="mt-0.5 text-2xs text-muted-foreground">Use your workspace login. The brief is stored in your workspace only after you sign in.</p>
+              <div className="mt-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                <Input
+                  type="email"
+                  autoComplete="username"
+                  aria-label="Login email"
+                  placeholder="you@company.com"
+                  value={login.email}
+                  onChange={(e) => setLogin((l) => ({ ...l, email: e.target.value }))}
+                />
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  aria-label="Password"
+                  placeholder="Password"
+                  value={login.password}
+                  onChange={(e) => setLogin((l) => ({ ...l, password: e.target.value }))}
+                />
+              </div>
+              {signInError && <p className="mt-2 text-2xs text-bad">{signInError}</p>}
+            </div>
           )}
           {save.error != null && (
             <Notice tone="bad" title={describeError(save.error).title} className="mb-4">
@@ -482,8 +521,8 @@ export function BriefView({
             <span>I&apos;ve reviewed the service, the description, and the ideal customer. Meetings need the prospect&apos;s explicit agreement.</span>
           </label>
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Button type="submit" size="lg" className="h-10 px-4" disabled={!filled || save.pending}>
-              {save.pending ? "Saving brief…" : "Reviewed and continue"}
+            <Button type="submit" size="lg" className="h-10 px-4" disabled={!filled || save.pending || signingIn}>
+              {signingIn ? "Signing in…" : save.pending ? "Saving brief…" : needsSignIn && !canSave ? "Sign in and save" : "Reviewed and continue"}
               <ArrowRight data-icon="inline-end" />
             </Button>
             <span className="text-xs text-muted-foreground">Next: connect Google and add your test inbox.</span>

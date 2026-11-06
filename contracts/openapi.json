@@ -588,6 +588,35 @@
         "title": "CampaignLaunchView",
         "type": "object"
       },
+      "CampaignPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "CampaignPage",
+        "type": "object"
+      },
       "CampaignState": {
         "enum": [
           "draft",
@@ -607,7 +636,7 @@
         "additionalProperties": false,
         "properties": {
           "config_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Config Version",
             "type": "integer"
           },
@@ -639,7 +668,7 @@
             "type": "string"
           },
           "profile_version": {
-            "minimum": 1,
+            "minimum": 1.0,
             "title": "Profile Version",
             "type": "integer"
           },
@@ -663,7 +692,7 @@
             "$ref": "#/components/schemas/Usage"
           },
           "version": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Version",
             "type": "integer"
           }
@@ -992,6 +1021,18 @@
             "title": "Offered Slots",
             "type": "array"
           },
+          "prospect_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prospect Id"
+          },
           "provider_thread_id": {
             "anyOf": [
               {
@@ -1219,6 +1260,28 @@
           "buyer_test_email": {
             "title": "Buyer Test Email",
             "type": "string"
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id"
+          },
+          "conversation_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "identity_is_simulated": {
             "const": true,
@@ -1499,6 +1562,44 @@
         ],
         "title": "FailurePhase",
         "type": "string"
+      },
+      "FoundEmail": {
+        "additionalProperties": false,
+        "description": "Display-only contact data. Never a recipient: delivery always goes to the consented test inbox.",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "looked_up_at": {
+            "format": "date-time",
+            "title": "Looked Up At",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "status",
+          "source",
+          "looked_up_at"
+        ],
+        "title": "FoundEmail",
+        "type": "object"
       },
       "FreeBusyResult": {
         "additionalProperties": false,
@@ -1902,30 +2003,59 @@
         "title": "HealthReady",
         "type": "object"
       },
+      "LedgerPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionView"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "LedgerPage",
+        "type": "object"
+      },
       "Limits": {
         "additionalProperties": false,
-        "description": "P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.",
+        "description": "Per-mission ceilings. `max_conversations` is the number of people reached; outbound messages and reply turns\nare per conversation. Raising a bound needs a reviewed contract and quota change.",
         "properties": {
           "max_conversations": {
-            "maximum": 1.0,
+            "maximum": 25.0,
             "minimum": 1.0,
             "title": "Max Conversations",
             "type": "integer"
           },
           "max_discovered": {
-            "maximum": 10.0,
+            "maximum": 50.0,
             "minimum": 1.0,
             "title": "Max Discovered",
             "type": "integer"
           },
           "max_enriched": {
-            "maximum": 3.0,
+            "maximum": 25.0,
             "minimum": 1.0,
             "title": "Max Enriched",
             "type": "integer"
           },
           "max_model_calls": {
-            "maximum": 20.0,
+            "maximum": 150.0,
             "minimum": 1.0,
             "title": "Max Model Calls",
             "type": "integer"
@@ -1943,13 +2073,13 @@
             "type": "integer"
           },
           "max_research_calls": {
-            "maximum": 10.0,
+            "maximum": 80.0,
             "minimum": 1.0,
             "title": "Max Research Calls",
             "type": "integer"
           },
           "max_runtime_seconds": {
-            "maximum": 600.0,
+            "maximum": 1800.0,
             "minimum": 1.0,
             "title": "Max Runtime Seconds",
             "type": "integer"
@@ -2082,6 +2212,14 @@
               }
             ]
           },
+          "conversations": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ConversationView"
+            },
+            "title": "Conversations",
+            "type": "array"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -2103,6 +2241,14 @@
                 "type": "null"
               }
             ]
+          },
+          "handoffs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Handoff"
+            },
+            "title": "Handoffs",
+            "type": "array"
           },
           "id": {
             "format": "uuid",
@@ -2628,7 +2774,7 @@
             "items": {
               "$ref": "#/components/schemas/ConsentedRecipient"
             },
-            "maxItems": 2,
+            "maxItems": 6,
             "minItems": 1,
             "title": "Consented Recipients",
             "type": "array"
@@ -2983,6 +3129,16 @@
       "ProspectPerson": {
         "additionalProperties": false,
         "properties": {
+          "found_email": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FoundEmail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -3302,6 +3458,31 @@
         "title": "SuccessEnvelope[CampaignLaunchView]",
         "type": "object"
       },
+      "SuccessEnvelope_CampaignPage_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CampaignPage"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[CampaignPage]",
+        "type": "object"
+      },
       "SuccessEnvelope_EvidenceView_": {
         "additionalProperties": false,
         "properties": {
@@ -3377,6 +3558,31 @@
         "title": "SuccessEnvelope[HealthReady]",
         "type": "object"
       },
+      "SuccessEnvelope_LedgerPage_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LedgerPage"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[LedgerPage]",
+        "type": "object"
+      },
       "SuccessEnvelope_MissionDetail_": {
         "additionalProperties": false,
         "properties": {
@@ -3400,6 +3606,31 @@
           "correlation_id"
         ],
         "title": "SuccessEnvelope[MissionDetail]",
+        "type": "object"
+      },
+      "SuccessEnvelope_OAuthStartResult_": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "format": "uuid",
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OAuthStartResult"
+          },
+          "schema_version": {
+            "const": "outcome.v1",
+            "default": "outcome.v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "correlation_id"
+        ],
+        "title": "SuccessEnvelope[OAuthStartResult]",
         "type": "object"
       },
       "SuccessEnvelope_OrganizationView_": {
@@ -3623,6 +3854,49 @@
   "openapi": "3.1.0",
   "paths": {
     "/api/v1/campaigns": {
+      "get": {
+        "operationId": "get_campaigns_api_v1_campaigns_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_CampaignPage_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Campaigns",
+        "tags": [
+          "campaigns"
+        ]
+      },
       "post": {
         "operationId": "create_campaign_api_v1_campaigns_post",
         "requestBody": {
@@ -3703,6 +3977,82 @@
         "summary": "Get Campaign",
         "tags": [
           "campaigns"
+        ]
+      }
+    },
+    "/api/v1/campaigns/{campaign_id}/ledger": {
+      "get": {
+        "operationId": "get_ledger_api_v1_campaigns__campaign_id__ledger_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_LedgerPage_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Ledger",
+        "tags": [
+          "campaigns"
+        ]
+      }
+    },
+    "/api/v1/google/oauth/start": {
+      "post": {
+        "operationId": "start_oauth_api_v1_google_oauth_start_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_OAuthStartResult_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Start Oauth",
+        "tags": [
+          "google"
         ]
       }
     },

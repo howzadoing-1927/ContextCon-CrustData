@@ -178,6 +178,8 @@ def test_no_supported_person_gives_no_match_without_invented_identity(research_c
 
 def test_caps_stop_after_three_matches_and_ten_discovered(research_campaign, conn):
     _, launched, lease = research_campaign
+    conn.execute("update campaigns set limits_json = limits_json || %s where id = %s",
+                 (Jsonb({"max_discovered": 10, "max_enriched": 3}), launched.id))
     fake = FakeResearch(n_companies=15, matches={company_ref(100 + i): "supported" for i in range(15)})
 
     handle_research(conn, lease, research_factory=lambda: fake)
@@ -189,6 +191,7 @@ def test_caps_stop_after_three_matches_and_ten_discovered(research_campaign, con
 
 def test_research_budget_enforced_before_calls(research_campaign, conn):
     _, launched, lease = research_campaign
+    conn.execute("update campaigns set limits_json = limits_json || %s where id = %s", (Jsonb({"max_research_calls": 10}), launched.id))
     conn.execute("update campaigns set budget_json = jsonb_set(budget_json, '{usage,research_calls}', '5') where id = %s", (launched.id,))
     fake = FakeResearch(n_companies=10, matches={})
 

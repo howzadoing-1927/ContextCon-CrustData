@@ -1,28 +1,28 @@
 {
   "$id": "urn:outcome:outcome.v1:Limits",
   "additionalProperties": false,
-  "description": "P0 single-conversation ceilings. Raising a bound needs a reviewed contract and quota change.",
+  "description": "Per-mission ceilings. `max_conversations` is the number of people reached; outbound messages and reply turns\nare per conversation. Raising a bound needs a reviewed contract and quota change.",
   "properties": {
     "max_conversations": {
-      "maximum": 1,
+      "maximum": 25,
       "minimum": 1,
       "title": "Max Conversations",
       "type": "integer"
     },
     "max_discovered": {
-      "maximum": 10,
+      "maximum": 50,
       "minimum": 1,
       "title": "Max Discovered",
       "type": "integer"
     },
     "max_enriched": {
-      "maximum": 3,
+      "maximum": 25,
       "minimum": 1,
       "title": "Max Enriched",
       "type": "integer"
     },
     "max_model_calls": {
-      "maximum": 20,
+      "maximum": 150,
       "minimum": 1,
       "title": "Max Model Calls",
       "type": "integer"
@@ -40,13 +40,13 @@
       "type": "integer"
     },
     "max_research_calls": {
-      "maximum": 10,
+      "maximum": 80,
       "minimum": 1,
       "title": "Max Research Calls",
       "type": "integer"
     },
     "max_runtime_seconds": {
-      "maximum": 600,
+      "maximum": 1800,
       "minimum": 1,
       "title": "Max Runtime Seconds",
       "type": "integer"

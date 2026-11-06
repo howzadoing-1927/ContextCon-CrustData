@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useEffect } from "react";
 import { ErrorState } from "@/components/outcome/error-state";
@@ -44,6 +44,7 @@ function SetupContent() {
   const canEdit = data.viewer_role === "owner";
   const items = readiness(data);
   const done = items.filter((i) => i.done).length;
+  const next = items.find((i) => !i.done);
   const refresh = () => void workspace.refresh();
 
   return (
@@ -81,7 +82,7 @@ function SetupContent() {
         </ol>
         {done === 4 && (
           <Link href="/missions/new" className={cn(buttonVariants({ size: "sm" }), "mt-4 w-full")}>
-            Write a mission
+            Start a mission
           </Link>
         )}
       </aside>
@@ -98,6 +99,21 @@ function SetupContent() {
           <GoogleSection workspace={data} canEdit={canEdit} onChanged={refresh} />
           <PolicySection workspace={data} canEdit={canEdit} onChanged={refresh} />
         </EvidenceProvider>
+        <div className="mt-8 flex items-center justify-end gap-3 border-t border-hairline pt-5">
+          <p className="text-2xs text-muted-foreground">
+            {next ? `Still to do: ${next.label.toLowerCase()}.` : "Setup is complete. Pick a ready-made mission or write your own."}
+          </p>
+          {next ? (
+            <a href={`#${next.id}`} className={buttonVariants({ variant: "outline" })}>
+              Go to {next.label.toLowerCase()}
+            </a>
+          ) : (
+            <Link href="/missions/new" className={buttonVariants()}>
+              Continue
+              <ArrowRight data-icon="inline-end" />
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

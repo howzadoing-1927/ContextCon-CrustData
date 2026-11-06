@@ -89,9 +89,19 @@ class ProspectCompany(ContractModel):
     domain: str | None
 
 
+class FoundEmail(ContractModel):
+    """Display-only contact data. Never a recipient: delivery always goes to the consented test inbox."""
+
+    email: str | None
+    status: str
+    source: str
+    looked_up_at: AwareDatetime
+
+
 class ProspectPerson(ContractModel):
     name: str
     title: str | None
+    found_email: FoundEmail | None = None
 
 
 class ProspectRelationship(ContractModel):
@@ -120,6 +130,8 @@ class Delivery(ContractModel):
     mode: Literal["simulation"]
     buyer_test_email: Email
     identity_is_simulated: Literal[True]
+    conversation_id: UUID | None = None
+    conversation_state: ConversationState | None = None
 
 
 class ProspectCase(ContractModel):
@@ -209,6 +221,7 @@ class BookingReceipt(ContractModel):
 
 class ConversationView(ContractModel):
     id: UUID
+    prospect_id: UUID | None = None
     state: ConversationState
     version: int = Field(ge=0)
     buyer_role_label: Literal["simulated buyer"]
@@ -283,6 +296,8 @@ class OrganizationView(ContractModel):
 class MissionDetail(CampaignView):
     prospects: list[ProspectCase]
     conversation: ConversationView | None
+    conversations: list[ConversationView] = []
     open_exceptions: list[DecisionView]
     evidence: list[EvidenceView]
     handoff: Handoff | None
+    handoffs: list[Handoff] = []

@@ -80,7 +80,7 @@ export default function MissionsPage() {
             title="No missions yet"
             action={
               <Link href="/missions/new" className={buttonVariants()}>
-                Write the first mission
+                Add a mission
               </Link>
             }
           >
